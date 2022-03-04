@@ -7,6 +7,9 @@ Makefile.defs
 ^_pkgdown\.yml$
 ^doc$
 ^pkgdown$
+^man-roxygen
 DESCRIPTION-r
 WISHLIST
 
+^.*\.Rproj$
+^\.Rproj\.user$
