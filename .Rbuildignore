@@ -1,0 +1,12 @@
+lib/*
+scratch/*
+scratch/[.].*$
+Makefile
+Makefile.defs
+.tar.gz$
+^_pkgdown\.yml$
+^doc$
+^pkgdown$
+DESCRIPTION-r
+WISHLIST
+
