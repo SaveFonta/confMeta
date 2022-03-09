@@ -31,9 +31,8 @@ However, all of these arguments can be overwritten by the user via the \code{...
 \examples{
 thetahat <- c(0.65, -0.5, 0.03, -0.51, 0.85, 0.75, -0.22, 1.02, 0.36, 0.44)
 se <- c(0.2, 0.2, 0.19, 0.22, 0.21, 0.18, 0.17, 0.18, 0.21, 0.19)
-estimateTau2(thetahat = thetahat, se = se)|
+estimateTau2(thetahat = thetahat, se = se)
 
 thetahat[1] <- 7
 estimateTau2(thetahat = thetahat, se = se)
 }
-\keyword{internal}

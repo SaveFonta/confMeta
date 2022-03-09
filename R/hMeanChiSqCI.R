@@ -76,8 +76,7 @@ hMeanChiSqCI <- function(thetahat, se,
             length(heterogeneity) == 1L)
   
   # estimate heterogeneity
-  alternative <- match.arg(alternative)
-  distr <- match.arg(distr)
+  distr <- match.arg(distr, several.ok = FALSE)
   if(length(se) == 1L) se <- rep(se, length(thetahat))
   
   ## target function to compute the limits of the CI

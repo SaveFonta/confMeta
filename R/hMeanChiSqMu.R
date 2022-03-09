@@ -3,14 +3,17 @@
 #' @template thetahat
 #' @template se 
 #' @template w 
-#' @param mu A numeric vector containing null hypothesis value(s). Defaults to 0.
+#' @param mu A numeric vector containing null hypothesis value(s).
 #' @template phi
 #' @template tau2
 #' @template alternative 
 #' @template distr
 #' @template heterogeneity 
 #' @param bound If \code{FALSE} (default), p-values that cannot be computed are reported as \code{NaN}.
-#' If \code{TRUE}, they are reported as "> bound".
+#' If \code{TRUE}, they are reported as "> bound". This might, however, lead to situations in which
+#' some of the p-values could be computed whereas others are reported as bounds. As a consequence, the
+#' returned vector in such cases has class \code{"character"}. If the output vector must be of class \code{numeric}
+#' use \code{bound = FALSE}.
 #' @return Returns the p-value from the harmonic mean chi-squared test
 #' based on study-specific estimates and standard errors.
 #' @importFrom stats pchisq pf
@@ -70,7 +73,6 @@ hMeanChiSqMu <- function(thetahat, se,
             length(heterogeneity) == 1L)
   
   # match arguments
-  alternative <- match.arg(alternative, several.ok = FALSE)
   distr <- match.arg(distr, several.ok = FALSE)
   if(length(se) == 1L) se <- rep(se, length(thetahat))
   
@@ -88,38 +90,42 @@ hMeanChiSqMu <- function(thetahat, se,
   # Case: Alternative is one of c("greater", "less", "two.sided")
   if(alternative != "none"){
     sw <- sum(sqrt(w))^2
-    zH2 <- vapply(seq_along(mu), function(i){
-      z <- (thetahat - mu[i]) / denominator
-      sw / sum(w / z^2)
-    }, double(1L))
+    z <- vapply(seq_along(mu), function(i) (thetahat - mu[i]) / denominator, double(length(thetahat)))
+    if(!is.matrix(z)) z <- as.matrix(z)
+    zH2 <- vapply(seq_along(mu), function(i) sw / sum(w / z[, i]^2), double(1L))
     if(distr == "chisq"){
-      res <- stats::pchisq(zH2, df = 1, lower.tail = FALSE)
+      res <- stats::pchisq(zH2, df = 1L, lower.tail = FALSE)
     } else if(distr == "f") {
-      res <- stats::pf(zH2, df1 = 1, df2 = (length(thetahat) - 1), lower.tail = FALSE)
+      res <- stats::pf(zH2, df1 = 1L, df2 = (length(thetahat) - 1L), lower.tail = FALSE)
     }
-    check_greater <- min(z) >= 0
-    check_less <- max(z) <= 0
+    check_greater <- vapply(seq_len(ncol(z)), function(i) min(z[, i]) >= 0, logical(1L))
+    check_less <- vapply(seq_len(ncol(z)), function(i) max(z[, i]) <= 0, logical(1L))
     break_p <- 1 / (2^n)
     if(alternative == "greater"){
       if(bound){
-        res <- if(check_greater) res / (2^n) else paste(">", format(break_p, scientific = FALSE))
+        res <- ifelse(check_greater, res / (2^n), paste(">", format(break_p, scientific = FALSE)))
+        #res <- if(check_greater) res / (2^n) else paste(">", format(break_p, scientific = FALSE))
       } else {
-        res <- if(check_greater || check_less) res/(2^n) else NaN
+        res <- ifelse(check_greater | check_less, res / (2^n), NaN)
+        #res <- if(check_greater || check_less) res/(2^n) else NaN
       }
     }
     if(alternative == "less"){
       if(bound){
-        res <- if(check_less) res / (2^n) else paste(">", format(break_p, scientific = FALSE))
+        res <- ifelse(check_less, res / (2^n), paste(">", format(break_p, scientific = FALSE)))
+        #res <- if(check_less) res / (2^n) else paste(">", format(break_p, scientific = FALSE))
       } else {
-        res <- if(check_greater || check_less) res / (2^n) else NaN
+        res <- ifelse(check_greater | check_less, res / (2^n),  NaN)
+        #res <- if(check_greater || check_less) res / (2^n) else NaN
       }
     }
     if(alternative == "two.sided"){
       if(bound){
-        res <- if(check_greater || check_less) res / (2^(n - 1)) else
-          paste(">", format(2*break_p, scientific = FALSE))
+        res <- ifelse(check_greater | check_less, res / (2^(n - 1)), paste(">", format(2*break_p, scientific = FALSE)))
+        #res <- if(check_greater || check_less) res / (2^(n - 1)) else paste(">", format(2*break_p, scientific = FALSE))
       } else {
-        res <- if(check_greater || check_less) res / (2^(n - 1)) else NaN
+        res <- ifelse(check_greater | check_less, res / (2^(n - 1)), NaN)
+        #res <- if(check_greater || check_less) res / (2^(n - 1)) else NaN
       }
     }
   # Case when alternative is "none"

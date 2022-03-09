@@ -27,9 +27,8 @@ In the paper the weights should be squared!?
 \examples{
 thetahat <- c(0.21, 0.53, 0.24, 0.32, 0.19)
 se <- c(0.19, 0.39, 0.7, 1, 0.97)
-estimatePhi(thetahat = thetahat, se = se)|
+estimatePhi(thetahat = thetahat, se = se)
 
 thetahat[1] <- 7
 estimatePhi(thetahat = thetahat, se = se)
 }
-\keyword{internal}

@@ -9,7 +9,7 @@ Makefile.defs
 ^pkgdown$
 ^man-roxygen
 DESCRIPTION-r
-WISHLIST
 
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^LICENSE\.md$

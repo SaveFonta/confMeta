@@ -24,7 +24,7 @@ hMeanChiSqMu(
 
 \item{w}{Numeric vector of weights.}
 
-\item{mu}{A numeric vector containing null hypothesis value(s). Defaults to 0.}
+\item{mu}{A numeric vector containing null hypothesis value(s).}
 
 \item{phi}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
 
@@ -39,7 +39,10 @@ Specifies the alternative to be considered in the computation of the p-value.}
 \item{heterogeneity}{The method used to estimate heterogeneity. Implemented options are \code{"additive"} and \code{"multiplicative"}.}
 
 \item{bound}{If \code{FALSE} (default), p-values that cannot be computed are reported as \code{NaN}.
-If \code{TRUE}, they are reported as "> bound".}
+If \code{TRUE}, they are reported as "> bound". This might, however, lead to situations in which
+some of the p-values could be computed whereas others are reported as bounds. As a consequence, the
+returned vector in such cases has class \code{"character"}. If the output vector must be of class \code{numeric}
+use \code{bound = FALSE}.}
 }
 \value{
 Returns the p-value from the harmonic mean chi-squared test

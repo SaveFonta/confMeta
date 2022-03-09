@@ -18,12 +18,12 @@
 #' 
 #' @importFrom stats lm anova
 #' 
-#' @keywords internal
+#' @export
 #' 
 #' @examples
 #' thetahat <- c(0.21, 0.53, 0.24, 0.32, 0.19)
 #' se <- c(0.19, 0.39, 0.7, 1, 0.97)
-#' estimatePhi(thetahat = thetahat, se = se)|
+#' estimatePhi(thetahat = thetahat, se = se)
 #'
 #' thetahat[1] <- 7
 #' estimatePhi(thetahat = thetahat, se = se)
@@ -61,12 +61,12 @@ estimatePhi <- function(thetahat, se){
 #' 
 #' @importFrom meta metagen
 #' 
-#' @keywords internal
+#' @export
 #' 
 #' @examples
 #' thetahat <- c(0.65, -0.5, 0.03, -0.51, 0.85, 0.75, -0.22, 1.02, 0.36, 0.44)
 #' se <- c(0.2, 0.2, 0.19, 0.22, 0.21, 0.18, 0.17, 0.18, 0.21, 0.19)
-#' estimateTau2(thetahat = thetahat, se = se)|
+#' estimateTau2(thetahat = thetahat, se = se)
 #'
 #' thetahat[1] <- 7
 #' estimateTau2(thetahat = thetahat, se = se)
