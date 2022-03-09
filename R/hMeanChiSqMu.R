@@ -104,28 +104,22 @@ hMeanChiSqMu <- function(thetahat, se,
     if(alternative == "greater"){
       if(bound){
         res <- ifelse(check_greater, res / (2^n), paste(">", format(break_p, scientific = FALSE)))
-        #res <- if(check_greater) res / (2^n) else paste(">", format(break_p, scientific = FALSE))
       } else {
         res <- ifelse(check_greater | check_less, res / (2^n), NaN)
-        #res <- if(check_greater || check_less) res/(2^n) else NaN
       }
     }
     if(alternative == "less"){
       if(bound){
         res <- ifelse(check_less, res / (2^n), paste(">", format(break_p, scientific = FALSE)))
-        #res <- if(check_less) res / (2^n) else paste(">", format(break_p, scientific = FALSE))
       } else {
         res <- ifelse(check_greater | check_less, res / (2^n),  NaN)
-        #res <- if(check_greater || check_less) res / (2^n) else NaN
       }
     }
     if(alternative == "two.sided"){
       if(bound){
         res <- ifelse(check_greater | check_less, res / (2^(n - 1)), paste(">", format(2*break_p, scientific = FALSE)))
-        #res <- if(check_greater || check_less) res / (2^(n - 1)) else paste(">", format(2*break_p, scientific = FALSE))
       } else {
         res <- ifelse(check_greater | check_less, res / (2^(n - 1)), NaN)
-        #res <- if(check_greater || check_less) res / (2^(n - 1)) else NaN
       }
     }
   # Case when alternative is "none"
