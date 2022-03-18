@@ -88,7 +88,7 @@ hMeanChiSqCI <- function(thetahat, se,
   target <- function(limit){
     hMeanChiSqMu(thetahat = thetahat, se = se, w = w, mu = limit, phi = phi, tau2 = tau2,
                  alternative = alternative, distr = distr, heterogeneity = heterogeneity, 
-                 bound = FALSE) - alpha
+                 bound = FALSE, check_inputs = FALSE) - alpha
   }
   
   ## sort 'thetahat', 'se', 'w'
