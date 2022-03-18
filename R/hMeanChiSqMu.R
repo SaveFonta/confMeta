@@ -14,6 +14,7 @@
 #' some of the p-values could be computed whereas others are reported as bounds. As a consequence, the
 #' returned vector in such cases has class \code{"character"}. If the output vector must be of class \code{numeric}
 #' use \code{bound = FALSE}.
+#' @template check_inputs
 #' @return Returns the p-value from the harmonic mean chi-squared test
 #' based on study-specific estimates and standard errors.
 #' @importFrom stats pchisq pf
@@ -26,51 +27,54 @@ hMeanChiSqMu <- function(thetahat, se,
                          alternative = "none",
                          distr = c("chisq", "f"),
                          heterogeneity = c("additive", "multiplicative"),
-                         bound = FALSE){
+                         bound = FALSE,
+                         check_inputs = TRUE){
   
   # Check inputs
-  stopifnot(is.numeric(thetahat),
-            length(thetahat) > 0L,
-            is.finite(thetahat),
-            
-            is.numeric(se),
-            length(se) == 1L || length(se) == length(thetahat),
-            is.finite(se),
-            min(se) > 0,
-            
-            is.numeric(w),
-            length(w) == length(thetahat),
-            is.finite(w),
-            min(w) > 0,
-            
-            is.numeric(phi) || is.null(phi),
-            length(phi) == 1L,
-            is.finite(phi) || is.null(phi),
-            
-            is.numeric(tau2) || is.null(tau2),
-            length(tau2) == 1L,
-            is.finite(tau2) || is.null(tau2),
-            0 <= tau2 || is.null(tau2),
-            
-            !is.null(phi) || !is.null(tau2),
-            
-            is.numeric(mu),
-            length(mu) > 0L,
-            is.finite(mu),
-            
-            is.logical(bound),
-            length(bound) == 1L,
-            is.finite(bound),
-            
-            !is.null(alternative),
-            length(alternative) == 1L,
-            alternative %in% c("greater", "less", "two.sided", "none"),
-            
-            !is.null(distr),
-            length(distr) == 1L,
-            
-            !is.null(heterogeneity),
-            length(heterogeneity) == 1L)
+  if(check_inputs){
+    stopifnot(is.numeric(thetahat),
+              length(thetahat) > 0L,
+              is.finite(thetahat),
+              
+              is.numeric(se),
+              length(se) == 1L || length(se) == length(thetahat),
+              is.finite(se),
+              min(se) > 0,
+              
+              is.numeric(w),
+              length(w) == length(thetahat),
+              is.finite(w),
+              min(w) > 0,
+              
+              is.numeric(phi) || is.null(phi),
+              length(phi) == 1L,
+              is.finite(phi) || is.null(phi),
+              
+              is.numeric(tau2) || is.null(tau2),
+              length(tau2) == 1L,
+              is.finite(tau2) || is.null(tau2),
+              0 <= tau2 || is.null(tau2),
+              
+              !is.null(phi) || !is.null(tau2),
+              
+              is.numeric(mu),
+              length(mu) > 0L,
+              is.finite(mu),
+              
+              is.logical(bound),
+              length(bound) == 1L,
+              is.finite(bound),
+              
+              !is.null(alternative),
+              length(alternative) == 1L,
+              alternative %in% c("greater", "less", "two.sided", "none"),
+              
+              !is.null(distr),
+              length(distr) == 1L,
+              
+              !is.null(heterogeneity),
+              length(heterogeneity) == 1L)
+  }
   
   # match arguments
   distr <- match.arg(distr, several.ok = FALSE)

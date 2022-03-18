@@ -14,7 +14,8 @@ hMeanChiSqCI(
   alternative = "none",
   distr = c("chisq", "f"),
   heterogeneity = c("additive", "multiplicative"),
-  wGamma = rep(1, length(unique(thetahat)) - 1)
+  wGamma = rep(1, length(unique(thetahat)) - 1),
+  check_inputs = TRUE
 )
 }
 \arguments{
@@ -41,6 +42,11 @@ Specifies the alternative to be considered in the computation of the p-value.}
 \item{wGamma}{Numeric vector of length \code{unique(thetahat) - 1} specifying weights used to
 summarize the gamma values, i.e.,
 the local minima of the p-value function between the thetahats. Default is a vector of 1s.}
+
+\item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
+The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
+in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument
+to \code{FALSE} might be dangerous.}
 }
 \value{
 Returns a list containing confidence interval(s)

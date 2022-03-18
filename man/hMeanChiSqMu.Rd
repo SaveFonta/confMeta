@@ -14,7 +14,8 @@ hMeanChiSqMu(
   alternative = "none",
   distr = c("chisq", "f"),
   heterogeneity = c("additive", "multiplicative"),
-  bound = FALSE
+  bound = FALSE,
+  check_inputs = TRUE
 )
 }
 \arguments{
@@ -43,6 +44,11 @@ If \code{TRUE}, they are reported as "> bound". This might, however, lead to sit
 some of the p-values could be computed whereas others are reported as bounds. As a consequence, the
 returned vector in such cases has class \code{"character"}. If the output vector must be of class \code{numeric}
 use \code{bound = FALSE}.}
+
+\item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
+The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
+in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument
+to \code{FALSE} might be dangerous.}
 }
 \value{
 Returns the p-value from the harmonic mean chi-squared test

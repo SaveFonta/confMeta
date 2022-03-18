@@ -12,6 +12,7 @@
 #' @param wGamma Numeric vector of length \code{unique(thetahat) - 1} specifying weights used to
 #' summarize the gamma values, i.e.,
 #' the local minima of the p-value function between the thetahats. Default is a vector of 1s.
+#' @template check_inputs
 #' @return Returns a list containing confidence interval(s)
 #' obtained by inverting the harmonic mean chi-squared test based on study-specific
 #' estimates and standard errors. The list contains:
@@ -30,50 +31,54 @@ hMeanChiSqCI <- function(thetahat, se,
                          alternative = "none",
                          distr = c("chisq", "f"),
                          heterogeneity = c("additive", "multiplicative"),
-                         wGamma = rep(1, length(unique(thetahat)) - 1)){
+                         wGamma = rep(1, length(unique(thetahat)) - 1),
+                         check_inputs = TRUE){
   
-  stopifnot(is.numeric(thetahat),
-            length(thetahat) > 0L,
-            is.finite(thetahat),
-            
-            is.numeric(se),
-            length(se) == 1L || length(se) == length(thetahat),
-            is.finite(se),
-            min(se) > 0,
-            
-            is.numeric(w),
-            length(w) == length(thetahat),
-            is.finite(w),
-            min(w) > 0,
-            
-            is.numeric(phi) || is.null(phi),
-            length(phi) == 1L,
-            is.finite(phi) || is.null(phi),
-            
-            is.numeric(tau2) || is.null(tau2),
-            length(tau2) == 1L,
-            is.finite(tau2) || is.null(tau2),
-            0 <= tau2 || is.null(tau2),
-            
-            !is.null(phi) || !is.null(tau2),
-            
-            !is.null(alternative),
-            length(alternative) == 1L,
-            alternative %in% c("greater", "less", "two.sided", "none"),
-            
-            is.numeric(level),
-            length(level) == 1L,
-            is.finite(level),
-            level > 0 & level < 1,
-            
-            is.numeric(wGamma),
-            length(wGamma) == length(unique(thetahat)) - 1,
-            
-            !is.null(distr),
-            length(distr) == 1L,
-            
-            !is.null(heterogeneity),
-            length(heterogeneity) == 1L)
+  if(check_inputs){
+    stopifnot(is.numeric(thetahat),
+              length(thetahat) > 0L,
+              is.finite(thetahat),
+              
+              is.numeric(se),
+              length(se) == 1L || length(se) == length(thetahat),
+              is.finite(se),
+              min(se) > 0,
+              
+              is.numeric(w),
+              length(w) == length(thetahat),
+              is.finite(w),
+              min(w) > 0,
+              
+              is.numeric(phi) || is.null(phi),
+              length(phi) == 1L,
+              is.finite(phi) || is.null(phi),
+              
+              is.numeric(tau2) || is.null(tau2),
+              length(tau2) == 1L,
+              is.finite(tau2) || is.null(tau2),
+              0 <= tau2 || is.null(tau2),
+              
+              !is.null(phi) || !is.null(tau2),
+              
+              !is.null(alternative),
+              length(alternative) == 1L,
+              alternative %in% c("greater", "less", "two.sided", "none"),
+              
+              is.numeric(level),
+              length(level) == 1L,
+              is.finite(level),
+              level > 0 & level < 1,
+              
+              is.numeric(wGamma),
+              length(wGamma) == length(unique(thetahat)) - 1,
+              
+              !is.null(distr),
+              length(distr) == 1L,
+              
+              !is.null(heterogeneity),
+              length(heterogeneity) == 1L)
+  }
+  
   
   # estimate heterogeneity
   distr <- match.arg(distr, several.ok = FALSE)
