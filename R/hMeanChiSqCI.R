@@ -25,8 +25,8 @@
 #' @importFrom stats uniroot optimize qnorm weighted.mean
 hMeanChiSqCI <- function(thetahat, se, 
                          w = rep(1, length(thetahat)),
-                         phi = estimatePhi(thetahat, se),
-                         tau2 = estimateTau2(thetahat, se),
+                         phi = NULL,
+                         tau2 = NULL,
                          level = 0.95, 
                          alternative = "none",
                          distr = c("chisq", "f"),
@@ -34,6 +34,7 @@ hMeanChiSqCI <- function(thetahat, se,
                          wGamma = rep(1, length(unique(thetahat)) - 1),
                          check_inputs = TRUE){
   
+  # Check inputs
   if(check_inputs){
     stopifnot(is.numeric(thetahat),
               length(thetahat) > 0L,
@@ -49,16 +50,9 @@ hMeanChiSqCI <- function(thetahat, se,
               is.finite(w),
               min(w) > 0,
               
-              is.numeric(phi) || is.null(phi),
-              length(phi) == 1L,
-              is.finite(phi) || is.null(phi),
-              
-              is.numeric(tau2) || is.null(tau2),
-              length(tau2) == 1L,
-              is.finite(tau2) || is.null(tau2),
-              0 <= tau2 || is.null(tau2),
-              
-              !is.null(phi) || !is.null(tau2),
+              is.null(phi) || is.numeric(phi) & length(phi) == 1L & is.finite(phi) & 0 <= phi, # should phi be allowed to be < 1?
+              is.null(tau2) || is.numeric(tau2) & length(tau2) == 1L & is.finite(tau2) & 0 <= tau2,
+              !is.null(tau2) || !is.null(phi), # one of both must be given
               
               !is.null(alternative),
               length(alternative) == 1L,
@@ -76,7 +70,9 @@ hMeanChiSqCI <- function(thetahat, se,
               length(distr) == 1L,
               
               !is.null(heterogeneity),
-              length(heterogeneity) == 1L)
+              length(heterogeneity) == 1L,
+              
+              (heterogeneity == "additive" & !is.null(tau2)) || (heterogeneity == "multiplicative" & !is.null(phi)))
   }
   
   

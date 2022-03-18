@@ -22,8 +22,8 @@
 hMeanChiSqMu <- function(thetahat, se, 
                          w = rep(1, length(thetahat)),
                          mu = 0,
-                         phi = estimatePhi(thetahat, se),
-                         tau2 = estimateTau2(thetahat, se),
+                         phi = NULL,
+                         tau2 = NULL,
                          alternative = "none",
                          distr = c("chisq", "f"),
                          heterogeneity = c("additive", "multiplicative"),
@@ -46,16 +46,9 @@ hMeanChiSqMu <- function(thetahat, se,
               is.finite(w),
               min(w) > 0,
               
-              is.numeric(phi) || is.null(phi),
-              length(phi) == 1L,
-              is.finite(phi) || is.null(phi),
-              
-              is.numeric(tau2) || is.null(tau2),
-              length(tau2) == 1L,
-              is.finite(tau2) || is.null(tau2),
-              0 <= tau2 || is.null(tau2),
-              
-              !is.null(phi) || !is.null(tau2),
+              is.null(phi) || is.numeric(phi) & length(phi) == 1L & is.finite(phi) & 0 <= phi, # should phi be allowed to be < 1?
+              is.null(tau2) || is.numeric(tau2) & length(tau2) == 1L & is.finite(tau2) & 0 <= tau2,
+              !is.null(tau2) || !is.null(phi), # one of both must be given
               
               is.numeric(mu),
               length(mu) > 0L,
@@ -73,7 +66,9 @@ hMeanChiSqMu <- function(thetahat, se,
               length(distr) == 1L,
               
               !is.null(heterogeneity),
-              length(heterogeneity) == 1L)
+              length(heterogeneity) == 1L,
+              
+              (heterogeneity == "additive" && !is.null(tau2)) || (heterogeneity == "multiplicative" && !is.null(phi)))
   }
   
   # match arguments
