@@ -20,10 +20,11 @@
 #' mymu <- seq(min(thetahat - 3 * se), max(thetahat + 3 * se), length.out=1000)
 #' p_add <- kTRMu(thetahat, se, mymu, tau2 = tau2, phi = phi, heterogeneity = "additive")
 #' p_mult <- kTRMu(thetahat, se, mymu, tau2 = tau2, phi = phi, heterogeneity = "multiplicative")
-kTRMu <- function(thetahat, se, mu, 
-                  alternative = "none", 
-                  tau2 = NULL,
+kTRMu <- function(thetahat, se, 
+                  mu, 
                   phi = NULL, 
+                  tau2 = NULL,
+                  alternative = "none", 
                   heterogeneity = c("additive", "multiplicative")){
   
   stopifnot(

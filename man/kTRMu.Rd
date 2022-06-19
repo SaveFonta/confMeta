@@ -8,9 +8,9 @@ kTRMu(
   thetahat,
   se,
   mu,
-  alternative = "none",
-  tau2 = NULL,
   phi = NULL,
+  tau2 = NULL,
+  alternative = "none",
   heterogeneity = c("additive", "multiplicative")
 )
 }
@@ -21,12 +21,12 @@ kTRMu(
 
 \item{mu}{A numeric vector containing null hypothesis value(s).}
 
-\item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
-Specifies the alternative to be considered in the computation of the p-value.}
+\item{phi}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
 
 \item{tau2}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
 
-\item{phi}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
+\item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
+Specifies the alternative to be considered in the computation of the p-value.}
 
 \item{heterogeneity}{The method used to estimate heterogeneity. Implemented options are \code{"additive"} and \code{"multiplicative"}.}
 }

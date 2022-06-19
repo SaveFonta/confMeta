@@ -13,6 +13,7 @@ hMeanChiSqCI(
   level = 0.95,
   alternative = "none",
   distr = c("chisq", "f"),
+  pValueFUN = hMeanChiSqMu,
   heterogeneity = c("additive", "multiplicative"),
   wGamma = rep(1, length(unique(thetahat)) - 1),
   check_inputs = TRUE
@@ -36,6 +37,9 @@ Specifies the alternative to be considered in the computation of the p-value.}
 
 \item{distr}{The distribution to use for the calculation of the p-value. Currently, the options are
 \code{"f"} (F-distribution) and \code{"chisq"} (Chi-squared distribution).}
+
+\item{pValueFUN}{A function that calculates the p-value. Must have an argument \code{mu} that specifies the null-hypothesis.
+Defaults to \code{\link[hMean]{hMeanChiSqMu}}.}
 
 \item{heterogeneity}{The method used to estimate heterogeneity. Implemented options are \code{"additive"} and \code{"multiplicative"}.}
 

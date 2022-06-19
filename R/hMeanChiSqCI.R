@@ -8,6 +8,8 @@
 #' @param level Numeric vector of length 1 specifying the level of the confidence interval. Defaults to 0.95.
 #' @template alternative
 #' @template distr
+#' @param pValueFUN A function that calculates the p-value. Must have an argument \code{mu} that specifies the null-hypothesis. 
+#' Defaults to \code{\link[hMean]{hMeanChiSqMu}}.
 #' @template heterogeneity
 #' @param wGamma Numeric vector of length \code{unique(thetahat) - 1} specifying weights used to
 #' summarize the gamma values, i.e.,
@@ -23,6 +25,7 @@
 #' \item{gammaHMean}{Harmonic mean of all gammas weighted by \code{wGamma}.}
 #' @export
 #' @importFrom stats uniroot optimize qnorm weighted.mean
+#' @importFrom methods formalArgs
 hMeanChiSqCI <- function(thetahat, se, 
                          w = rep(1, length(thetahat)),
                          phi = NULL,
@@ -30,6 +33,7 @@ hMeanChiSqCI <- function(thetahat, se,
                          level = 0.95, 
                          alternative = "none",
                          distr = c("chisq", "f"),
+                         pValueFUN = hMeanChiSqMu,
                          heterogeneity = c("additive", "multiplicative"),
                          wGamma = rep(1, length(unique(thetahat)) - 1),
                          check_inputs = TRUE){
@@ -80,12 +84,19 @@ hMeanChiSqCI <- function(thetahat, se,
   distr <- match.arg(distr, several.ok = FALSE)
   if(length(se) == 1L) se <- rep(se, length(thetahat))
   
-  ## target function to compute the limits of the CI
+  # target function to compute the limits of the CI
+  args <- alist(thetahat = thetahat, se = se, w = w, phi = phi, tau2 = tau2, mu = limit,
+                alternative = alternative, distr = distr, heterogeneity = heterogeneity,
+                bound = FALSE, check_inputs = FALSE)
+  args <- args[names(args) %in% methods::formalArgs(pValueFUN)]
   target <- function(limit){
-    hMeanChiSqMu(thetahat = thetahat, se = se, w = w, mu = limit, phi = phi, tau2 = tau2,
-                 alternative = alternative, distr = distr, heterogeneity = heterogeneity, 
-                 bound = FALSE, check_inputs = FALSE) - alpha
+    do.call(`pValueFUN`, args) - alpha
   }
+  # target <- function(limit){
+  #   hMeanChiSqMu(thetahat = thetahat, se = se, w = w, mu = limit, phi = phi, tau2 = tau2,
+  #                alternative = alternative, distr = distr, heterogeneity = heterogeneity,
+  #                bound = FALSE, check_inputs = FALSE) - alpha
+  # }
   
   ## sort 'thetahat', 'se', 'w'
   indOrd <- order(thetahat)
