@@ -9,11 +9,6 @@
 #' @template alternative 
 #' @template distr
 #' @template heterogeneity 
-#' @param bound If \code{FALSE} (default), p-values that cannot be computed are reported as \code{NaN}.
-#' If \code{TRUE}, they are reported as "> bound". This might, however, lead to situations in which
-#' some of the p-values could be computed whereas others are reported as bounds. As a consequence, the
-#' returned vector in such cases has class \code{"character"}. If the output vector must be of class \code{numeric}
-#' use \code{bound = FALSE}.
 #' @template check_inputs
 #' @return Returns the p-value from the harmonic mean chi-squared test
 #' based on study-specific estimates and standard errors.
@@ -25,11 +20,9 @@ hMeanChiSqMu <- function(thetahat, se,
                          phi = NULL,
                          tau2 = NULL,
                          alternative = "none",
-                         distr = c("chisq", "f"),
-                         heterogeneity = c("additive", "multiplicative"),
-                         bound = FALSE,
+                         distr = "chisq",
+                         heterogeneity = "none",
                          check_inputs = TRUE){
-  
   # Check inputs
   if(check_inputs){
     stopifnot(is.numeric(thetahat),
@@ -37,7 +30,6 @@ hMeanChiSqMu <- function(thetahat, se,
               is.finite(thetahat),
               
               is.numeric(se),
-              length(se) == 1L || length(se) == length(thetahat),
               is.finite(se),
               min(se) > 0,
               
@@ -46,17 +38,9 @@ hMeanChiSqMu <- function(thetahat, se,
               is.finite(w),
               min(w) > 0,
               
-              is.null(phi) || is.numeric(phi) & length(phi) == 1L & is.finite(phi) & 0 <= phi, # should phi be allowed to be < 1?
-              is.null(tau2) || is.numeric(tau2) & length(tau2) == 1L & is.finite(tau2) & 0 <= tau2,
-              !is.null(tau2) || !is.null(phi), # one of both must be given
-              
               is.numeric(mu),
               length(mu) > 0L,
               is.finite(mu),
-              
-              is.logical(bound),
-              length(bound) == 1L,
-              is.finite(bound),
               
               !is.null(alternative),
               length(alternative) == 1L,
@@ -66,21 +50,29 @@ hMeanChiSqMu <- function(thetahat, se,
               length(distr) == 1L,
               
               !is.null(heterogeneity),
-              length(heterogeneity) == 1L,
-              
-              (heterogeneity == "additive" && !is.null(tau2)) || (heterogeneity == "multiplicative" && !is.null(phi)))
+              length(heterogeneity) == 1L)
+    
+    if(!length(se) %in% c(1L, length(thetahat))) stop("Length of argument 'se' must be either 1 or length(thetahat).")
+    if(!is.null(phi) && length(phi) > 1L) stop("Argument 'phi' must be of length 1.")
+    if(!is.null(tau2) && length(tau2) > 1L) stop("Argument 'tau2' must be of length 1.")
+    if(is.null(phi) && heterogeneity == "multiplicative") stop("If heterogeneity = 'multiplicative', phi must be provided.")
+    if(is.null(tau2) && heterogeneity == "additive") stop("If heterogeneity = 'additive', tau2 must be provided.")
+    if(!distr %in% c("f", "chisq")) stop("Argument 'distr' must be one of c('f', 'chisq').")
+    if(!is.null(phi) && length(phi) != 1L) stop("Argument 'phi' must be of length 1.")
+    if(!is.null(tau2) && length(tau2) != 1L) stop("Argument 'tau2' must be of length 1.")
+    if(!is.null(phi) && heterogeneity == "additive") warning("If heterogeneity = 'additive', argument 'phi' is ignored.")
+    if(!is.null(tau2) && heterogeneity == "multiplicative") warning("If heterogeneity = 'multiplicative', argument 'tau2' is ignored.")
+    if(heterogeneity == "none" && (!is.null(phi) || !is.null(tau2))) warning("If heterogeneity = 'none', arguments 'tau2' and 'phi' are ignored.")
+    if(!is.null(phi) && (!is.finite(phi) || phi < 0)) stop("Argument 'phi' must be finite and larger than 0.")
   }
   
   # match arguments
-  distr <- match.arg(distr, several.ok = FALSE)
   if(length(se) == 1L) se <- rep(se, length(thetahat))
   
-  # estimate heterogeneity
-  if(heterogeneity == "additive"){
-    denominator <- sqrt(se^2 + tau2)
-  } else if(heterogeneity == "multiplicative"){
-    denominator <- sqrt(se^2 * phi)
-  }
+  # add heterogeneity
+  if(heterogeneity == "additive") denominator <- sqrt(se^2 + tau2)
+  if(heterogeneity == "multiplicative") denominator <- sqrt(se^2 * phi)
+  if(heterogeneity == "none") denominator <- se
   
   # store lengths of input vector
   n <- length(thetahat)
@@ -101,25 +93,13 @@ hMeanChiSqMu <- function(thetahat, se,
     check_less <- vapply(seq_len(ncol(z)), function(i) max(z[, i]) <= 0, logical(1L))
     break_p <- 1 / (2^n)
     if(alternative == "greater"){
-      if(bound){
-        res <- ifelse(check_greater, res / (2^n), paste(">", format(break_p, scientific = FALSE)))
-      } else {
-        res <- ifelse(check_greater | check_less, res / (2^n), NaN)
-      }
+      res <- ifelse(check_greater | check_less, res / (2^n), NaN)
     }
     if(alternative == "less"){
-      if(bound){
-        res <- ifelse(check_less, res / (2^n), paste(">", format(break_p, scientific = FALSE)))
-      } else {
-        res <- ifelse(check_greater | check_less, res / (2^n),  NaN)
-      }
+      res <- ifelse(check_greater | check_less, res / (2^n),  NaN)
     }
     if(alternative == "two.sided"){
-      if(bound){
-        res <- ifelse(check_greater | check_less, res / (2^(n - 1)), paste(">", format(2*break_p, scientific = FALSE)))
-      } else {
-        res <- ifelse(check_greater | check_less, res / (2^(n - 1)), NaN)
-      }
+      res <- ifelse(check_greater | check_less, res / (2^(n - 1)), NaN)
     }
   # Case when alternative is "none"
   } else if(alternative == "none") {
@@ -128,10 +108,10 @@ hMeanChiSqMu <- function(thetahat, se,
       z <- (thetahat - mu[i]) / denominator
       sw / sum(w / z^2)
     }, double(1L))
-    if(distr == "chisq"){
-      res <- stats::pchisq(q = zH2, df = 1, lower.tail = FALSE)
+    res <- if(distr == "chisq"){
+      stats::pchisq(q = zH2, df = 1, lower.tail = FALSE)
     } else if(distr == "f") {
-      res <- stats::pf(zH2, df1 = 1, df2 = (length(thetahat) - 1), lower.tail = FALSE)
+      stats::pf(zH2, df1 = 1, df2 = (length(thetahat) - 1), lower.tail = FALSE)
     }
   }
   return(res)

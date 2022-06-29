@@ -7,16 +7,12 @@
 hMeanChiSqCI(
   thetahat,
   se,
-  w = rep(1, length(thetahat)),
-  phi = NULL,
-  tau2 = NULL,
   level = 0.95,
   alternative = "none",
-  distr = c("chisq", "f"),
-  pValueFUN = hMeanChiSqMu,
-  heterogeneity = c("additive", "multiplicative"),
   wGamma = rep(1, length(unique(thetahat)) - 1),
-  check_inputs = TRUE
+  check_inputs = TRUE,
+  pValueFUN = hMeanChiSqMu,
+  ...
 )
 }
 \arguments{
@@ -24,24 +20,10 @@ hMeanChiSqCI(
 
 \item{se}{Numeric vector of standard errors.}
 
-\item{w}{Numeric vector of weights.}
-
-\item{phi}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
-
-\item{tau2}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
-
 \item{level}{Numeric vector of length 1 specifying the level of the confidence interval. Defaults to 0.95.}
 
 \item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
 Specifies the alternative to be considered in the computation of the p-value.}
-
-\item{distr}{The distribution to use for the calculation of the p-value. Currently, the options are
-\code{"f"} (F-distribution) and \code{"chisq"} (Chi-squared distribution).}
-
-\item{pValueFUN}{A function that calculates the p-value. Must have an argument \code{mu} that specifies the null-hypothesis.
-Defaults to \code{\link[hMean]{hMeanChiSqMu}}.}
-
-\item{heterogeneity}{The method used to estimate heterogeneity. Implemented options are \code{"additive"} and \code{"multiplicative"}.}
 
 \item{wGamma}{Numeric vector of length \code{unique(thetahat) - 1} specifying weights used to
 summarize the gamma values, i.e.,
@@ -51,6 +33,12 @@ the local minima of the p-value function between the thetahats. Default is a vec
 The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
 in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument
 to \code{FALSE} might be dangerous.}
+
+\item{pValueFUN}{A function that calculates the p-value. Must have arguments \code{thetahat} and \code{se} as these are passed by this function.
+Must further have an argument \code{mu} that specifies the null-hypothesis.
+Defaults to \code{\link[hMean]{hMeanChiSqMu}}.}
+
+\item{...}{Arguments passed to \code{pValueFUN}. Arguments \code{thetahat} and \code{se} are automatically passed to \code{pValueFUN}.}
 }
 \value{
 Returns a list containing confidence interval(s)

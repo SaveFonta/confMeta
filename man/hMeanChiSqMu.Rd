@@ -12,9 +12,8 @@ hMeanChiSqMu(
   phi = NULL,
   tau2 = NULL,
   alternative = "none",
-  distr = c("chisq", "f"),
-  heterogeneity = c("additive", "multiplicative"),
-  bound = FALSE,
+  distr = "chisq",
+  heterogeneity = "none",
   check_inputs = TRUE
 )
 }
@@ -27,23 +26,20 @@ hMeanChiSqMu(
 
 \item{mu}{A numeric vector containing null hypothesis value(s).}
 
-\item{phi}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
+\item{phi}{A numeric vector of length 1. Must be finite and larger than 0. The square root of the argument is used to scale the standard errors.}
 
-\item{tau2}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
+\item{tau2}{A numeric vector of length 1.}
 
 \item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
 Specifies the alternative to be considered in the computation of the p-value.}
 
 \item{distr}{The distribution to use for the calculation of the p-value. Currently, the options are
-\code{"f"} (F-distribution) and \code{"chisq"} (Chi-squared distribution).}
+\code{"f"} (F-distribution) and \code{"chisq"} (Chi-squared distribution). Defaults to \code{"chisq"}.}
 
-\item{heterogeneity}{The method used to estimate heterogeneity. Implemented options are \code{"additive"} and \code{"multiplicative"}.}
-
-\item{bound}{If \code{FALSE} (default), p-values that cannot be computed are reported as \code{NaN}.
-If \code{TRUE}, they are reported as "> bound". This might, however, lead to situations in which
-some of the p-values could be computed whereas others are reported as bounds. As a consequence, the
-returned vector in such cases has class \code{"character"}. If the output vector must be of class \code{numeric}
-use \code{bound = FALSE}.}
+\item{heterogeneity}{One of \code{c("none", "additive", "multiplicative")}. If \code{heterogeneity = "none"} p-values are returned for the
+passed \code{se} without any adaption. If \code{heterogeneity = "additive"}, the standard errors \code{se} are reassigned the value of \code{sqrt(se^2 + tau2)} before
+computation of the p-values. If \code{heterogeneity = "multiplicative"}, the standard errors \code{se} are multiplied with the value of \code{phi} before
+computation of the p-values. Defaults to \code{"none"}.}
 
 \item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
 The idea of this argument is that if the function is called a large amount of times in an automated manner as for example

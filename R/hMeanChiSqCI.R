@@ -2,19 +2,16 @@
 #' 
 #' @template thetahat
 #' @template se
-#' @template w
-#' @template phi
-#' @template tau2
 #' @param level Numeric vector of length 1 specifying the level of the confidence interval. Defaults to 0.95.
 #' @template alternative
-#' @template distr
-#' @param pValueFUN A function that calculates the p-value. Must have an argument \code{mu} that specifies the null-hypothesis. 
+#' @param pValueFUN A function that calculates the p-value. Must have arguments \code{thetahat} and \code{se} as these are passed by this function.
+#' Must further have an argument \code{mu} that specifies the null-hypothesis.
 #' Defaults to \code{\link[hMean]{hMeanChiSqMu}}.
-#' @template heterogeneity
 #' @param wGamma Numeric vector of length \code{unique(thetahat) - 1} specifying weights used to
 #' summarize the gamma values, i.e.,
 #' the local minima of the p-value function between the thetahats. Default is a vector of 1s.
 #' @template check_inputs
+#' @param ... Arguments passed to \code{pValueFUN}. Arguments \code{thetahat} and \code{se} are automatically passed to \code{pValueFUN}.
 #' @return Returns a list containing confidence interval(s)
 #' obtained by inverting the harmonic mean chi-squared test based on study-specific
 #' estimates and standard errors. The list contains:
@@ -26,17 +23,13 @@
 #' @export
 #' @importFrom stats uniroot optimize qnorm weighted.mean
 #' @importFrom methods formalArgs
-hMeanChiSqCI <- function(thetahat, se, 
-                         w = rep(1, length(thetahat)),
-                         phi = NULL,
-                         tau2 = NULL,
+hMeanChiSqCI <- function(thetahat, se,
                          level = 0.95, 
                          alternative = "none",
-                         distr = c("chisq", "f"),
-                         pValueFUN = hMeanChiSqMu,
-                         heterogeneity = c("additive", "multiplicative"),
                          wGamma = rep(1, length(unique(thetahat)) - 1),
-                         check_inputs = TRUE){
+                         check_inputs = TRUE,
+                         pValueFUN = hMeanChiSqMu,
+                         ...){
   
   # Check inputs
   if(check_inputs){
@@ -49,15 +42,6 @@ hMeanChiSqCI <- function(thetahat, se,
               is.finite(se),
               min(se) > 0,
               
-              is.numeric(w),
-              length(w) == length(thetahat),
-              is.finite(w),
-              min(w) > 0,
-              
-              is.null(phi) || is.numeric(phi) & length(phi) == 1L & is.finite(phi) & 0 <= phi, # should phi be allowed to be < 1?
-              is.null(tau2) || is.numeric(tau2) & length(tau2) == 1L & is.finite(tau2) & 0 <= tau2,
-              !is.null(tau2) || !is.null(phi), # one of both must be given
-              
               !is.null(alternative),
               length(alternative) == 1L,
               alternative %in% c("greater", "less", "two.sided", "none"),
@@ -68,39 +52,31 @@ hMeanChiSqCI <- function(thetahat, se,
               level > 0 & level < 1,
               
               is.numeric(wGamma),
-              length(wGamma) == length(unique(thetahat)) - 1,
-              
-              !is.null(distr),
-              length(distr) == 1L,
-              
-              !is.null(heterogeneity),
-              length(heterogeneity) == 1L,
-              
-              (heterogeneity == "additive" & !is.null(tau2)) || (heterogeneity == "multiplicative" & !is.null(phi)))
+              length(wGamma) == length(unique(thetahat)) - 1
+              )
   }
   
+  # catch dotargs
+  dotargs <- as.list(substitute(...()))
   
-  # estimate heterogeneity
-  distr <- match.arg(distr, several.ok = FALSE)
+  # expand se
   if(length(se) == 1L) se <- rep(se, length(thetahat))
   
   # target function to compute the limits of the CI
-  args <- alist(thetahat = thetahat, se = se, w = w, phi = phi, tau2 = tau2, mu = limit,
-                alternative = alternative, distr = distr, heterogeneity = heterogeneity,
-                bound = FALSE, check_inputs = FALSE)
-  args <- args[names(args) %in% methods::formalArgs(pValueFUN)]
+  ## pass dotargs, thetahat, se
+  args <- append(dotargs, list(thetahat = thetahat, se = se))
+  ## add mu
+  args <- append(args, alist(mu = limit))
+  ## For the remaining arguments, use the defaults
+  args <- append(args, formals(pValueFUN)[!methods::formalArgs(pValueFUN) %in% names(args)])
+  ## define target function
   target <- function(limit){
     do.call(`pValueFUN`, args) - alpha
   }
-  # target <- function(limit){
-  #   hMeanChiSqMu(thetahat = thetahat, se = se, w = w, mu = limit, phi = phi, tau2 = tau2,
-  #                alternative = alternative, distr = distr, heterogeneity = heterogeneity,
-  #                bound = FALSE, check_inputs = FALSE) - alpha
-  # }
   
   ## sort 'thetahat', 'se', 'w'
   indOrd <- order(thetahat)
-  thetahat <- thetahat[indOrd]; se <- se[indOrd]; w <- w[indOrd]
+  thetahat <- thetahat[indOrd]; se <- se[indOrd]; #w <- w[indOrd]
   
   ## minima are only searched between distinct thetahat elements
   thetahatUnique <- unique(thetahat)

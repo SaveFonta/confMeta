@@ -3,10 +3,9 @@
 #' @template thetahat 
 #' @template se 
 #' @param mu A numeric vector containing null hypothesis value(s).
-#' @template alternative 
 #' @template tau2 
 #' @template phi 
-#' @template heterogeneity 
+#' @template heterogeneity
 #'
 #' @return The corresponding p-value given mu under the null-hypothesis
 #' @importFrom ReplicationSuccess z2p
@@ -24,15 +23,11 @@ kTRMu <- function(thetahat, se,
                   mu, 
                   phi = NULL, 
                   tau2 = NULL,
-                  alternative = "none", 
-                  heterogeneity = c("additive", "multiplicative")){
+                  heterogeneity = c("none", "additive", "multiplicative")){
   
-  stopifnot(
-    alternative == "none",
-    length(heterogeneity) == 1L,
-    heterogeneity %in% c("additive", "multiplicative"),
-    (heterogeneity == "additive" && !is.null(tau2)) || (heterogeneity == "multiplicative" && !is.null(phi))
-  )
+  if(is.null(tau2) && heterogeneity == "additive") stop("If heterogeneity = 'additive', tau2 must be provided")
+  if(is.null(phi) && heterogeneity == "multiplicative") stop("If heterogeneity = 'multiplicative', phi must be provided")
+  if(heterogeneity == "none" && (!is.null(tau2) || !is.null(phi))) warning(paste0("Ignoring parameter(s) phi and/or tau2 as heterogeneity = 'none'"))
   
   if(heterogeneity == "additive")
     se <- sqrt(se^2+tau2)
@@ -41,8 +36,7 @@ kTRMu <- function(thetahat, se,
   z <- vapply(mu, function(mu) (thetahat - mu)/se, double(length(thetahat)))
   if(is.null(dim(z)))
     dim(z) <- c(1, length(z))
-  if(alternative=="none")
-    p <- ReplicationSuccess::z2p(z, alternative="two.sided")
+  p <- ReplicationSuccess::z2p(z, alternative="two.sided")
   dim(p) <- dim(z)
   pmax <- apply(p, 2, max)
   k <- length(thetahat)

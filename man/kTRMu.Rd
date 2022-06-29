@@ -10,8 +10,7 @@ kTRMu(
   mu,
   phi = NULL,
   tau2 = NULL,
-  alternative = "none",
-  heterogeneity = c("additive", "multiplicative")
+  heterogeneity = c("none", "additive", "multiplicative")
 )
 }
 \arguments{
@@ -21,14 +20,14 @@ kTRMu(
 
 \item{mu}{A numeric vector containing null hypothesis value(s).}
 
-\item{phi}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
+\item{phi}{A numeric vector of length 1. Must be finite and larger than 0. The square root of the argument is used to scale the standard errors.}
 
-\item{tau2}{A numeric vector of length 1. TODO: list all other restrictions on the parameter.}
+\item{tau2}{A numeric vector of length 1.}
 
-\item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
-Specifies the alternative to be considered in the computation of the p-value.}
-
-\item{heterogeneity}{The method used to estimate heterogeneity. Implemented options are \code{"additive"} and \code{"multiplicative"}.}
+\item{heterogeneity}{One of \code{c("none", "additive", "multiplicative")}. If \code{heterogeneity = "none"} p-values are returned for the
+passed \code{se} without any adaption. If \code{heterogeneity = "additive"}, the standard errors \code{se} are reassigned the value of \code{sqrt(se^2 + tau2)} before
+computation of the p-values. If \code{heterogeneity = "multiplicative"}, the standard errors \code{se} are multiplied with the value of \code{phi} before
+computation of the p-values. Defaults to \code{"none"}.}
 }
 \value{
 The corresponding p-value given mu under the null-hypothesis
