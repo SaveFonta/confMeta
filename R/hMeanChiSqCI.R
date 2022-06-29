@@ -57,8 +57,7 @@ hMeanChiSqCI <- function(thetahat, se,
   }
   
   # catch dotargs
-  dotargs <- as.list(substitute(...()))
-  
+  dotargs <- list(...)
   # expand se
   if(length(se) == 1L) se <- rep(se, length(thetahat))
   
