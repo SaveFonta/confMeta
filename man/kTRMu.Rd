@@ -10,7 +10,8 @@ kTRMu(
   mu,
   phi = NULL,
   tau2 = NULL,
-  heterogeneity = c("none", "additive", "multiplicative")
+  heterogeneity = "none",
+  check_inputs = TRUE
 )
 }
 \arguments{
@@ -28,6 +29,11 @@ kTRMu(
 passed \code{se} without any adaption. If \code{heterogeneity = "additive"}, the standard errors \code{se} are reassigned the value of \code{sqrt(se^2 + tau2)} before
 computation of the p-values. If \code{heterogeneity = "multiplicative"}, the standard errors \code{se} are multiplied with the value of \code{phi} before
 computation of the p-values. Defaults to \code{"none"}.}
+
+\item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
+The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
+in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument
+to \code{FALSE} might be dangerous.}
 }
 \value{
 The corresponding p-value given mu under the null-hypothesis

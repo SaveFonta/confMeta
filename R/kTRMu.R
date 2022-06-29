@@ -6,6 +6,7 @@
 #' @template tau2 
 #' @template phi 
 #' @template heterogeneity
+#' @template check_inputs
 #'
 #' @return The corresponding p-value given mu under the null-hypothesis
 #' @importFrom ReplicationSuccess z2p
@@ -23,11 +24,14 @@ kTRMu <- function(thetahat, se,
                   mu, 
                   phi = NULL, 
                   tau2 = NULL,
-                  heterogeneity = c("none", "additive", "multiplicative")){
+                  heterogeneity = "none",
+                  check_inputs = TRUE){
   
-  if(is.null(tau2) && heterogeneity == "additive") stop("If heterogeneity = 'additive', tau2 must be provided")
-  if(is.null(phi) && heterogeneity == "multiplicative") stop("If heterogeneity = 'multiplicative', phi must be provided")
-  if(heterogeneity == "none" && (!is.null(tau2) || !is.null(phi))) warning(paste0("Ignoring parameter(s) phi and/or tau2 as heterogeneity = 'none'"))
+  if(check_inputs){
+    if(is.null(tau2) && heterogeneity == "additive") stop("If heterogeneity = 'additive', tau2 must be provided")
+    if(is.null(phi) && heterogeneity == "multiplicative") stop("If heterogeneity = 'multiplicative', phi must be provided")
+    if(heterogeneity == "none" && (!is.null(tau2) || !is.null(phi))) warning(paste0("Ignoring parameter(s) phi and/or tau2 as heterogeneity = 'none'"))
+  }
   
   if(heterogeneity == "additive")
     se <- sqrt(se^2+tau2)
