@@ -16,8 +16,6 @@
 #' @template se
 #' @return Estimated phi, a \code{numeric} vector of length 1.
 #' 
-#' @importFrom stats lm anova
-#' 
 #' @export
 #' 
 #' @examples
@@ -43,23 +41,25 @@ estimatePhi <- function(thetahat, se){
 #' Estimate tau2 for additive heterogeneity
 #' 
 #' @description
-#' This function estimates tau2 for the additive heterogeneity model. The estimation is done via a call to the function \code{\link[meta]{metagen}} which offers a lot of
-#' flexibility in terms of how tau2 should be estimated. Arguments can be passed via the \code{...} argument. Note, however, that the following arguments that are passed 
-#' to the \code{\link[meta]{metagen}} function are set within this function: 
+#' This function estimates tau2 for the additive heterogeneity model.
+#' The estimation is done via a call to the function \code{\link[meta]{metagen}}
+#' which offers a lot of flexibility in terms of how tau2 should be estimated.
+#' Arguments can be passed via the \code{...} argument. Note, however, that
+#' the following arguments that are passed to the \code{\link[meta]{metagen}}
+#' function are set within this function: 
 #' \itemize{
 #'   \item{\code{sm} = \code{"md"}}
 #'   \item{\code{method.tau} = \code{"REML"}}
 #'   \item{\code{control} = \code{list(maxiter = 1e5, stepadj = 0.25)}}
 #' }
 #' 
-#' However, all of these arguments can be overwritten by the user via the \code{...} argument.
+#' However, all of these arguments can be overwritten by the user via the
+#' \code{...} argument.
 #' 
 #' @template thetahat
 #' @template  se
 #' @param ... Further arguments that are passed to \code{\link[meta]{metagen}}.
 #' @return Estimated tau2, a \code{numeric} vector of length 1.
-#' 
-#' @importFrom meta metagen
 #' 
 #' @export
 #' 
@@ -79,11 +79,15 @@ estimateTau2 <- function(thetahat, se, ...){
   
   # set default arguments that can be overwritten by user via the ... argument
   # default args to be set
-  default_args <- c("sm" = "sm", 
-                    "method.tau" = "method.tau",
-                    "control" = "control")
-  default_args <- default_args[!(default_args %in% argnames)] # keep only those that are not set by user
-  args <- lapply(default_args, function(x){ # put all of the not overwritten defaults into a list
+  default_args <- c(
+    "sm" = "sm", 
+    "method.tau" = "method.tau",
+    "control" = "control"
+  )
+  # keep only those that are not set by user
+  default_args <- default_args[!(default_args %in% argnames)]
+  # put all of the not overwritten defaults into a list
+  args <- lapply(default_args, function(x){
     if(x == "sm") value <- "MD"
     if(x == "method.tau") value <- "REML"
     if(x == "control") value <- list(maxiter = 1e5, stepadj = 0.25)

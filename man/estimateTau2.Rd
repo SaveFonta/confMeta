@@ -17,16 +17,20 @@ estimateTau2(thetahat, se, ...)
 Estimated tau2, a \code{numeric} vector of length 1.
 }
 \description{
-This function estimates tau2 for the additive heterogeneity model. The estimation is done via a call to the function \code{\link[meta]{metagen}} which offers a lot of
-flexibility in terms of how tau2 should be estimated. Arguments can be passed via the \code{...} argument. Note, however, that the following arguments that are passed
-to the \code{\link[meta]{metagen}} function are set within this function:
+This function estimates tau2 for the additive heterogeneity model.
+The estimation is done via a call to the function \code{\link[meta]{metagen}}
+which offers a lot of flexibility in terms of how tau2 should be estimated.
+Arguments can be passed via the \code{...} argument. Note, however, that
+the following arguments that are passed to the \code{\link[meta]{metagen}}
+function are set within this function:
 \itemize{
 \item{\code{sm} = \code{"md"}}
 \item{\code{method.tau} = \code{"REML"}}
 \item{\code{control} = \code{list(maxiter = 1e5, stepadj = 0.25)}}
 }
 
-However, all of these arguments can be overwritten by the user via the \code{...} argument.
+However, all of these arguments can be overwritten by the user via the
+\code{...} argument.
 }
 \examples{
 thetahat <- c(0.65, -0.5, 0.03, -0.51, 0.85, 0.75, -0.22, 1.02, 0.36, 0.44)

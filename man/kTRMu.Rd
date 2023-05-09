@@ -36,7 +36,7 @@ in simulations, performance might be increased by not checking inputs in every s
 to \code{FALSE} might be dangerous.}
 }
 \value{
-The corresponding p-value given mu under the null-hypothesis
+The corresponding p-value given mu under the null-hypothesis.
 }
 \description{
 Implementation of the "k-Trials" rule.
@@ -45,8 +45,25 @@ Implementation of the "k-Trials" rule.
 thetahat <- c(0.38041824, -0.22170681, -0.09155859)
 se <- c(0.2256202, 0.2432796, 0.1051743)
 phi <- estimatePhi(thetahat = thetahat, se=se)
-tau2 <- estimateTau2(thetahat, se, control = list(stepadj = 0.5, maxiter = 1000, threshold = 1e-6))
+tau2 <- estimateTau2(
+  thetahat,
+  se,
+  control = list(stepadj = 0.5, maxiter = 1000, threshold = 1e-6)
+)
 mymu <- seq(min(thetahat - 3 * se), max(thetahat + 3 * se), length.out=1000)
-p_add <- kTRMu(thetahat, se, mymu, tau2 = tau2, phi = phi, heterogeneity = "additive")
-p_mult <- kTRMu(thetahat, se, mymu, tau2 = tau2, phi = phi, heterogeneity = "multiplicative")
+p_add <- kTRMu(
+  thetahat, se,
+  mymu,
+  tau2 = tau2,
+  phi = phi,
+  heterogeneity = "additive"
+)
+p_mult <- kTRMu(
+  thetahat,
+  se,
+  mymu,
+  tau2 = tau2,
+  phi = phi,
+  heterogeneity = "multiplicative"
+)
 }
