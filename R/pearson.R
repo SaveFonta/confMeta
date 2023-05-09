@@ -65,7 +65,9 @@ pPearsonMu <- function(
     phi = NULL,
     tau2 = NULL,
     alternative = "none",
-    heterogeneity = c("none", "additive", "multiplicative")) {
+    heterogeneity = c("none", "additive", "multiplicative"),
+    check_inputs = TRUE
+) {
 
     # check inputs
     alternative <- match.arg(alternative)
@@ -77,7 +79,6 @@ pPearsonMu <- function(
             is.null(tau2) || is.numeric(tau2) && is.finite(tau2),
             length(mu) == 1L
         )
-        
     }
 
     # recycle `se` if needed

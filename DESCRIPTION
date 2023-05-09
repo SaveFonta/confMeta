@@ -1,13 +1,9 @@
 Package: hMean
-Title: Utilities for Our Simulation Study.
+Title: Utilities for Our Simulation Study
 Version: 0.0.0.9001
 Authors@R: c(
-    person("Felix", "Hofmann", "felix.hofmann2@uzh.ch",
-        role = c("aut", "cre"),
-        comment = c(ORCID = "0000-0002-3891-6239")),
-    person("Leonhard", "Held", "leonhard.held@uzh.ch",
-        role = c("aut"),
-        comment = c(ORCID = "0000-0002-8686-5325"))
+    person("Felix", "Hofmann", email = "felix.hofmann2@uzh.ch", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3891-6239")),
+    person("Leonhard", "Held", email = "leonhard.held@uzh.ch", role = c("aut"), comment = c(ORCID = "0000-0002-8686-5325"))
     )
 Description: A collection of functions we use for ongoing work related to meta analyses and evidence synthesis.
 License: GPL (>= 3)

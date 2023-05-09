@@ -11,7 +11,8 @@ pPearsonMu(
   phi = NULL,
   tau2 = NULL,
   alternative = "none",
-  heterogeneity = c("none", "additive", "multiplicative")
+  heterogeneity = c("none", "additive", "multiplicative"),
+  check_inputs = TRUE
 )
 }
 \arguments{
