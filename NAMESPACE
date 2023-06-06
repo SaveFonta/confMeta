@@ -2,6 +2,7 @@
 
 export(estimatePhi)
 export(estimateTau2)
+export(ggPvalueFunction)
 export(hMeanChiSqCI)
 export(hMeanChiSqMu)
 export(kTRMu)
