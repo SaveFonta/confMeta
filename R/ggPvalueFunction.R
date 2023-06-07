@@ -34,7 +34,7 @@
 #'         0.219391786477601, 0.14796190250815, 0.270413132170067,
 #'         0.500009187786161)
 #' pValueFUN <- c("hMean", "k-Trials", "Pearson")
-#' distr <- "chisq"
+#' distr <- c("chisq", "f")
 #' heterogeneity <- "none"
 #' ggPvalueFunction(thetahat = thetahat,
 #'                  se = se,
@@ -73,7 +73,7 @@ ggPvalueFunction <- function(
         length(xlim) == 2L,
         xlim[1] < xlim[2]
     )
-    
+
     # Construct the grid to loop over
     grid <- make_grid(
         pValueFUN = pValueFUN,
@@ -100,9 +100,10 @@ ggPvalueFunction <- function(
 
     # Calculate the p-values and CIs
     data <- lapply(seq_len(nrow(grid)), function(x) {
-        p_call <- make_p_call(grid_row = grid[x, ], const = const)
-        CI_call <- make_CI_call(p_call = p_call)
-        
+        grid_row <- grid[x, ]
+        p_call <- make_p_call(grid_row = grid_row, const = const)
+        CI_call <- make_CI_call(p_call = p_call, level = level)
+
         # get the p-value
         p_call <- list(
             thetahat = thetahat,
@@ -242,7 +243,7 @@ ggPvalueFunction <- function(
     )
 }
 
-## This function constructs calls 
+## This function constructs calls
 make_p_call <- function(grid_row, const) {
     # Check inputs
     if (!inherits(grid_row, "data.frame"))
@@ -263,10 +264,10 @@ make_p_call <- function(grid_row, const) {
         thetahat = const$thetahat,
         se = const$se,
         heterogeneity = grid_row$heterogeneity,
-        phi = if (grid_row$heterogeneity == "multiplicative") 
+        phi = if (grid_row$heterogeneity == "multiplicative")
             const$phi
         else NULL,
-        tau2 = if (grid_row$heterogeneity == "additive") 
+        tau2 = if (grid_row$heterogeneity == "additive")
             const$tau2
         else NULL,
         mu = const$muSeq
@@ -288,12 +289,18 @@ make_p_call <- function(grid_row, const) {
     as.call(append(list(currentFUN), args))
 }
 
-make_CI_call(p_call, level, pValueFUN) {
+make_CI_call <- function(p_call, level) {
+    p_call_list <- as.list(p_call)
+    which(names(p_call_list) %in% c("", "thetahat", "se", "mu"))
+    dotargs <- p_call_list[-1L]
+    pvalFUN <- p_call_list[[1L]]
+    fp <- formals(pvalFUN)
+    fci <- formals(hMeanChiSqCI)
     args <- append(
-        as.list(p_call)[-1L],
+        p_call_list[-1L],
         list(
             level = level,
-            pValueFUN = pValueFUN
+            pValueFUN = pvalFUN
         )
     )
     as.call(append(list(hMeanChiSqCI), args))
