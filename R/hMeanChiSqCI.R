@@ -15,8 +15,10 @@
 #' between the thetahats. Default is a vector of 1s.
 #' @template check_inputs
 #' @param pValueFUN_args A named \code{list} with arguments passed to
-#' \code{pValueFUN}. Arguments \code{thetahat} and \code{se} are automatically
-#' passed to \code{pValueFUN}.
+#' \code{pValueFUN}. This list must contains all arguments of \code{pValueFUN}
+#' that do not have a Default. Arguments \code{thetahat}, \code{se}, and
+#' \code{mu} are automatically passed to \code{pValueFUN} and must thus not be
+#' included in this named list.
 #' @return Returns a list containing confidence interval(s)
 #' obtained by inverting the harmonic mean chi-squared test based on
 #' study-specific estimates and standard errors. The list contains:
@@ -53,7 +55,7 @@ hMeanChiSqCI <- function(
   
   # expand se
   if (length(se) == 1L) se <- rep(se, length(thetahat))
-  
+
   # target function to compute the limits of the CI
   ## pass dotargs, thetahat, se
   args <- append(pValueFUN_args, list(thetahat = thetahat, se = se))
@@ -89,7 +91,7 @@ hMeanChiSqCI <- function(
   eps <- 1e-6
   factor <- 5
   if (alternative == "none") {
-    
+
     ## ----------------------------
     ## find lower bound such that: lower < thetahat[1] AND target(lower) < 0 
     lower <- mint - z1 * minse
@@ -200,4 +202,239 @@ hMeanChiSqCI <- function(
       )
     )
   }
+}
+
+
+################################################################################
+hMeanChiSqCI_new <- function(
+  thetahat,
+  se,
+  level = 0.95, 
+  alternative = "none",
+  wGamma = rep(1, length(unique(thetahat)) - 1),
+  check_inputs = TRUE,
+  pValueFUN = hMeanChiSqMu,
+  pValueFUN_args
+) {
+  
+  if (check_inputs) {
+    check_inputs_CI(
+      thetahat = thetahat,
+      se = se,
+      level = level,
+      alternative = alternative,
+      wGamma = wGamma,
+      pValueFUN = pValueFUN,
+      pValueFUN_args = pValueFUN_args
+    )
+  }
+  
+  # Get the function we need to optimise
+  f <- make_function(
+    thetahat = thetahat,
+    se = se,
+    pValueFUN = pValueFUN,
+    pValueFUN_args = pValueFUN_args
+  )
+  
+  # Get the bounds
+  bounds <- get_bounds(
+    alternative = alternative,
+    thetahat = thetahat,
+    se = se,
+    level = level,
+    f = f
+  )
+  
+    
+  
+  
+}
+
+################################################################################
+# Helper function that returns a function to optimize                          #
+################################################################################
+
+make_function <- function(thetahat, se, alpha, pValueFUN, pValueFUN_args){
+  # Add/Overwrite thetahat and se args
+  pValueFUN_args$thetahat <- thetahat
+  pValueFUN_args$se <- se
+  # Add mu argument
+  if ("mu" %in% names(pValueFUN_args)) pValueFUN_args$mu <- NULL
+  pValueFUN_args <- append(pValueFUN_args, alist(mu = limit))
+  ## For the remaining arguments, use the defaults
+  forms <- formals(pValueFUN)
+  nforms <- names(formals)
+  pValueFUN_args <- append(
+    pValueFUN_args,
+    forms[!nforms %in% names(pValueFUN_args)]
+  )
+  ## Check whether all arguments are there
+  available_args <- nforms %in% names(pValueFUN_args)
+  if (!all(available_args)) {
+    stop(
+      paste0(
+        "List pValueFUN_args is missing argument(s) '", 
+        paste0(nforms[!available_args], collapse = "', '"),
+        "'."
+      )
+    )
+  }
+  
+  function(limit) {
+    do.call(pValueFUN, pValueFUN_args) - alpha
+  }
+}
+
+################################################################################
+# Helper functions to calculate the CIs                                        #
+################################################################################
+
+get_CI_less <- function(f, bounds) {
+    upper <- stats::uniroot(
+      f = f,
+      lower = bounds[1],
+      upper = bounds[2]
+    )$root
+    list(CI = cbind(-Inf, upper))
+}
+
+get_CI_greater <- function(f, bounds) {
+    lower <- stats::uniroot(
+      f = f,
+      lower = bounds[1],
+      upper = bounds[2]
+    )$root
+    list(CI = cbind(lower, -Inf))
+}
+
+get_CI_twosided <- function(f, bounds) {
+    lower <- stats::uniroot(
+      f = f,
+      lower = bounds[1],
+      upper = bounds[2]
+    )$root
+    upper <- stats::uniroot(
+      f = f,
+      lower = bounds[3],
+      upper = bounds[4]
+    )$root
+    return(
+      list(CI = cbind(lower, upper))
+    )
+}
+
+get_CI_none <- function(f, bounds) {
+    CI <- matrix(NA_real_, )
+    gam <- matrix(NA_real_, )
+    for (i in seq_len(length(bounds) - 1L)) {
+      opt <- stats::optimize(
+        f = target,
+        lower = thetahatUnique[i],
+        upper = thetahatUnique[i + 1L]
+      )
+      gam[i,] <- c(opt$minimum, opt$objective + alpha)
+      if (opt$objective <= 0) {
+        CImiddle[1L, i] <- stats::uniroot(
+          f = target,
+          lower = thetahatUnique[i],
+          upper = opt$minimum
+        )$root
+        CImiddle[2L, i] <- stats::uniroot(
+          f = target,
+          lower = opt$minimum,
+          upper = thetahatUnique[i + 1L]
+        )$root
+      }
+    }
+}
+
+get_CI <- function(alternative, f, bounds) {
+  switch(
+    alternative,
+    "none" = get_CI_none(f = f, bounds = bounds),
+    "less" = get_CI_less(f = f, bounds = bounds),
+    "greater" = get_CI_greater(f = f, bounds = bounds),
+    "two.sided" = get_CI_twosided(f = f, bounds = bounds)
+  )
+}
+
+################################################################################
+# Helper functions to calculate the bounds                                     #
+################################################################################
+
+get_bounds_none <- function(f, thetahat, mint, maxt, minse, maxse, z1) {
+  
+    ## find lower bound such that: lower < thetahat[1] AND target(lower) < 0 
+    lower <- mint - z1 * minse
+    while(f(lower) > 0) {
+      lower <- lower - minse
+    }
+    
+    ## find upper bound such that:
+    ## upper > thetahat[length(thetahat)] AND target(upper) < 0 
+    upper <- maxt + maxse
+    while (f(upper) > 0) {
+      upper <- upper + z1 * maxse
+    }
+    
+    c(lower, upper)
+}
+
+get_bounds <- function(alternative, thetahat, se, level, f) {
+  
+    ## sort 'thetahat', 'se'
+    o <- order(thetahat)
+    thetahat <- thetahat[o]
+    se <- se[o]
+    
+    ## minima are only searched between distinct thetahat elements
+    thetahat <- unique(thetahat)
+    
+    # get the lower and upper bound
+    mini <- which.min(thetahat)
+    maxi <- which.max(thetahat)
+    mint <- thetahat[mini]
+    maxt <- thetahat[maxi]
+    minse <- se[mini]
+    maxse <- se[maxi]
+    
+    # set some constants
+    alpha <- 1 - level
+    z1 <- max(-stats::qnorm(alpha), 1)
+    eps <- 1e-6
+    factor <- 5
+    
+    if (alternative == "none") {
+      b <- get_bounds_none(
+          f = f,
+          mint = mint,
+          minse = minse,
+          maxt = maxt,
+          maxse = maxse,
+          z1 = z1
+      )
+    }
+    
+    # return bounds
+    switch(
+      alternative,
+      "none" = c(
+        b[1], thetahat, b[2]
+      ),
+      "less" = c(
+        maxt + eps * maxse,
+        maxt + factor * z1 * maxse
+      ),
+      "greater" = c(
+        mint - factor * z1 * minse,
+        mint - eps * minse
+      ),
+      "two.sided" = c(
+        mint - factor * z1 * minse,
+        mint - eps * minse,
+        maxt + eps * maxse,
+        maxt + factor * z1 * maxse
+      )
+    )
 }
