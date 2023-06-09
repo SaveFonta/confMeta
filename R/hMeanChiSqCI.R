@@ -233,6 +233,7 @@ hMeanChiSqCI_new <- function(
   f <- make_function(
     thetahat = thetahat,
     se = se,
+    alpha = 1 - level,
     pValueFUN = pValueFUN,
     pValueFUN_args = pValueFUN_args
   )
@@ -244,6 +245,11 @@ hMeanChiSqCI_new <- function(
     se = se,
     level = level,
     f = f
+  )
+  
+  # Find the CIs
+  CIs <- get_CI(
+    
   )
   
     
@@ -325,34 +331,44 @@ get_CI_twosided <- function(f, bounds) {
 }
 
 get_CI_none <- function(f, bounds) {
-    CI <- matrix(NA_real_, )
-    gam <- matrix(NA_real_, )
-    for (i in seq_len(length(bounds) - 1L)) {
-      opt <- stats::optimize(
-        f = target,
-        lower = thetahatUnique[i],
-        upper = thetahatUnique[i + 1L]
-      )
-      gam[i,] <- c(opt$minimum, opt$objective + alpha)
-      if (opt$objective <= 0) {
-        CImiddle[1L, i] <- stats::uniroot(
-          f = target,
-          lower = thetahatUnique[i],
-          upper = opt$minimum
-        )$root
-        CImiddle[2L, i] <- stats::uniroot(
-          f = target,
-          lower = opt$minimum,
-          upper = thetahatUnique[i + 1L]
-        )$root
+    n_intervals <- length(bounds) - 1L
+    CI <- gam <- matrix(NA_real_, ncol = 2L, nrow = n_intervals)
+    colnames(gam) <- c("minimum", "pvalue_fun/gamma")
+    colnames(CI) <- c("lower", "upper")
+    for (i in seq_len(n_intervals)) {
+      if (i == 1L || i == n_intervals) {
+        get_root_ends <- function(f, bounds) {
+          
+        }
+      } else {
+        opt <- stats::optimize(
+          f = f,
+          lower = bounds[i],
+          upper = bounds[i + 1L]
+        )
+        mini <- opt$minimum
+        obj <- opt$objective
+        gam[i, ] <- c(mini, obj + alpha)
+        if (obj <= 0) {
+          CI[i, 1L] <- stats::uniroot(
+            f = f,
+            lower = bounds[i],
+            upper = mini
+          )$root
+          CI[i, 2L] <- stats::uniroot(
+            f = target,
+            lower = mini
+            upper = bounds[i + 1L]
+          )$root
+        }
       }
     }
 }
 
-get_CI <- function(alternative, f, bounds) {
+get_CI <- function(alternative, f, bounds, alpha) {
   switch(
     alternative,
-    "none" = get_CI_none(f = f, bounds = bounds),
+    "none" = get_CI_none(f = f, bounds = bounds, alpha = alpha),
     "less" = get_CI_less(f = f, bounds = bounds),
     "greater" = get_CI_greater(f = f, bounds = bounds),
     "two.sided" = get_CI_twosided(f = f, bounds = bounds)
