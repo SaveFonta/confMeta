@@ -219,7 +219,7 @@ check_inputs_p_value <- function(
     check_thetahat_arg(thetahat = thetahat)
     
     ## se
-    check_se_arg(se = se, l_thetahat = thetahat)
+    check_se_arg(se = se, l_thetahat = length(thetahat))
     
     # Check mu
     check_mu_arg(mu = mu)
@@ -311,7 +311,7 @@ adjust_se <- function(se, heterogeneity, phi, tau2) {
         switch(
             heterogeneity,
             "additive" = sqrt(se^2 + tau2),
-            "multiplicative" = se * phi
+            "multiplicative" = se * sqrt(phi)
         )
 }
 
