@@ -14,8 +14,9 @@
 #' summarize the gamma values, i.e., the local minima of the p-value function
 #' between the thetahats. Default is a vector of 1s.
 #' @template check_inputs
-#' @param ... Arguments passed to \code{pValueFUN}. Arguments \code{thetahat}
-#' and \code{se} are automatically passed to \code{pValueFUN}.
+#' @param pValueFUN_args A named \code{list} with arguments passed to
+#' \code{pValueFUN}. Arguments \code{thetahat} and \code{se} are automatically
+#' passed to \code{pValueFUN}.
 #' @return Returns a list containing confidence interval(s)
 #' obtained by inverting the harmonic mean chi-squared test based on
 #' study-specific estimates and standard errors. The list contains:
@@ -26,49 +27,36 @@
 #' \item{gammaHMean}{Harmonic mean of all gammas weighted by \code{wGamma}.}
 #' @export
 hMeanChiSqCI <- function(
-  thetahat, se,
+  thetahat,
+  se,
   level = 0.95, 
   alternative = "none",
   wGamma = rep(1, length(unique(thetahat)) - 1),
   check_inputs = TRUE,
   pValueFUN = hMeanChiSqMu,
-  ...
+  pValueFUN_args
 ) {
   
   # Check inputs
   if (check_inputs) {
-    stopifnot(
-      is.numeric(thetahat),
-      length(thetahat) > 0L,
-      is.finite(thetahat),
-      
-      is.numeric(se),
-      length(se) == 1L || length(se) == length(thetahat),
-      is.finite(se),
-      min(se) > 0,
-      
-      !is.null(alternative),
-      length(alternative) == 1L,
-      alternative %in% c("greater", "less", "two.sided", "none"),
-      
-      is.numeric(level),
-      length(level) == 1L,
-      is.finite(level),
-      level > 0 & level < 1,
-      
-      is.numeric(wGamma),
-      length(wGamma) == length(unique(thetahat)) - 1
+    check_inputs_CI(
+      thetahat = thetahat,
+      se = se,
+      level = level,
+      alternative = alternative,
+      wGamma = wGamma,
+      check_inputs = check_inputs,
+      pValueFUN = pValueFUN,
+      pValueFUN_args = pValueFUN_args
     )
   }
   
-  # catch dotargs
-  dotargs <- list(...)
   # expand se
   if (length(se) == 1L) se <- rep(se, length(thetahat))
   
   # target function to compute the limits of the CI
   ## pass dotargs, thetahat, se
-  args <- append(dotargs, list(thetahat = thetahat, se = se))
+  args <- append(pValueFUN_args, list(thetahat = thetahat, se = se))
   ## add mu
   args <- append(args, alist(mu = limit))
   ## For the remaining arguments, use the defaults

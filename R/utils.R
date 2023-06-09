@@ -80,8 +80,10 @@ make_grid <- function(pValueFUN, heterogeneity, distr) {
     grid
 }
 
-# Check the inputs to the p-value functions. The following functions are used
-# in:
+################################################################################
+# Check inputs for p-value functions                                           #
+################################################################################
+# The following functions are used in:
 # - pPearsonMu
 # - kTRMu
 # - hMeanChiSqMu
@@ -91,32 +93,26 @@ is_num_fin <- function(x) {
     is.numeric(x) && length(x) > 0L && all(is.finite(x))
 }
 
-## Check inputs to the p-value functions
-check_inputs_p_value <- function(
-    thetahat,
-    se,
-    heterogeneity,
-    phi,
-    tau2,
-    mu,
-    alternative
-) {
-    
-    # Check thetahat and se are numeric and finite
-    ## thetahat
+## Checks thetahat
+check_thetahat_arg <- function(thetahat) {
     if (!is_num_fin(thetahat))
         stop(
             "Argument 'thetahat' must be a numeric vector with finite elements."
         )
-    ## se
+}
+
+## Checks se
+check_se_arg <- function(se, l_thetahat) {
     if (!is_num_fin(se))
         stop("Argument 'se' must be a numeric vector with finite elements.")
-    if (any(se <= 0))
+    if (min(se) <= 0)
         stop("All entries of argument 'se' must be positive.")
-    if (length(se) != length(thetahat) && length(se) != 1L)
+    if (length(se) != l_thetahat && length(se) != 1L)
         stop("Argument 'se' must have length of either 1 or length(thetahat).")
-    
-    # Check mu
+}
+
+## Checks mu
+check_mu_arg <- function(mu) {
     if (!is.numeric(mu) || any(!is.finite(mu)) || length(mu) < 1L)
         stop(
             paste0(
@@ -124,8 +120,10 @@ check_inputs_p_value <- function(
                 " with finite elements."
             )
         )
-    
-    # Check heterogeneity
+}
+
+## Checks heterogeneity
+check_heterogeneity_arg <- function(heterogeneity) {
     if (
         is.null(heterogeneity) ||
         !(heterogeneity %in% c("none", "additive", "multiplicative"))
@@ -136,8 +134,10 @@ check_inputs_p_value <- function(
                 "c('none', 'additive', 'multiplicative')."
             )
         )
-    
-    # Check phi and tau2
+}
+
+## Checks phi and tau2
+check_phiTau2_arg <- function(heterogeneity, phi, tau2) {
     if (heterogeneity == "none") {
         if (!is.null(phi) || !is.null(tau2))
             warning(
@@ -160,8 +160,10 @@ check_inputs_p_value <- function(
                 "Ignoring argument 'tau2' as heterogeneity = 'multiplicative'."
             )
     }
-    
-    # Check alternative argument
+}
+
+## Checks the alternative argument
+check_alternative_arg <- function(alternative) {
     if (
         length(alternative) != 1L ||
         !(alternative %in% c("none", "less", "greater", "two.sided"))
@@ -176,14 +178,14 @@ check_inputs_p_value <- function(
 
 ## Check the distribution argument used in hMeanChiSqMu()
 ## - hMeanChiSqMu
-check_distr_p_value <- function(distr) {
+check_distr_arg <- function(distr) {
     if (length(distr) != 1L || !(distr %in% c("f", "chisq")))
         stop("Argument 'distr' must be one of c('f', 'chisq').")
 }
 
 ## Check the w argument used in hMeanChiSqMu()
 ## - hMeanChiSqMu
-check_w_p_value <- function(w, thetahat) {
+check_w_arg <- function(w, thetahat) {
     if (!is_num_fin(w) || length(w) != length(thetahat) || min(w) < 0)
         stop(
             paste0(
@@ -193,6 +195,110 @@ check_w_p_value <- function(w, thetahat) {
         )
 }
 
+check_checkInputs_arg <- function(check_inputs) {
+    isTRUE(check_inputs) || isFALSE(check_inputs)
+}
+
+## Summarise the before functions
+## These arguments are present in all p-value functions
+# - pPearsonMu
+# - hMeanChiSqMu
+# - kTRMu
+check_inputs_p_value <- function(
+    thetahat,
+    se,
+    heterogeneity,
+    phi,
+    tau2,
+    mu,
+    alternative
+) {
+    
+    # Check thetahat and se are numeric and finite
+    ## thetahat
+    check_thetahat_arg(thetahat = thetahat)
+    
+    ## se
+    check_se_arg(se = se, l_thetahat = thetahat)
+    
+    # Check mu
+    check_mu_arg(mu = mu)
+    
+    # Check heterogeneity
+    check_heterogeneity_arg(heterogeneity = heterogeneity)
+    
+    # Check phi and tau2
+    check_phiTau2_arg(heterogeneity = heterogeneity, phi = phi, tau2 = tau2)
+    
+    # Check alternative argument
+    check_alternative_arg(alternative = alternative)
+}
+
+################################################################################
+# Argument checks for hMeanChiSqCI                                             #
+################################################################################
+
+# Check level
+check_level_arg <- function(level) {
+    if (!is_num_fin(level) || length(level) != 1L)
+        stop("Argument 'level' must be numeric, finite and of length 1.")
+    if (level <= 0 || level >= 1)
+        stop("Argument 'level' must be between 0 and 1.")
+}
+
+# Check wGamma
+check_wGamma_arg <- function(wGamma, thetahat) {
+    if (length(wGamma) != length(unique(thetahat)) - 1L)
+        stop(
+            "Argument 'wGamma' must have length length(unique(thetahat)) - 1L."
+        )
+    if (!is_num_fin(wGamma))
+        stop(
+            "Argument 'wGamma' must be numeric and all entries must be finite."
+        )
+}
+
+# Check pValueFUN
+check_pValueFUN_arg <- function(pValueFUN) {
+    if (!is.function(pValueFUN))
+        stop("Argument 'pValueFUN' must be a function.")
+}
+
+check_pValueFUNArgs_arg <- function(pValueFUN_args, pValueFUN) {
+    if (!is.list(pValueFUN_args))
+        stop("Argument 'pValueFUN_args' must be a list'.")
+    if ("" %in% names(pValueFUN_args))
+        stop("Arument 'pValueFUN_args' must be a named list.")
+    # Try to find out what pValueFUN is and check the formals such that the
+    # names of the list can be checked
+    # However, the above only works for our pValueFUNs since we know their
+    # arguments. Custom pValueFUNs might have entirely different Arguments.
+}
+
+# Summarise the above functions into one
+check_inputs_CI <- function(
+    thetahat,
+    se,
+    level,
+    alternative,
+    wGamma,
+    check_inputs,
+    pValueFUN,
+    pValueFUN_args
+) {
+    check_thetahat_arg(thetahat)
+    check_se_arg(se = se, l_thetahat = length(thetahat))
+    check_level_arg(level = level)
+    check_alternative_arg(alternative = alternative)
+    check_wGamma_arg(wGamma = wGamma)
+    check_checkInputs_arg(check_inputs = check_inputs)
+    check_pValueFUN_arg(pValueFUN = pValueFUN)
+    check_pValueFUNArgs_arg(pValueFUN_args = pValueFUN_args)
+}
+
+################################################################################
+# Adjustment of standard errors based on heterogeneity model                   #
+################################################################################
 # This function adjusts the standard errors depending on the heterogeneity model
 # this function is used in the p-value functions:
 # - kTRMu

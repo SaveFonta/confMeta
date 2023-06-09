@@ -1,4 +1,4 @@
-#' p-Value of Pearson combination test
+#' Calculate the p-value using the Pearson combination test.
 #'
 #' @details
 #' The function is is vectorized over the \code{mu} argument.
@@ -16,7 +16,6 @@
 #' @export
 #'
 #' @examples
-#' resP <- resH <- resTR <- numeric()
 #' n <- 15
 #' thetahat <- rnorm(n)
 #' se <- rgamma(n, 5, 5)
@@ -26,29 +25,27 @@
 #'   length.out = 1e5
 #' )
 #' phi <- estimatePhi(thetahat = thetahat, se = se)
-#' for(i in 1:length(mu)){
-#'   resP[i] <- pPearsonMu(
-#'     thetahat=thetahat,
-#'     se=se,
-#'     mu=mu[i],
-#'     heterogeneity="multiplicative",
-#'     phi=phi
-#'   )
-#'   resH[i] <- hMeanChiSqMu(
-#'     thetahat=thetahat,
-#'     se = se,
-#'     mu = mu[i],
-#'     heterogeneity = "multiplicative",
-#'     phi = phi
-#'   )
-#'   resTR[i] <- kTRMu(
+#' resP <- pPearsonMu(
 #'     thetahat = thetahat,
 #'     se = se,
-#'     mu = mu[i],
+#'     mu = mu,
 #'     heterogeneity = "multiplicative",
 #'     phi = phi
-#'   )
-#' }
+#' )
+#' resH <- hMeanChiSqMu(
+#'     thetahat = thetahat,
+#'     se = se,
+#'     mu = mu,
+#'     heterogeneity = "multiplicative",
+#'     phi = phi
+#' )
+#' resTR <- kTRMu(
+#'     thetahat = thetahat,
+#'     se = se,
+#'     mu = mu,
+#'     heterogeneity = "multiplicative",
+#'     phi = phi
+#' )
 #' par(las=1)
 #' matplot(
 #'   mu,
@@ -64,11 +61,11 @@
 pPearsonMu <- function(
     thetahat,
     se,
-    mu,
+    mu = 0,
     phi = NULL,
     tau2 = NULL,
-    alternative = "none",
     heterogeneity = c("none", "additive", "multiplicative"),
+    alternative = "none",
     check_inputs = TRUE
 ) {
 

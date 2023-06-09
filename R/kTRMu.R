@@ -1,13 +1,15 @@
-#' Implementation of the "k-Trials" rule.
+#' Calculate the p-value using the k-Trials method.
+
 #' @details
 #' The function is vectorized over the argument \code{mu}.
 #' 
 #' @template thetahat
 #' @template se
 #' @template mu
-#' @template tau2
 #' @template phi
+#' @template tau2
 #' @template heterogeneity
+#' @template alternative
 #' @template check_inputs
 #'
 #' @return The corresponding p-value given mu under the null-hypothesis.
@@ -49,6 +51,7 @@ kTRMu <- function(
   phi = NULL,
   tau2 = NULL,
   heterogeneity = "none",
+  alternative = "none",
   check_inputs = TRUE
 ) {
 

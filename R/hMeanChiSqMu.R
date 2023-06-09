@@ -1,29 +1,32 @@
-#' Calculate the p-value
+#' Calculate the p-value using the harmonic mean chi-squared test.
+#' 
+#' @details
+#' The function is vectorized over the argument \code{mu}.
 #'
 #' @template thetahat
 #' @template se 
-#' @template w 
 #' @template mu
 #' @template phi
 #' @template tau2
+#' @template heterogeneity
 #' @template alternative 
-#' @template distr
-#' @template heterogeneity 
 #' @template check_inputs
+#' @template w 
+#' @template distr
 #' @return Returns the p-value from the harmonic mean chi-squared test
 #' based on study-specific estimates and standard errors.
 #' @export
 hMeanChiSqMu <- function(
     thetahat,
     se,
-    w = rep(1, length(thetahat)),
     mu = 0,
     phi = NULL,
     tau2 = NULL,
-    alternative = "none",
-    distr = "chisq",
     heterogeneity = "none",
-    check_inputs = TRUE
+    alternative = "none",
+    check_inputs = TRUE,
+    w = rep(1, length(thetahat)),
+    distr = "chisq"
 ) {
 
   # Check inputs
@@ -37,8 +40,8 @@ hMeanChiSqMu <- function(
       phi = phi,
       tau2 = tau2
     )
-    check_distr_p_value(distr = distr)
-    check_w_p_value(w = w, thetahat = thetahat)
+    check_distr_arg(distr = distr)
+    check_w_arg(w = w, thetahat = thetahat)
   }
   
   # match arguments

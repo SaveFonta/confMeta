@@ -2,16 +2,16 @@
 % Please edit documentation in R/pearson.R
 \name{pPearsonMu}
 \alias{pPearsonMu}
-\title{p-Value of Pearson combination test}
+\title{Calculate the p-value using the Pearson combination test.}
 \usage{
 pPearsonMu(
   thetahat,
   se,
-  mu,
+  mu = 0,
   phi = NULL,
   tau2 = NULL,
-  alternative = "none",
   heterogeneity = c("none", "additive", "multiplicative"),
+  alternative = "none",
   check_inputs = TRUE
 )
 }
@@ -26,13 +26,13 @@ pPearsonMu(
 
 \item{tau2}{A numeric vector of length 1.}
 
-\item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
-Specifies the alternative to be considered in the computation of the p-value.}
-
 \item{heterogeneity}{One of \code{c("none", "additive", "multiplicative")}. If \code{heterogeneity = "none"} p-values are returned for the
 passed \code{se} without any adaption. If \code{heterogeneity = "additive"}, the standard errors \code{se} are reassigned the value of \code{sqrt(se^2 + tau2)} before
 computation of the p-values. If \code{heterogeneity = "multiplicative"}, the standard errors \code{se} are multiplied with the value of \code{phi} before
 computation of the p-values. Defaults to \code{"none"}.}
+
+\item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
+Specifies the alternative to be considered in the computation of the p-value.}
 
 \item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
 The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
@@ -40,45 +40,45 @@ in simulations, performance might be increased by not checking inputs in every s
 to \code{FALSE} might be dangerous.}
 }
 \value{
-The corresponding p-value given mu under the null-hypothesis.
+The corresponding p-values given mu under the null-hypothesis.
 }
 \description{
-p-Value of Pearson combination test
+Calculate the p-value using the Pearson combination test.
+}
+\details{
+The function is is vectorized over the \code{mu} argument.
 }
 \examples{
-resP <- resH <- resTR <- numeric()
 n <- 15
 thetahat <- rnorm(n)
 se <- rgamma(n, 5, 5)
 mu <- seq(
   min(thetahat) - 0.5 * max(se),
   max(thetahat) + 0.5 * max(se),
-  length.out = 1e4
+  length.out = 1e5
 )
 phi <- estimatePhi(thetahat = thetahat, se = se)
-for(i in 1:length(mu)){
-  resP[i] <- pPearsonMu(
-    thetahat=thetahat,
-    se=se,
-    mu=mu[i],
-    heterogeneity="multiplicative",
-    phi=phi
-  )
-  resH[i] <- hMeanChiSqMu(
-    thetahat=thetahat,
-    se = se,
-    mu = mu[i],
-    heterogeneity = "multiplicative",
-    phi = phi
-  )
-  resTR[i] <- kTRMu(
+resP <- pPearsonMu(
     thetahat = thetahat,
     se = se,
-    mu = mu[i],
+    mu = mu,
     heterogeneity = "multiplicative",
     phi = phi
-  )
-}
+)
+resH <- hMeanChiSqMu(
+    thetahat = thetahat,
+    se = se,
+    mu = mu,
+    heterogeneity = "multiplicative",
+    phi = phi
+)
+resTR <- kTRMu(
+    thetahat = thetahat,
+    se = se,
+    mu = mu,
+    heterogeneity = "multiplicative",
+    phi = phi
+)
 par(las=1)
 matplot(
   mu,
