@@ -14,11 +14,7 @@
 #' summarize the gamma values, i.e., the local minima of the p-value function
 #' between the thetahats. Default is a vector of 1s.
 #' @template check_inputs
-#' @param pValueFUN_args A named \code{list} with arguments passed to
-#' \code{pValueFUN}. This list should contain all arguments of \code{pValueFUN}
-#' that do not have a default. Arguments \code{thetahat}, \code{se}, and
-#' \code{mu} are automatically passed to \code{pValueFUN} and must thus not be
-#' included in this list.
+#' @template pValueFUN_args
 #' @return Returns a list containing confidence interval(s)
 #' obtained by inverting the harmonic mean chi-squared test based on
 #' study-specific estimates and standard errors. The list contains:
