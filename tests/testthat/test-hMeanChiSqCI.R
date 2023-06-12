@@ -61,9 +61,7 @@ test_that("Results of hMeanChiSqCI are consistent.", {
         level = level,
         alternative = alternative,
         pValueFUN = pValueFUN,
-        heterogeneity = grid$heterogeneity[x],
-        phi = if (grid$heterogeneity[x] == "multiplicative") phi else NULL,
-        tau2 = if (grid$heterogeneity[x] == "additive") tau2 else NULL
+        pValueFUN_args = pValueFUN_args
       )
     }
   )
