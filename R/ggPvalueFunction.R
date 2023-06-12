@@ -47,8 +47,9 @@
 #     se,
 #     level = 0.95,
 #     distr = c("f", "chisq"),
-#     pValueFUN = c("hMean", "k-Trials", "Pearson"),
 #     heterogeneity = c("none", "additive", "multiplicative"),
+#     pValueFUN = c("hMean", "k-Trials", "Pearson"),
+#     pValueFUN_args,
 #     xlim = c(min(thetahat - 3 * se), max(thetahat + 3 * se))
 # ) {
 # 
@@ -300,7 +301,7 @@
 #     #        this only refers to hMeanChiSqMu).
 #     remove <- which(names(p_call_list) %in% c("", "mu", "w"))
 #     names(p_call_list)[1L] <- "pValueFUN"
-#     CI_call <- 
+#     CI_call <-
 #     dotargs <- p_call_list[-1L]
 #     pvalFUN <- p_call_list[[1L]]
 #     fp <- formals(pvalFUN)
