@@ -326,6 +326,8 @@ utils::globalVariables(
         # whereever
         "limit",
         # ggPvalueFunction
-        "x", "y", "group", "x_gamma", "y_gamma", "xmin", "xmax", "ymin", "ymax"
+        "x", "y", "group", "x_gamma", "y_gamma", "xmin", "xmax", "ymin", "ymax",
+        # ForestPlot
+        "lower", "upper", "estimate", "ID", "color"
     )
 )

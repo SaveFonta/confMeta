@@ -10,6 +10,11 @@ library(testthat)
 library(hMean)
 
 get_old_FUN <- function(path, fun_name) {
+  # Source the utils file as well
+  source(
+    "https://raw.githubusercontent.com/felix-hof/hMean/main/R/utils.R",
+    local = TRUE
+  )
   new_name <- paste0(fun_name, "_old")
   def <- readLines(path)
   comments <- grepl("^\\s*#", def)
