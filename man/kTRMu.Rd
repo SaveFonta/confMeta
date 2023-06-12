@@ -2,7 +2,7 @@
 % Please edit documentation in R/kTRMu.R
 \name{kTRMu}
 \alias{kTRMu}
-\title{Implementation of the "k-Trials" rule.}
+\title{Calculate the p-value using the k-Trials method.}
 \usage{
 kTRMu(
   thetahat,
@@ -11,6 +11,7 @@ kTRMu(
   phi = NULL,
   tau2 = NULL,
   heterogeneity = "none",
+  alternative = "none",
   check_inputs = TRUE
 )
 }
@@ -30,6 +31,9 @@ passed \code{se} without any adaption. If \code{heterogeneity = "additive"}, the
 computation of the p-values. If \code{heterogeneity = "multiplicative"}, the standard errors \code{se} are multiplied with the value of \code{phi} before
 computation of the p-values. Defaults to \code{"none"}.}
 
+\item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
+Specifies the alternative to be considered in the computation of the p-value.}
+
 \item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
 The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
 in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument
@@ -39,31 +43,38 @@ to \code{FALSE} might be dangerous.}
 The corresponding p-value given mu under the null-hypothesis.
 }
 \description{
-Implementation of the "k-Trials" rule.
+Calculate the p-value using the k-Trials method.
+}
+\details{
+The function is vectorized over the argument \code{mu}.
 }
 \examples{
 thetahat <- c(0.38041824, -0.22170681, -0.09155859)
 se <- c(0.2256202, 0.2432796, 0.1051743)
-phi <- estimatePhi(thetahat = thetahat, se=se)
+phi <- estimatePhi(thetahat = thetahat, se = se)
 tau2 <- estimateTau2(
-  thetahat,
-  se,
-  control = list(stepadj = 0.5, maxiter = 1000, threshold = 1e-6)
+    thetahat,
+    se,
+    control = list(stepadj = 0.5, maxiter = 1000, threshold = 1e-6)
 )
-mymu <- seq(min(thetahat - 3 * se), max(thetahat + 3 * se), length.out=1000)
+mymu <- seq(
+    min(thetahat - 3 * se),
+    max(thetahat + 3 * se),
+    length.out = 1000
+)
 p_add <- kTRMu(
-  thetahat, se,
-  mymu,
-  tau2 = tau2,
-  phi = phi,
-  heterogeneity = "additive"
+    thetahat, se,
+    mymu,
+    tau2 = tau2,
+    phi = phi,
+    heterogeneity = "additive"
 )
 p_mult <- kTRMu(
-  thetahat,
-  se,
-  mymu,
-  tau2 = tau2,
-  phi = phi,
-  heterogeneity = "multiplicative"
+    thetahat,
+    se,
+    mymu,
+    tau2 = tau2,
+    phi = phi,
+    heterogeneity = "multiplicative"
 )
 }

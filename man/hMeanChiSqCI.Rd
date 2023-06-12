@@ -12,7 +12,7 @@ hMeanChiSqCI(
   wGamma = rep(1, length(unique(thetahat)) - 1),
   check_inputs = TRUE,
   pValueFUN = hMeanChiSqMu,
-  ...
+  pValueFUN_args
 )
 }
 \arguments{
@@ -41,8 +41,11 @@ to \code{FALSE} might be dangerous.}
 Must further have an argument \code{mu} that specifies the null-hypothesis.
 Defaults to \code{\link[hMean]{hMeanChiSqMu}}.}
 
-\item{...}{Arguments passed to \code{pValueFUN}. Arguments \code{thetahat}
-and \code{se} are automatically passed to \code{pValueFUN}.}
+\item{pValueFUN_args}{A named \code{list} with arguments passed to
+\code{pValueFUN}. This list should contain all arguments of \code{pValueFUN}
+that do not have a default. Arguments \code{thetahat}, \code{se}, and
+\code{mu} are automatically passed to \code{pValueFUN} and must thus not be
+included in this list.}
 }
 \value{
 Returns a list containing confidence interval(s)

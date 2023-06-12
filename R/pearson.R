@@ -1,5 +1,8 @@
-#' p-Value of Pearson combination test
+#' Calculate the p-value using the Pearson combination test.
 #'
+#' @details
+#' The function is is vectorized over the \code{mu} argument.
+#' 
 #' @template thetahat
 #' @template se
 #' @template mu
@@ -9,43 +12,40 @@
 #' @template alternative
 #' @template check_inputs
 #'
-#' @return The corresponding p-value given mu under the null-hypothesis.
+#' @return The corresponding p-values given mu under the null-hypothesis.
 #' @export
 #'
 #' @examples
-#' resP <- resH <- resTR <- numeric()
 #' n <- 15
 #' thetahat <- rnorm(n)
 #' se <- rgamma(n, 5, 5)
 #' mu <- seq(
 #'   min(thetahat) - 0.5 * max(se),
 #'   max(thetahat) + 0.5 * max(se),
-#'   length.out = 1e4
+#'   length.out = 1e5
 #' )
 #' phi <- estimatePhi(thetahat = thetahat, se = se)
-#' for(i in 1:length(mu)){
-#'   resP[i] <- pPearsonMu(
-#'     thetahat=thetahat,
-#'     se=se,
-#'     mu=mu[i],
-#'     heterogeneity="multiplicative",
-#'     phi=phi
-#'   )
-#'   resH[i] <- hMeanChiSqMu(
-#'     thetahat=thetahat,
-#'     se = se,
-#'     mu = mu[i],
-#'     heterogeneity = "multiplicative",
-#'     phi = phi
-#'   )
-#'   resTR[i] <- kTRMu(
+#' resP <- pPearsonMu(
 #'     thetahat = thetahat,
 #'     se = se,
-#'     mu = mu[i],
+#'     mu = mu,
 #'     heterogeneity = "multiplicative",
 #'     phi = phi
-#'   )
-#' }
+#' )
+#' resH <- hMeanChiSqMu(
+#'     thetahat = thetahat,
+#'     se = se,
+#'     mu = mu,
+#'     heterogeneity = "multiplicative",
+#'     phi = phi
+#' )
+#' resTR <- kTRMu(
+#'     thetahat = thetahat,
+#'     se = se,
+#'     mu = mu,
+#'     heterogeneity = "multiplicative",
+#'     phi = phi
+#' )
 #' par(las=1)
 #' matplot(
 #'   mu,
@@ -61,47 +61,58 @@
 pPearsonMu <- function(
     thetahat,
     se,
-    mu,
+    mu = 0,
     phi = NULL,
     tau2 = NULL,
-    alternative = "none",
     heterogeneity = c("none", "additive", "multiplicative"),
+    alternative = "none",
     check_inputs = TRUE
 ) {
 
     # check inputs
-    alternative <- match.arg(alternative)
-    heterogeneity <- match.arg(heterogeneity)
     if (check_inputs) {
-        stopifnot(
-            length(se) == length(thetahat) || length(se) == 1L,
-            is.null(phi) || is.numeric(phi) && is.finite(phi),
-            is.null(tau2) || is.numeric(tau2) && is.finite(tau2),
-            length(mu) == 1L
-        )
+      check_inputs_p_value(
+        thetahat = thetahat,
+        se = se,
+        mu = mu,
+        heterogeneity = heterogeneity,
+        alternative = alternative,
+        phi = phi,
+        tau2 = tau2
+      )
     }
 
     # recycle `se` if needed
-    if (length(se) == 1L) {
-        se <- rep(se, length(thetahat))
-    }
+    if (length(se) == 1L) se <- rep(se, length(thetahat))
 
-    # construct denominator
-    se <- switch(
-        heterogeneity,
-        "none" = se,
-        "additive" = sqrt(se^2 + tau2),
-        "multiplicative" = sqrt(se^2 * phi)
+    # adjust se based on heterogeneity model
+    se <- adjust_se(
+      se = se,
+      heterogeneity = heterogeneity,
+      phi = phi,
+      tau2 = tau2
     )
 
     # Get lengths
     n <- length(thetahat)
 
+    # implement alternatives
     if (alternative == "none") {
-        z <- (thetahat - mu) / se
-        p <- ReplicationSuccess::z2p(z, alternative = "two.sided")
-        tp <- -2 * sum(log(1 - p))
+        z <- vapply(
+            mu,
+            function(mu) {
+                (thetahat - mu) / se
+            },
+            double(length(thetahat))
+        )
+        if (is.null(dim(z)))
+            dim(z) <- c(1L, length(z))
+        # ReplicationSuccess::z2p
+        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) 
+        tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
         p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
+    } else {
+      stop("Invalid argument 'alternative'.")
     }
     return(p)
 }
