@@ -1,30 +1,30 @@
 #' Plot the p-value function(s) for a given set of studies
 #'
-#' @param thetahat Numeric vector of parameter estimates.
-#' @param se Numeric vector of standard errors.
-#' @param level Numeric vector of length 1 specifying the level of the
-#' confidence interval. Defaults to 0.95.
+#' @template thetahat
+#' @template se
+#' @template level
 #' @param distr Character vector of length 1 or 2. Valid options are
 #' either \code{"f"} or \code{"chisq"} or both. Denotes the distribution
 #' used in cases where \code{pValueFUN = "hMean"} but ignored otherwise.
 #' @param pValueFUN Character vector of length 1, 2 or 3. Valid options consist
-#' of any combination of \code{"hMean"}, \code{"k-Trials"} or \code{"Pearson"}.
+#' of any combination of \code{"hMean"}, \code{"k-Trials"}, or \code{"Pearson"}.
 #' \code{"hMean"} will add a line using \code{\link[hMean]{hMeanChiSqMu}} as the
-#'  p-value function whereas \code{"k-Trials"} adds a line using
-#' \code{\link[hMean]{kTRMu}} as the p-value function.
-#' @param heterogeneity One or more of c("none", "additive", "multiplicative").
-#' If heterogeneity = "none" p-values are returned for the passed se without
-#' any adaption. If heterogeneity = "additive", the standard errors se are
-#' reassigned the value of sqrt(se^2 + tau2) before computation of the p-values.
-#' If heterogeneity = "multiplicative", the standard errors se are multiplied
-#' with the value of phi before computation of the p-values.
-#' Defaults to "none".
+#' p-value function, \code{"k-Trials"} adds a line using 
+#' \code{\link[hMean]{kTRMu}} as the p-value function, and \code{"Pearson} uses
+#' \code{\link[hMean]{pPearsonMu}} as the p-value function.
+#' @param heterogeneity The heterogeneity model used to adjust the standard
+#' errors \code{se}. Valid options are any combination of \code{"none"}, 
+#' \code{"additive"}, or \code{"multiplicative"}. See also
+#' \code{\link[hMean]{hMeanChiSqMu}}.
+#' @param pValueFUN Any combination of \code{"hMean"}, \code{"k-Trials"}, and
+#' \code{"Pearson"}. This argument determines which methods are plotted in the
+#' resulting image.
+#' @template pValueFUN_args
 #' @param xlim Numeric vector of length 2 denoting the range of values
 #' on the x-axis, i.e. the effect size.
 #'
 #' @return An object of class \code{ggplot}. It contains the plot of the p-value
 #' functions specified by the input arguments.
-#' @export
 #'
 #' @examples
 #' thetahat <- c(-0.49, -0.17, -0.52, -0.48, -0.26, -0.36, -0.47, -0.3, -0.15,
@@ -42,11 +42,12 @@
 #'                  distr = distr,
 #'                  heterogeneity = heterogeneity,
 #'                  pValueFUN = pValueFUN)
+#' @export
 ggPvalueFunction <- function(
     thetahat,
     se,
     level = 0.95,
-    distr = c("f", "chisq"),
+    distr = c("chisq", "f"),
     heterogeneity = c("none", "additive", "multiplicative"),
     pValueFUN = c("hMean", "k-Trials", "Pearson"),
     pValueFUN_args,
