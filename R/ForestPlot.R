@@ -1,24 +1,24 @@
 #' Plot the forest plot for a given meta-analysis
 #'
-#' @template thetahat 
-#' @template se 
-#' @template level 
+#' @template thetahat
+#' @template se
+#' @template level
 #' @param distr Character vector of length 1 or 2. Valid options are
 #' either \code{"f"} or \code{"chisq"} or both. Denotes the distribution
 #' used in cases where \code{pValueFUN = "hMean"} but ignored otherwise.
 #' @param pValueFUN Character vector of length 1, 2 or 3. Valid options consist
 #' of any combination of \code{"hMean"}, \code{"k-Trials"}, or \code{"Pearson"}.
 #' \code{"hMean"} will add a line using \code{\link[hMean]{hMeanChiSqMu}} as the
-#' p-value function, \code{"k-Trials"} adds a line using 
+#' p-value function, \code{"k-Trials"} adds a line using
 #' \code{\link[hMean]{kTRMu}} as the p-value function, and \code{"Pearson"} uses
 #' \code{\link[hMean]{pPearsonMu}} as the p-value function.
 #' @param heterogeneity The heterogeneity model used to adjust the standard
-#' errors \code{se}. Valid options are any combination of \code{"none"}, 
+#' errors \code{se}. Valid options are any combination of \code{"none"},
 #' \code{"additive"}, or \code{"multiplicative"}. See also
 #' \code{\link[hMean]{hMeanChiSqMu}}.
 #' @param height The height of the polygons. Must be a numeric vector of length
 #' 1. Defaults to 0.5.
-#' @param studyNames Either \code{NULL} (the default) or a character vector of 
+#' @param studyNames Either \code{NULL} (the default) or a character vector of
 #' the same length as \code{thetahat} indicating the names of the individual
 #' studies.
 #'
@@ -40,9 +40,9 @@
 #'     se = se,
 #'     distr = distr,
 #'     pValueFUN = c("hMean", "k-Trials", "Pearson"),
-#'     heterogeneity = NULL
+#'     heterogeneity = heterogeneity
 #' )
-#' 
+#'
 #' @export
 ForestPlot <- function(
     thetahat,
@@ -76,7 +76,6 @@ ForestPlot <- function(
         name = studyNames,
         plottype = 0L,
         color = 0L,
-        #polygon = I(rep(list(NA), l_theta)),
         stringsAsFactors = FALSE,
         row.names = NULL
     )
@@ -99,29 +98,6 @@ ForestPlot <- function(
         },
         character(1L)
     )
-    # hMean <- "hMean" %in% pValueFUN
-    # ktrmu <- "k-Trials" %in% pValueFUN
-    # if (hMean)
-    #     grid_hmean <- expand.grid(
-    #         fun_name = "hMean",
-    #         heterogeneity = heterogeneity,
-    #         distr = distr,
-    #         stringsAsFactors = FALSE
-    #     )
-    # if (ktrmu)
-    #     grid_ktrmu <- expand.grid(
-    #         fun_name = "k-Trials",
-    #         heterogeneity = heterogeneity,
-    #         distr = NA_character_,
-    #         stringsAsFactors = FALSE
-    #     )
-    # if (hMean && ktrmu) {
-    #     grid <- rbind(grid_hmean, grid_ktrmu)
-    # } else if (hMean && !ktrmu) {
-    #     grid <- grid_hmean
-    # } else {
-    #     grid <- grid_ktrmu
-    # }
     grid$name <- with(
         grid,
         make_names(
