@@ -2,7 +2,7 @@
 #'
 #' @details
 #' The function is is vectorized over the \code{mu} argument.
-#' 
+#'
 #' @template thetahat
 #' @template se
 #' @template mu
@@ -108,7 +108,7 @@ pPearsonMu <- function(
         if (is.null(dim(z)))
             dim(z) <- c(1L, length(z))
         # ReplicationSuccess::z2p
-        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) 
+        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
         tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
         p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
     } else {
