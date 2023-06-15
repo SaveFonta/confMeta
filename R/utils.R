@@ -163,7 +163,7 @@ check_phiTau2_arg <- function(heterogeneity, phi, tau2) {
 }
 
 ## Checks the alternative argument
-check_alternative_arg <- function(alternative) {
+check_alternative_arg_hmean <- function(alternative) {
     if (
         length(alternative) != 1L ||
         !(alternative %in% c("none", "less", "greater", "two.sided"))
@@ -172,6 +172,48 @@ check_alternative_arg <- function(alternative) {
             paste0(
                 "Argument 'alternative' must be one of ",
                 "c('none', 'less', 'greater', 'two.sided')."
+            )
+        )
+}
+
+## Checks the alternative argument
+check_alternative_arg_edg <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("one.sided", "two.sided"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('one.sided', 'two.sided')."
+            )
+        )
+}
+
+## Checks the alternative argument
+check_alternative_arg_pearson <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none')."
+            )
+        )
+}
+
+## Checks the alternative argument
+check_alternative_arg_ktr <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none')."
             )
         )
 }
@@ -210,8 +252,7 @@ check_inputs_p_value <- function(
     heterogeneity,
     phi,
     tau2,
-    mu,
-    alternative
+    mu
 ) {
 
     # Check thetahat and se are numeric and finite
@@ -229,9 +270,6 @@ check_inputs_p_value <- function(
 
     # Check phi and tau2
     check_phiTau2_arg(heterogeneity = heterogeneity, phi = phi, tau2 = tau2)
-
-    # Check alternative argument
-    check_alternative_arg(alternative = alternative)
 }
 
 ################################################################################
@@ -275,6 +313,19 @@ check_pValueFUNArgs_arg <- function(pValueFUN_args, pValueFUN) {
     # arguments. Custom pValueFUNs might have entirely different Arguments.
 }
 
+check_alternative_arg_CI <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none", "two.sided", "one.sided", "less", "greater"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none', 'two.sided', 'one.sided', 'less', 'greater')."
+            )
+        )
+}
+
 # Summarise the above functions into one
 check_inputs_CI <- function(
     thetahat,
@@ -289,7 +340,7 @@ check_inputs_CI <- function(
     check_thetahat_arg(thetahat)
     check_se_arg(se = se, l_thetahat = length(thetahat))
     check_level_arg(level = level)
-    check_alternative_arg(alternative = alternative)
+    check_alternative_arg_CI(alternative = alternative)
     check_wGamma_arg(wGamma = wGamma, thetahat = thetahat)
     check_pValueFUN_arg(pValueFUN = pValueFUN)
     check_pValueFUNArgs_arg(pValueFUN_args = pValueFUN_args)
@@ -312,6 +363,28 @@ adjust_se <- function(se, heterogeneity, phi, tau2) {
             "additive" = sqrt(se^2 + tau2),
             "multiplicative" = se * sqrt(phi)
         )
+}
+
+
+################################################################################
+# Compute the z-values based on thetahat, se and vectorize over mu             #
+################################################################################
+# This function calculates the z values of thetahat and se for every value of mu
+# this function is used in the p-value functions:
+# - kTRMu
+# - hMeanChiSqMu
+# - pPearsonMu
+# - pEdgingtonMu
+
+get_z <- function(thetahat, se, mu) {
+    n <- length(thetahat)
+    z <- vapply(
+        mu,
+        function(mu) (thetahat - mu) / se,
+        double(n)
+    )
+    if (is.null(dim(z))) dim(z) <- c(1L, n)
+    z
 }
 
 ################################################################################

@@ -11,6 +11,11 @@
 #' @template heterogeneity
 #' @template alternative
 #' @template check_inputs
+#' @param approx Must be either TRUE (default) or FALSE. If TRUE, the p-value
+#' is computed using the normal approximation of the exact Irwin-Hall
+#' distribution if \code{length(thetahat) >= 12}. This avoids issues that can
+#' lead to overflow of the double precision floating point numbers R uses for
+#' numeric vectors.
 #'
 #' @return The corresponding p-values given mu under the null-hypothesis.
 #' @export
@@ -24,9 +29,8 @@
 #'   max(thetahat) + 0.5 * max(se),
 #'   length.out = 1e5
 #' )
-#' heterogeneity <- "none"
-#' phi <- NULL
-#' # phi <- estimatePhi(thetahat = thetahat, se = se)
+#' heterogeneity <- "multiplicative"
+#' phi <- estimatePhi(thetahat = thetahat, se = se)
 #' resP <- pPearsonMu(
 #'     thetahat = thetahat,
 #'     se = se,
@@ -48,14 +52,14 @@
 #'     heterogeneity = heterogeneity,
 #'     phi = phi
 #' )
-#' resE <- edgingtonMu(
+#' resE <- pEdgingtonMu(
 #'     thetahat = thetahat,
 #'     se = se,
 #'     mu = mu,
 #'     heterogeneity = heterogeneity,
 #'     phi = phi
 #' )
-#' par(las=1)
+#' par(las = 1)
 #' matplot(
 #'   mu,
 #'   cbind(resP, resH, resTR, resE),
@@ -72,29 +76,29 @@
 #' )
 #' title(paste("Phi =", as.character(round(phi, 2))))
 
-edgingtonMu <- function(
+pEdgingtonMu <- function(
     thetahat,
     se,
     mu = 0,
     phi = NULL,
     tau2 = NULL,
-    heterogeneity = c("none", "additive", "multiplicative"),
-    alternative = c("two.sided", "one.sided"),
+    heterogeneity = "none",
+    alternative = "two.sided",
     check_inputs = TRUE,
-    approx = FALSE
+    approx = TRUE
 ) {
 
     # check inputs
     if (check_inputs) {
-      check_inputs_p_value(
-        thetahat = thetahat,
-        se = se,
-        mu = mu,
-        heterogeneity = heterogeneity,
-        alternative = alternative,
-        phi = phi,
-        tau2 = tau2
-      )
+        check_inputs_p_value(
+            thetahat = thetahat,
+            se = se,
+            mu = mu,
+            heterogeneity = heterogeneity,
+            phi = phi,
+            tau2 = tau2
+        )
+        check_alternative_arg_edg(alternative = alternative)
     }
 
     # recycle `se` if needed
@@ -111,25 +115,18 @@ edgingtonMu <- function(
     # Get length
     n <- length(thetahat)
 
-    # implement alternatives
-    z <- vapply(
-        mu,
-        function(mu) {
-            (thetahat - mu) / se
-        },
-        double(n)
-    )
-    if (is.null(dim(z)))
-        dim(z) <- c(1L, n)
+    # get the z-values
+    z <- get_z(thetahat = thetahat, se = se, mu = mu)
     # convert them to p-values
     # p <- ReplicationSuccess::z2p(z, "two.sided")
     p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
-    Fx <- pirwinhall(colSums(p), n = n, approx = approx)
-    if (alternative == "two.sided") { # two.sided
-        p <- 2 * apply(matrix(c(Fx, 1 - Fx), ncol = 2L), 1L, min)
-    } else { # one.sided
-        p <- Fx
-    }
+    # sum up the p-values and calculate the probability
+    tp <- pirwinhall(q = colSums(p), n = n, approx = approx)
+    p <- switch(
+        alternative,
+        "one.sided" = 2 * apply(matrix(c(tp, 1 - tp), ncol = 2L), 1L, min),
+        "two.sided" = tp
+    )
     return(p)
 }
 
@@ -194,7 +191,7 @@ pirwinhall_approx <- function(q, n) {
         out <- pirwinhall_vec(q = q, n = n)
     } else if (n_norm_approx == l_n) {
         # if all(n > 11), just use pnorm for all elements
-        out <- pnorm(
+        out <- stats::pnorm(
             q = q,
             mean = n / 2,
             sd = sqrt(n / 12),
@@ -215,7 +212,7 @@ pirwinhall_approx <- function(q, n) {
         # fill it with the respective probabilities
         n_norm <- n[idx_approx]
         q_norm <- q[idx_approx]
-        out[idx_approx] <- pnorm(
+        out[idx_approx] <- stats::pnorm(
             q = q_norm,
             mean = n_norm / 2,
             sd = sqrt(n_norm / 12),
@@ -300,7 +297,7 @@ dirwinhall_approx <- function(x, n) {
         out <- dirwinhall_vec(x = x, n = n)
     } else if (n_norm_approx == l_n) {
         # if all(n > 11), just use pnorm for all elements
-        out <- dnorm(
+        out <- stats::dnorm(
             x = x,
             mean = n / 2,
             sd = sqrt(n / 12),
@@ -320,7 +317,7 @@ dirwinhall_approx <- function(x, n) {
         # fill it with the respective probabilities
         n_norm <- n[idx_approx]
         x_norm <- x[idx_approx]
-        out[idx_approx] <- dnorm(
+        out[idx_approx] <- stats::dnorm(
             x = x_norm,
             mean = n_norm / 2,
             sd = sqrt(n_norm / 12),
