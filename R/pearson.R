@@ -71,15 +71,15 @@ pPearsonMu <- function(
 
     # check inputs
     if (check_inputs) {
-      check_inputs_p_value(
-        thetahat = thetahat,
-        se = se,
-        mu = mu,
-        heterogeneity = heterogeneity,
-        alternative = alternative,
-        phi = phi,
-        tau2 = tau2
-      )
+        check_inputs_p_value(
+            thetahat = thetahat,
+            se = se,
+            mu = mu,
+            heterogeneity = heterogeneity,
+            phi = phi,
+            tau2 = tau2
+        )
+        check_alternative_arg_pearson(alternative = alternative)
     }
 
     # recycle `se` if needed
@@ -87,10 +87,10 @@ pPearsonMu <- function(
 
     # adjust se based on heterogeneity model
     se <- adjust_se(
-      se = se,
-      heterogeneity = heterogeneity,
-      phi = phi,
-      tau2 = tau2
+        se = se,
+        heterogeneity = heterogeneity,
+        phi = phi,
+        tau2 = tau2
     )
 
     # Get lengths
@@ -98,21 +98,13 @@ pPearsonMu <- function(
 
     # implement alternatives
     if (alternative == "none") {
-        z <- vapply(
-            mu,
-            function(mu) {
-                (thetahat - mu) / se
-            },
-            double(length(thetahat))
-        )
-        if (is.null(dim(z)))
-            dim(z) <- c(1L, length(z))
+        z <- get_z(thetahat = thetahat, se = se, mu = mu)
         # ReplicationSuccess::z2p
         p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
         tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
         p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
     } else {
-      stop("Invalid argument 'alternative'.")
+        stop("Invalid argument 'alternative'.")
     }
     return(p)
 }
