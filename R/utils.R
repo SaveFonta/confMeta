@@ -213,23 +213,23 @@ check_inputs_p_value <- function(
     mu,
     alternative
 ) {
-    
+
     # Check thetahat and se are numeric and finite
     ## thetahat
     check_thetahat_arg(thetahat = thetahat)
-    
+
     ## se
     check_se_arg(se = se, l_thetahat = length(thetahat))
-    
+
     # Check mu
     check_mu_arg(mu = mu)
-    
+
     # Check heterogeneity
     check_heterogeneity_arg(heterogeneity = heterogeneity)
-    
+
     # Check phi and tau2
     check_phiTau2_arg(heterogeneity = heterogeneity, phi = phi, tau2 = tau2)
-    
+
     # Check alternative argument
     check_alternative_arg(alternative = alternative)
 }
@@ -318,7 +318,7 @@ adjust_se <- function(se, heterogeneity, phi, tau2) {
 # Global variables                                                             #
 # This section is necessary because some of the functions in the ggplot2       #
 # package use non-standard evaluation (NSE) which leads to warnings/notes in   #
-# R CMD check. Thus we declare all of the variables here.                      # 
+# R CMD check. Thus we declare all of the variables here.                      #
 # ##############################################################################
 
 utils::globalVariables(
