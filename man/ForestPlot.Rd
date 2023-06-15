@@ -70,7 +70,7 @@ ForestPlot(
     se = se,
     distr = distr,
     pValueFUN = c("hMean", "k-Trials", "Pearson"),
-    heterogeneity = NULL
+    heterogeneity = heterogeneity
 )
 
 }

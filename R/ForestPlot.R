@@ -174,10 +174,10 @@ ForestPlot <- function(
             gamma = polygons
         )
     })
-    hmeanCIs <- do.call(`rbind`, lapply(hMeanCIs, `[[`, i = 1L))
+    hmeanCIs <- do.call("rbind", lapply(hMeanCIs, `[[`, i = 1L))
     hmeanPoly  <- stats::setNames(lapply(hMeanCIs, `[[`, i = 2L), grid$name)
     hmeanPoly <- do.call(
-        `rbind`,
+        "rbind",
         lapply(seq_along(hmeanPoly), function(z) {
             hmeanPoly[[z]]$name <- names(hmeanPoly)[z]
             hmeanPoly[[z]]
@@ -190,12 +190,12 @@ ForestPlot <- function(
         TE = thetahat, seTE = se, sm = "MD",
         level = level, method.tau = "REML"
     )
-    ## Hartung & Knapp
+    ## Hartung-Knapp
     hk <- meta::metagen(
         TE = thetahat, seTE = se, sm = "MD",
         level = level, method.tau = "REML", hakn = TRUE
     )
-    ## Henmi & Copas
+    ## Henmi-Copas
     hc <- metafor::hc(
         object = metafor::rma(yi = thetahat, sei = se, level = level)
     )
@@ -237,7 +237,7 @@ ForestPlot <- function(
         other_methods
     )
     otherPoly <- do.call(
-        `rbind`,
+        "rbind",
         lapply(seq_along(otherPoly), function(z) {
             otherPoly[[z]]$name <- names(otherPoly)[z]
             otherPoly[[z]]
@@ -425,5 +425,5 @@ calculate_polygon  <- function(CIs, thetahat, gammas = NULL, height, level) {
         colnames(out) <- c("id", "x", "y")
         out
     })
-    as.data.frame(do.call(`rbind`, poly))
+    as.data.frame(do.call("rbind", poly))
 }
