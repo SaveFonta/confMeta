@@ -38,21 +38,31 @@ make_grid <- function(pValueFUN, heterogeneity, distr) {
             stringsAsFactors = FALSE
         )
     }
+    make_grid_edgington <- function(heterogeneity, distr) {
+        distr <- NA_character_
+        expand.grid(
+            fun_name = "pEdgingtonMu",
+            heterogeneity = heterogeneity,
+            distr = distr,
+            stringsAsFactors = FALSE
+        )
+    }
     # Put functions in a named list
     grid_funs <- list(
         "hMean" = make_grid_hMean,
         "k-Trials" = make_grid_kTRMu,
-        "Pearson" = make_grid_pearson
+        "Pearson" = make_grid_pearson,
+        "Edgington" = make_grid_edgington
     )
     # Which P-value functions should be included in the grid
-    include_funs <- c("hMean", "k-Trials", "Pearson")
+    include_funs <- c("hMean", "k-Trials", "Pearson", "Edgington")
     include_funs <- include_funs[include_funs %in% pValueFUN]
     # Subset the list with function to include only those
     # p-value functions that were requested
     grid_funs <- grid_funs[include_funs]
     # Make the grid
     grid <- do.call(
-        rbind,
+        "rbind",
         lapply(
             grid_funs,
             function(fun, heterogeneity, distr) {

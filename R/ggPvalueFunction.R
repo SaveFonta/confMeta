@@ -33,7 +33,7 @@
 #'         0.372455823554997, 0.25000459389308, 0.295923805016299,
 #'         0.219391786477601, 0.14796190250815, 0.270413132170067,
 #'         0.500009187786161)
-#' pValueFUN <- c("hMean", "k-Trials", "Pearson")
+#' pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington")
 #' distr <- c("chisq")
 #' heterogeneity <- "none"
 #' ggPvalueFunction(thetahat = thetahat,
@@ -49,9 +49,9 @@ ggPvalueFunction <- function(
     level = 0.95,
     distr = c("chisq", "f"),
     heterogeneity = c("none", "additive", "multiplicative"),
-    pValueFUN = c("hMean", "k-Trials", "Pearson"),
+    pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington"),
     pValueFUN_args,
-    xlim = c(min(thetahat - 3 * se), max(thetahat + 3 * se))
+    xlim = c(min(thetahat - 2 * se), max(thetahat + 2 * se))
 ) {
 
     # get the p-value function(s)
@@ -107,7 +107,8 @@ ggPvalueFunction <- function(
         pval <- eval(p_call)
         CIs <- eval(CI_call)
 
-        # compile a data set
+        # make a data frame that contains the necessary information
+        # gamma_min (for point on the minimum), p-values, etc.
         idx <- which.min(CIs$gamma[, 2])
         gamma_min <- CIs$gamma[idx, 2]
         x_gamma_min <- CIs$gamma[idx, 1]
@@ -121,13 +122,15 @@ ggPvalueFunction <- function(
             y_gamma = rep(gamma_min, length(const$muSeq)),
             stringsAsFactors = FALSE
         )
-        # handle error bars
+        # handle error bars (display errorbars with a little jitter depending on
+        # heterogeneity)
         factor <- switch(
           grid_row$heterogeneity,
           "none" = 0,
           "additive" = 1,
           "multiplicative" = -1
         )
+        # make a second data frame for the display of confidence intervals
         df2 <- data.frame(
             xmin = unname(CIs$CI[, 1]),
             xmax = unname(CIs$CI[, 2]),
@@ -141,7 +144,9 @@ ggPvalueFunction <- function(
         df2$ymin <- df2$y - const$eb_height
         list(df1, df2)
     })
-    lines <- do.call(`rbind`, lapply(data, `[[`, i = 1L))
+    # Extract the data frame for the lines with p-value functions and add
+    # a group variable with the name of the legend entry
+    lines <- do.call("rbind", lapply(data, `[[`, i = 1L))
     lines$group <- with(
         lines,
         paste0(
@@ -150,7 +155,8 @@ ggPvalueFunction <- function(
             ifelse(is.na(distr), "", paste0("\ndistr: ", distr))
         )
     )
-    errorbars <- do.call(`rbind`, lapply(data, `[[`, i = 2L))
+    # Do the same for the data frame with the CIs
+    errorbars <- do.call("rbind", lapply(data, `[[`, i = 2L))
     errorbars$group <- with(
         errorbars,
         paste0(
@@ -160,9 +166,13 @@ ggPvalueFunction <- function(
         )
     )
 
+    # Define function for secondary y-axis
     trans <- function(x) abs(x - 1) * 100
+    # Define breaks for the primary y-axis
     breaks_y1 <- sort(c(1 - level, pretty(lines$y)))
+    # Compute breaks for the secondary y-axis
     breaks_y2 <- sort(trans(c(breaks_y1)))
+    # Set transparency
     transparency <- 1
 
     ## TODO: create a function that constructs the title

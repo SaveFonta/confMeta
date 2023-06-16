@@ -8,8 +8,8 @@ ForestPlot(
   thetahat,
   se,
   level = 0.95,
-  distr = c("chisq", "f"),
-  pValueFUN = c("hMean", "k-Trials", "Pearson"),
+  distr = c("chisq"),
+  pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington"),
   heterogeneity = c("none", "additive", "multiplicative"),
   height = 0.5,
   studyNames = NULL
@@ -62,14 +62,14 @@ se <- c(0.346945150708765, 0.214289651908355, 0.239800324754587,
         0.372455823554997, 0.25000459389308, 0.295923805016299,
         0.219391786477601, 0.14796190250815, 0.270413132170067,
         0.500009187786161)
-pValueFUN <- c("hMean", "k-Trials", "Pearson")
+pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington")
 distr <- c("chisq")
 heterogeneity <- "none"
 ForestPlot(
     thetahat = thetahat,
     se = se,
     distr = distr,
-    pValueFUN = c("hMean", "k-Trials", "Pearson"),
+    pValueFUN = pValueFUN,
     heterogeneity = heterogeneity
 )
 
