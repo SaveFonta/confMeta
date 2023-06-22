@@ -1,3 +1,6 @@
+# source globals
+source("globals.R")
+
 test_that("Results of kTRMu are consistent", {
   # Set inputs
   set.seed(42)
