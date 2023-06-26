@@ -1,4 +1,4 @@
-#' Calculate the p-value using the Pearson combination test.
+#' Calculate the p-value using the Fisher test.
 #'
 #' @details
 #' The function is is vectorized over the \code{mu} argument.
@@ -9,13 +9,7 @@
 #' @template phi
 #' @template tau2
 #' @template heterogeneity
-#' @template alternative
 #' @template check_inputs
-#' @param approx Must be either TRUE (default) or FALSE. If TRUE, the p-value
-#' is computed using the normal approximation of the exact Irwin-Hall
-#' distribution if \code{length(thetahat) >= 12}. This avoids issues that can
-#' lead to overflow of the double precision floating point numbers R uses for
-#' numeric vectors.
 #'
 #' @return The corresponding p-values given mu under the null-hypothesis.
 #' @examples
@@ -83,7 +77,6 @@
 #'
 #' @export
 #'
-
 pFisherMu <- function(
     thetahat,
     se,
