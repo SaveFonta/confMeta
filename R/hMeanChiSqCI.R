@@ -52,7 +52,8 @@
 #'     "pearson" = hMean::pPearsonMu,
 #'     "hMean" = hMean::hMeanChiSqMu,
 #'     "k-Trials" = hMean::kTRMu,
-#'     "edgington" = hMean::pEdgingtonMu
+#'     "edgington" = hMean::pEdgingtonMu,
+#'     "fisher" = hMean::pFisherMu
 #' )
 #' p_vals <- do.call(
 #'     "cbind",
@@ -100,13 +101,14 @@
 #'     matplot(
 #'         mu,
 #'         p_vals,
-#'         type = "l", lty = 1, lwd = 3, ylab = "p-value function"
+#'         type = "l", lty = 1, lwd = 3,
+#'         ylab = "p-value function", xlab = expression(mu)
 #'     )
 #'     legend("topleft",
 #'         col = c(1, 2, 3, 4),
 #'         lwd = 3,
 #'         lty = 1,
-#'         legend = c("Pearson", "hMean", "k-Trials", "Edgington"),
+#'         legend = c("Pearson", "hMean", "k-Trials", "Edgington", "Fisher"),
 #'         bty = "n",
 #'         cex = 2
 #'     )
@@ -157,8 +159,8 @@
 #'     par(opar)
 #' }
 #' plot_res(mu = mu, p_vals = p_vals, cis = cis)
+#'
 #' @export
-
 hMeanChiSqCI <- function(
   thetahat,
   se,
