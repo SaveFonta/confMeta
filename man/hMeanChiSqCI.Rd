@@ -142,7 +142,7 @@ plot_res <- function(
         ylab = "p-value function", xlab = expression(mu)
     )
     legend("topleft",
-        col = c(1, 2, 3, 4),
+        col = c(1, 2, 3, 4, 5),
         lwd = 3,
         lty = 1,
         legend = c("Pearson", "hMean", "k-Trials", "Edgington", "Fisher"),
