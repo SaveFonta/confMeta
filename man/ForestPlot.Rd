@@ -8,7 +8,7 @@ ForestPlot(
   thetahat,
   se,
   level = 0.95,
-  distr = c("chisq"),
+  distr = c("chisq", "f"),
   pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
   heterogeneity = c("none", "additive", "multiplicative"),
   height = 0.5,
