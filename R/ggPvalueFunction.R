@@ -49,7 +49,7 @@ ggPvalueFunction <- function(
     level = 0.95,
     distr = c("chisq", "f"),
     heterogeneity = c("none", "additive", "multiplicative"),
-    pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington"),
+    pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
     pValueFUN_args,
     xlim = c(min(thetahat - 2 * se), max(thetahat + 2 * se))
 ) {
@@ -106,6 +106,12 @@ ggPvalueFunction <- function(
         CI_call <- make_CI_call(p_call = p_call, level = level)
         pval <- eval(p_call)
         CIs <- eval(CI_call)
+        # hMeanChiSqCI(
+        #     thetahat = thetahat,
+        #     se = se,
+        #     level = level,
+        #     pValueFUN = "Fisher"
+        # )
 
         # make a data frame that contains the necessary information
         # gamma_min (for point on the minimum), p-values, etc.
@@ -146,7 +152,7 @@ ggPvalueFunction <- function(
     })
     # Extract the data frame for the lines with p-value functions and add
     # a group variable with the name of the legend entry
-    lines <- do.call("rbind", lapply(data, `[[`, i = 1L))
+    lines <- do.call("rbind", lapply(data, "[[", i = 1L))
     lines$group <- with(
         lines,
         paste0(
@@ -156,7 +162,7 @@ ggPvalueFunction <- function(
         )
     )
     # Do the same for the data frame with the CIs
-    errorbars <- do.call("rbind", lapply(data, `[[`, i = 2L))
+    errorbars <- do.call("rbind", lapply(data, "[[", i = 2L))
     errorbars$group <- with(
         errorbars,
         paste0(

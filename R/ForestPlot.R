@@ -49,11 +49,11 @@ ForestPlot <- function(
     se,
     level = 0.95,
     distr = c("chisq"),
-    pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington"),
+    pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
     heterogeneity = c("none", "additive", "multiplicative"),
     height = 0.5,
     studyNames = NULL
-    ) {
+) {
 
     # get the p-value function(s)
     pValueFUN <- match.arg(pValueFUN, several.ok = TRUE)
@@ -94,7 +94,8 @@ ForestPlot <- function(
                 "hMeanChiSqMu" = "hMean",
                 "kTRMu" = "k-Trials",
                 "pPearsonMu" = "Pearson",
-                "pEdgingtonMu" = "Edgington"
+                "pEdgingtonMu" = "Edgington",
+                "pFisherMu" = "Fisher"
             )
         },
         character(1L)
@@ -124,7 +125,8 @@ ForestPlot <- function(
             "hMean" = hMean::hMeanChiSqMu,
             "k-Trials" = hMean::kTRMu,
             "Pearson" = hMean::pPearsonMu,
-            "Edgington" = hMean::pEdgingtonMu
+            "Edgington" = hMean::pEdgingtonMu,
+            "Fisher" = hMean::pFisherMu
         )
         # Put arguments in a list
         arglist <- list(
