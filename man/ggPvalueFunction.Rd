@@ -10,7 +10,7 @@ ggPvalueFunction(
   level = 0.95,
   distr = c("chisq", "f"),
   heterogeneity = c("none", "additive", "multiplicative"),
-  pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington"),
+  pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
   pValueFUN_args,
   xlim = c(min(thetahat - 2 * se), max(thetahat + 2 * se))
 )
