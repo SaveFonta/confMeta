@@ -252,26 +252,35 @@ hMeanChiSqCI <- function(
 
         ## For the intervals in the middle, compute the minimum and the
         ## corresponding p-value
-        gam <- t(
-            vapply(
-                seq_len(n_intervals),
-                function(i) {
-                    opt <- stats::optimize(
-                        f = f,
-                        lower = thetahat[i],
-                        upper = thetahat[i + 1L]
-                    )
-                    c(opt$minimum, opt$objective)
-                },
-                double(2L)
+        if (n_intervals == 0) {
+            gam <- matrix(NA_real_, ncol = 2L, nrow = 1L)
+        } else {
+            gam <- t(
+                vapply(
+                    seq_len(n_intervals),
+                    function(i) {
+                        opt <- stats::optimize(
+                            f = f,
+                            lower = thetahat[i],
+                            upper = thetahat[i + 1L]
+                        )
+                        c(opt$minimum, opt$objective)
+                    },
+                    double(2L)
+                )
             )
-        )
+        }
         colnames(gam) <- c("minimum", "pvalue_fun/gamma")
 
         # Whereever the p-value function is negative at the minimum,
         # search for the two roots. Also add the lower and upper bound
+        # If there is no minimum (i.e. only one thetahat is positive),
+        # then, we can also just use lower & upper for the CI
         minima <- gam[, 2L]
-        if (any(minima < 0)) {
+        one_pos_theta_only <- length(minima) == 1L && is.na(minima)
+        exist_neg_minima <- any(minima < 0)
+        search_roots <- !one_pos_theta_only && exist_neg_minima
+        if (search_roots) {
             negative <- seq_len(nrow(gam))[minima < 0]
             min <- gam[, 1L][negative]
             CI <- vapply(
@@ -298,7 +307,9 @@ hMeanChiSqCI <- function(
         colnames(CI) <- c("lower", "upper")
 
         # Increase the y-coordinate of the minima by alpha
-        gam[, 2L] <- gam[, 2L] + get("alpha", envir = environment(f))
+        if (!one_pos_theta_only) {
+            gam[, 2L] <- gam[, 2L] + get("alpha", envir = environment(f))
+        }
 
         # return
         out <- list(
