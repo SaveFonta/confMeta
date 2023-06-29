@@ -205,16 +205,15 @@ server <- function(input, output, session) {
         }
     )
 
-    pars <- list(
-        thetahat = rnorm(3),
-        se = rgamma(3, 5, 5),
-        level = 0.95,
-        het = "none",
-        pValueFUN = c("hMean", "Edgington", "Fisher"),
-        distr = c("chisq", "f")
-    )
-    make_plot(pars)
-
+    # pars <- list(
+    #     thetahat = rnorm(3),
+    #     se = rgamma(3, 5, 5),
+    #     level = 0.95,
+    #     het = "none",
+    #     pValueFUN = c("hMean", "Edgington", "Fisher"),
+    #     distr = c("chisq", "f")
+    # )
+    # make_plot(pars)
 
     output$plot1 <- renderPlot(make_plot(pars1()))
     output$plot2 <- renderPlot(make_plot(pars2()))
