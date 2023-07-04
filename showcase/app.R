@@ -79,7 +79,13 @@ ui <- fluidPage(
                 "level1", "Confidence level",
                 value = 0.95, min = 0.001, max = 0.999, step = 0.001
             ),
-            sliderInput("xlim1", "Range of x-axis", value = c(-3, 3))
+            sliderInput(
+                "xlim1",
+                "Range of x-axis",
+                min = -20,
+                max = 20,
+                value = c(-5, 5)
+            )
         ),
         # column(
         #     6,
