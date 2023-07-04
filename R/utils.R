@@ -115,7 +115,8 @@ make_names <- function(FUN, heterogeneity, distr) {
         character(1L)
     )
     # handle distr
-    if (!is.na(distr))
+    do_distr <- !(length(distr) == 1L && is.na(distr))
+    if (do_distr)
         distr <- ifelse(is.na(distr), "", paste0(" (", distr, ")"))
     else
         distr <- rep("", length(FUN))
