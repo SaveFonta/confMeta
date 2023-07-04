@@ -1,21 +1,3 @@
-# n <- 15
-# mean <- 0
-# sd <- 1.3
-# shape <- 5
-# rate <- 5
-# thetahat <- rnorm(n, mean = mean, sd = sd)
-# se <- rgamma(n, shape = shape, rate = rate)
-# heterogeneity <- "none"
-# pValueFUN <- c("hMean", "Pearson", "Edgington", "Fisher")
-# distr <- "f"
-# level <- 0.95
-# diamond_height <- 0.5
-# v_space <- 1.5
-# studyNames <- NULL
-# xlim <- NULL
-
-
-
 #' Plot the forest plot for a given meta-analysis
 #'
 #' @template thetahat
