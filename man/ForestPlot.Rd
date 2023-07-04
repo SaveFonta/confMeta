@@ -11,8 +11,10 @@ ForestPlot(
   distr = c("chisq", "f"),
   pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
   heterogeneity = c("none", "additive", "multiplicative"),
-  height = 0.5,
-  studyNames = NULL
+  diamond_height = 0.5,
+  v_space = 1.5,
+  studyNames = NULL,
+  xlim = NULL
 )
 }
 \arguments{
@@ -39,14 +41,18 @@ errors \code{se}. Valid options are any combination of \code{"none"},
 \code{"additive"}, or \code{"multiplicative"}. See also
 \code{\link[hMean]{hMeanChiSqMu}}.}
 
-\item{height}{The height of the polygons. Must be a numeric vector of length
-\enumerate{
-\item Defaults to 0.5.
-}}
+\item{diamond_height}{The height of the polygons. Must be a numeric vector of
+length 1. Defaults to 0.5.}
+
+\item{v_space}{A numeric vector of length 1 indicating the vertical space
+between the different rows of the plot. Default is 1.5.}
 
 \item{studyNames}{Either \code{NULL} (the default) or a character vector of
 the same length as \code{thetahat} indicating the names of the individual
 studies.}
+
+\item{xlim}{Either \code{NULL} (default) or a numeric vector of length 2,
+indicating the limits of the x-axis.}
 }
 \value{
 An object of class \code{ggplot}. The object contains everything
@@ -62,7 +68,7 @@ se <- c(0.346945150708765, 0.214289651908355, 0.239800324754587,
         0.372455823554997, 0.25000459389308, 0.295923805016299,
         0.219391786477601, 0.14796190250815, 0.270413132170067,
         0.500009187786161)
-pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington")
+pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher")
 distr <- c("chisq")
 heterogeneity <- "none"
 ForestPlot(

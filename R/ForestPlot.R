@@ -1,3 +1,21 @@
+# n <- 15
+# mean <- 0
+# sd <- 1.3
+# shape <- 5
+# rate <- 5
+# thetahat <- rnorm(n, mean = mean, sd = sd)
+# se <- rgamma(n, shape = shape, rate = rate)
+# heterogeneity <- "none"
+# pValueFUN <- c("hMean", "Pearson", "Edgington", "Fisher")
+# distr <- "f"
+# level <- 0.95
+# diamond_height <- 0.5
+# v_space <- 1.5
+# studyNames <- NULL
+# xlim <- NULL
+
+
+
 #' Plot the forest plot for a given meta-analysis
 #'
 #' @template thetahat
@@ -16,11 +34,15 @@
 #' errors \code{se}. Valid options are any combination of \code{"none"},
 #' \code{"additive"}, or \code{"multiplicative"}. See also
 #' \code{\link[hMean]{hMeanChiSqMu}}.
-#' @param height The height of the polygons. Must be a numeric vector of length
-#' 1. Defaults to 0.5.
+#' @param diamond_height The height of the polygons. Must be a numeric vector of
+#' length 1. Defaults to 0.5.
 #' @param studyNames Either \code{NULL} (the default) or a character vector of
 #' the same length as \code{thetahat} indicating the names of the individual
 #' studies.
+#' @param xlim Either \code{NULL} (default) or a numeric vector of length 2,
+#' indicating the limits of the x-axis.
+#' @param v_space A numeric vector of length 1 indicating the vertical space
+#' between the different rows of the plot. Default is 1.5.
 #'
 #' @return An object of class \code{ggplot}. The object contains everything
 #' necessary to plot the forest plot.
@@ -32,7 +54,7 @@
 #'         0.372455823554997, 0.25000459389308, 0.295923805016299,
 #'         0.219391786477601, 0.14796190250815, 0.270413132170067,
 #'         0.500009187786161)
-#' pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington")
+#' pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher")
 #' distr <- c("chisq")
 #' heterogeneity <- "none"
 #' ForestPlot(
@@ -51,8 +73,10 @@ ForestPlot <- function(
     distr = c("chisq", "f"),
     pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
     heterogeneity = c("none", "additive", "multiplicative"),
-    height = 0.5,
-    studyNames = NULL
+    diamond_height = 0.5,
+    v_space = 1.5,
+    studyNames = NULL,
+    xlim = NULL
 ) {
 
     # get the p-value function(s)
@@ -69,6 +93,7 @@ ForestPlot <- function(
     se_term <- stats::qnorm(level) * se
     l_theta <- length(thetahat)
 
+    # Make a data frame for the single studies
     studyCIs <- data.frame(
         lower = thetahat - se_term,
         upper = thetahat + se_term,
@@ -80,301 +105,336 @@ ForestPlot <- function(
         row.names = NULL
     )
 
+    # Get the dataframe for the polygons of the new methods
+    new_method_cis <- get_CI_new_methods(
+        thetahat = thetahat,
+        se = se,
+        heterogeneity = heterogeneity,
+        pValueFUN = pValueFUN,
+        distr = distr,
+        level = level,
+        diamond_height = diamond_height
+    )
+
+    # Get the dataframe for the polygons of the old methods
+    old_methods_cis <- get_CI_old_methods(
+        thetahat = thetahat,
+        se = se,
+        level = level,
+        diamond_height = diamond_height
+    )
+
+    # Assemble the dataset
+    polygons <- rbind(old_methods_cis, new_method_cis)
+
+    # Some cosmetics
+    ## If any of the CIs does not exist, replace the row
+    na_cis <- anyNA(polygons$x)
+    if (na_cis) {
+        # Which methods have an NA CI
+        na_methods <- with(polygons, unique(name[is.na(x)]))
+        # Mark it with a new variable
+        polygons$ci_exists <- ifelse(polygons$name %in% na_methods, FALSE, TRUE)
+        # Set y coordinate to 0
+        idx <- with(polygons, name %in% na_methods)
+        polygons$y[idx] <- 0
+        polygons$x[idx] <- 0
+    } else {
+        polygons$ci_exists <- TRUE
+    }
+    ## Assign correct y-coordinate
+    methods <- unique(polygons$name)
+    n_methods <- length(methods)
+    spacing <- seq(
+        (nrow(studyCIs) + n_methods + 1L) * v_space,
+        v_space,
+        by = -v_space
+    )
+    studyCIs$y <- spacing[seq_len(nrow(studyCIs))]
+    method_spacing <- spacing[(nrow(studyCIs) + 2L):length(spacing)]
+    for (i in seq_along(methods)) {
+        idx <- with(polygons, name == methods[i])
+        polygons$y[idx] <- polygons$y[idx] + method_spacing[i]
+    }
+    ## Try making color to factor
+    polygons$color <- factor(polygons$color)
+
+    # Make the plot
+    p <- ggplot2::ggplot() +
+        # ggplot2::ylim(c(0, max(spacing) + v_space)) +
+        ggplot2::geom_errorbarh(
+            data = studyCIs,
+            ggplot2::aes(
+                y = y,
+                xmin = lower,
+                xmax = upper,
+                height = diamond_height
+            ),
+            show.legend = FALSE
+        ) +
+        ggplot2::geom_point(
+            data = studyCIs,
+            ggplot2::aes(x = estimate, y = y)
+        ) +
+        ggplot2::geom_polygon(
+            data = polygons[polygons$ci_exists == TRUE, ],
+            ggplot2::aes(
+                x = x,
+                y = y,
+                group = paste0(name, ".", id),
+                fill = color
+            ),
+            show.legend = FALSE
+        ) +
+        ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
+        ggplot2::theme_minimal() +
+        ggplot2::theme(
+            axis.title.y = ggplot2::element_blank(),
+            axis.line.x = ggplot2::element_line(linetype = "solid"),
+            axis.ticks.x = ggplot2::element_line(linetype = "solid"),
+            panel.border = ggplot2::element_blank(),
+            axis.ticks = ggplot2::element_blank(),
+            panel.grid.minor = ggplot2::element_blank(),
+            panel.grid.major.y = ggplot2::element_blank()
+        ) +
+        ggplot2::scale_y_continuous(
+            breaks = spacing,
+            labels = c(studyCIs$name, "", unique(polygons$name))
+        ) +
+        ggplot2::labs(
+            x = bquote(mu)
+        ) +
+        ggplot2::scale_fill_discrete(
+            type = c(
+                "gray20",
+                scales::hue_pal()(length(unique(stats::na.omit(polygons$color))) - 1L)
+            )
+        )
+    if (na_cis) {
+        na_rows <- polygons[polygons$ci_exists == FALSE, ]
+        for (i in seq_len(nrow(na_rows))) {
+            p <- p + ggplot2::annotate(
+                geom = "text",
+                x = na_rows$x[i],
+                y = na_rows$y[i],
+                label = "CI does not exist"
+            )
+        }
+    }
+    if (!is.null(xlim)) {
+        p <- p + ggplot2::xlim(xlim)
+
+    }
+    p
+
+}
+
+
+get_CI_new_methods <- function(
+    thetahat,
+    se,
+    heterogeneity,
+    pValueFUN,
+    distr,
+    level,
+    diamond_height
+) {
+
     # Set up the grid to loop over
     grid <- make_grid(
         pValueFUN = pValueFUN,
         heterogeneity = heterogeneity,
         distr = distr
     )
-    grid$pretty_name <- vapply(
-        grid$fun_name,
-        function(x) {
-            switch(
-                x,
-                "hMeanChiSqMu" = "hMean",
-                "kTRMu" = "k-Trials",
-                "pPearsonMu" = "Pearson",
-                "pEdgingtonMu" = "Edgington",
-                "pFisherMu" = "Fisher"
-            )
-        },
-        character(1L)
-    )
-    grid$name <- with(
-        grid,
-        make_names(
-            FUN = pretty_name,
-            heterogeneity = heterogeneity,
-            distr = distr
-        )
-    )
 
-    # Calculate phi and tau2
+    # Calculate phi and tau2 (This is the same for all scenarios)
     phi <- hMean::estimatePhi(thetahat, se)
     tau2 <- hMean::estimateTau2(thetahat, se)
 
-    # Calculate the CIs for hMean and k-Trial
-    hMeanCIs <- lapply(seq_len(nrow(grid)), function(x) {
+    out <- lapply(seq_len(nrow(grid)), function(r) {
+
         # determine whether to pass phi or tau2
-        het <- grid$heterogeneity[x]
+        het <- grid$heterogeneity[r]
         phi_pass <- if (het == "multiplicative") phi else NULL
         tau2_pass <- if (het == "additive") tau2 else NULL
+        # determine distr
+        distr <- grid$distr[r]
         # get the p-Value function
-        pValueFUN <- switch(
-            grid$pretty_name[x],
-            "hMean" = hMean::hMeanChiSqMu,
-            "k-Trials" = hMean::kTRMu,
-            "Pearson" = hMean::pPearsonMu,
-            "Edgington" = hMean::pEdgingtonMu,
-            "Fisher" = hMean::pFisherMu
+        pValueFUN <- get(grid$fun_name[r])
+        # determine the arguments for the pvalue function
+        pValueFUN_args <- list(
+            heterogeneity = het,
+            phi = phi_pass,
+            tau2 = tau2_pass,
+            check_inputs = FALSE
         )
-        # Put arguments in a list
-        arglist <- list(
+        if (!is.na(distr)) {
+            pValueFUN_args <- append(pValueFUN_args, list(distr = distr))
+        }
+        # Calculate the CIs and the minima
+        res <- hMeanChiSqCI(
             thetahat = thetahat,
             se = se,
             level = level,
+            alternative = "none",
             pValueFUN = pValueFUN,
-            pValueFUN_args = list(
-                heterogeneity = het,
-                phi = phi_pass,
-                tau2 = tau2_pass
-            )
+            pValueFUN_args = pValueFUN_args
         )
-        if (grid$fun_name[x] == "hMean") {
-            arglist$pValueFUN_args <- append(
-                arglist$pValueFUN_args,
-                list(
-                    alternative = "none",
-                    distr = grid$distr[x]
+        ci_exists <- if (all(is.na(res$CI))) FALSE else TRUE
+        if (ci_exists) {
+            # evaluate pValueFUN at thetahat to get the maxima for the diamond
+            f_thetahat <- do.call(
+                "pValueFUN",
+                append(
+                    list(thetahat = thetahat, se = se, mu = thetahat),
+                    pValueFUN_args
                 )
             )
+            # Extract the CIs and minima
+            CI  <- res$CI
+            gamma  <- res$gamma
+            # Calculate the polygons for the diamond
+            polygons <- calculate_polygon_2(
+                CIs = CI,
+                thetahat = thetahat,
+                f_thetahat = f_thetahat,
+                gammas = gamma,
+                diamond_height = diamond_height,
+                level = level
+            )
+            polygons$name <- grid$name[r]
+            polygons$color <- r
+
+            ## Assemble output
+            polygons
+        } else {
+            data.frame(
+                x = NA_real_,
+                y = NA_real_,
+                id = NA_real_,
+                name = grid$name[r],
+                color = NA_real_
+            )
         }
-        # Call hMeanChiSqCI on the arguments
-        res <- do.call(hMean::hMeanChiSqCI, arglist)
-        # extract the CIs
-        CI  <- res$CI
-        # Compute the polygons
-        gamma  <- res$gamma
-        polygons <- calculate_polygon(
-            CIs = CI,
-            thetahat = thetahat,
-            gammas = gamma,
-            height = height,
-            level = level
-        )
-
-        ## Assemble output
-        list(
-            CI = data.frame(
-                lower = rep(CI[, 1L], l_theta),
-                upper = rep(CI[, 2L], l_theta),
-                estimate = rep(thetahat, each = nrow(res$CI)),
-                name = grid$name[x],
-                plottype = 1L,
-                color = x,
-                stringsAsFactors = FALSE,
-                row.names = NULL
-            ),
-            gamma = polygons
-        )
+        # list(
+        #     CI = data.frame(
+        #         lower = CI[, 1L],
+        #         upper = CI[, 2L],
+        #         name = grid$name[r],
+        #         plottype = 1L,
+        #         color = r,
+        #         stringsAsFactors = FALSE,
+        #         row.names = NULL
+        #     ),
+        #     polygons = polygons
+        # )
     })
-    hmeanCIs <- do.call("rbind", lapply(hMeanCIs, `[[`, i = 1L))
-    hmeanPoly  <- stats::setNames(lapply(hMeanCIs, `[[`, i = 2L), grid$name)
-    hmeanPoly <- do.call(
-        "rbind",
-        lapply(seq_along(hmeanPoly), function(z) {
-            hmeanPoly[[z]]$name <- names(hmeanPoly)[z]
-            hmeanPoly[[z]]
-        })
-    )
+    do.call("rbind", out)
+}
 
-    # Calculate CIs for the classic methods
-    ## REML
-    reml <- meta::metagen(
-        TE = thetahat, seTE = se, sm = "MD",
-        level = level, method.tau = "REML"
-    )
-    ## Hartung-Knapp
-    hk <- meta::metagen(
-        TE = thetahat, seTE = se, sm = "MD",
-        level = level, method.tau = "REML", hakn = TRUE
-    )
-    ## Henmi-Copas
-    hc <- metafor::hc(
-        object = metafor::rma(yi = thetahat, sei = se, level = level)
-    )
+
+get_CI_old_methods <- function(
+    thetahat,
+    se,
+    level,
+    diamond_height
+) {
+
+
+    # Get the object
+    get_obj_reml <- function(thetahat, se, level) {
+        meta::metagen(
+            TE = thetahat, seTE = se, sm = "MD",
+            level = level, method.tau = "REML"
+        )
+    }
+    get_obj_hk <- function(thetahat, se, level) {
+        meta::metagen(
+            TE = thetahat, seTE = se, sm = "MD",
+            level = level, method.tau = "REML", hakn = TRUE
+        )
+    }
+    get_obj_hc <- function(thetahat, se, level) {
+        metafor::hc(
+            object = metafor::rma(yi = thetahat, sei = se, level = level)
+        )
+    }
+    get_obj <- function(method, thetahat, se, level) {
+        switch(
+            method,
+            "Random Effects, REML" = get_obj_reml(
+                thetahat = thetahat,
+                se = se,
+                level = level
+            ),
+            "Hartung & Knapp" = get_obj_hk(
+                thetahat = thetahat,
+                se = se,
+                level = level
+            ),
+            "Henmi & Copas" = get_obj_hc(
+                thetahat = thetahat,
+                se = se,
+                level = level
+            )
+        )
+    }
+    # Get the CI
+    get_ci_reml <- function(reml) {
+        m <- matrix(c(reml$lower.random, reml$upper.random), ncol = 2L)
+        colnames(m) <- c("lower", "upper")
+        m
+    }
+    get_ci_hk <- function(hk) {
+        m <- matrix(c(hk$lower.random, hk$upper.random), ncol = 2L)
+        colnames(m) <- c("lower", "upper")
+        m
+    }
+    get_ci_hc <- function(hc) {
+        m <- matrix(c(hc$ci.lb, hc$ci.ub), ncol = 2L)
+        colnames(m) <- c("lower", "upper")
+        m
+    }
+    get_ci <- function(method, obj) {
+        switch(
+            method,
+            "Random Effects, REML" = get_ci_reml(reml = obj),
+            "Hartung & Knapp" = get_ci_hk(hk = obj),
+            "Henmi & Copas" = get_ci_hc(hc = obj)
+        )
+    }
 
     # Make a table with the classic methods
     other_methods <- c(
         "Random Effects, REML", "Hartung & Knapp", "Henmi & Copas"
     )
-    other_CIs <- data.frame(
-        lower = c(reml$lower.random, hk$lower.random, hc$ci.lb),
-        upper = c(reml$upper.random, hk$upper.random, hc$ci.ub),
-        estimate = c(
-            mean(c(reml$lower.random, reml$upper.random)),
-            mean(c(hk$lower.random, hk$upper.random)),
-            mean(c(hc$ci.lb, hc$ci.ub))
-        ),
-        name = other_methods,
-        plottype = 1L,
-        color = 0L,
-        stringsAsFactors = FALSE,
-        row.names = NULL
-    )
-    # Compute the polygons for these methods as well
-    otherPoly <- stats::setNames(
-        apply(
-            as.matrix(other_CIs[c("lower", "upper", "estimate")]),
-            1L,
-            function(z) {
-                dim(z) <- c(1L, 3L)
-                out <- calculate_polygon(
-                    CIs = z[, 1:2, drop = FALSE],
-                    thetahat = z[, 3L],
-                    height = height,
+
+    do.call(
+        "rbind",
+        lapply(
+            other_methods,
+            function(x) {
+                obj <- get_obj(
+                    method = x,
+                    thetahat = thetahat,
+                    se = se,
                     level = level
                 )
-                out
+                ci <- get_ci(method = x, obj = obj)
+                est <- mean(ci)
+                data.frame(
+                    x = c(ci[, "lower"], est, ci[, "upper"], est),
+                    y = c(0, -diamond_height / 2, 0, diamond_height / 2),
+                    id = 1,
+                    name = x,
+                    color = 0
+                )
             }
-        ),
-        other_methods
-    )
-    otherPoly <- do.call(
-        "rbind",
-        lapply(seq_along(otherPoly), function(z) {
-            otherPoly[[z]]$name <- names(otherPoly)[z]
-            otherPoly[[z]]
-        })
-    )
-
-    # Compose data sets for plotting
-    dataCIs <- rbind(
-        studyCIs,
-        other_CIs,
-        hmeanCIs
-    )
-
-    dataPoly <- rbind(
-        otherPoly,
-        hmeanPoly
-    )
-
-    # Construct the plot
-    ## Calculate positioning of for each of the intervals
-    unique_intervals <- unique(dataCIs$name)
-    y  <- data.frame(
-        name = unique_intervals,
-        y = rev(seq_along(unique_intervals)),
-        stringsAsFactors = FALSE
-    )
-    y$y[seq_along(thetahat)] <- y$y[seq_along(thetahat)] + 1L
-    dataCIs <- merge(
-        dataCIs, y,
-        by = "name",
-        sort = FALSE,
-        all.x = TRUE,
-        all.y = FALSE
-    )
-    dataPoly <- merge(
-        dataPoly, y,
-        by = "name",
-        sort = FALSE,
-        all.x = TRUE,
-        all.y = FALSE
-    )
-    dataPoly$y <- dataPoly$y.x + dataPoly$y.y
-    dataPoly <- dataPoly[c("name", "id", "x", "y")]
-
-    # Construct id column for each polygon
-    dataPoly$ID <- with(dataPoly, paste(name, id))
-
-    # Construct y-axis labels
-    meth <- unique(dataCIs$name)
-    ylabs <- rev(c(
-        meth[seq_along(thetahat)],
-        "",
-        meth[(l_theta + 1L):length(meth)]
-    ))
-
-    # Add color scales to polygons
-    dataPoly <- merge(
-        dataPoly,
-        dataCIs[c("name", "color")],
-        by = "name",
-        all.x = TRUE,
-        all.y = FALSE,
-        sort = FALSE
-    )
-    dataPoly$color <- as.factor(dataPoly$color)
-
-    # Which CIs to draw as polygons and which as bars
-    draw_poly <- unique(dataCIs$name[dataCIs$plottype == 1L])
-    draw_bar <- unique(dataCIs$name[dataCIs$plottype == 0L])
-
-    # Do the plot
-    ggplot2::ggplot() +
-    ggplot2::geom_errorbarh(
-        data = dataCIs[dataCIs$name %in% draw_bar, ],
-        ggplot2::aes(y = y, xmin = lower, xmax = upper, height = height),
-        show.legend = FALSE
-    ) +
-    ggplot2::geom_point(
-        data = dataCIs[dataCIs$name %in% draw_bar, ],
-        ggplot2::aes(x = estimate, y = y)
-    ) +
-    ggplot2::geom_polygon(
-        data = dataPoly[dataPoly$name %in% draw_poly, ],
-        ggplot2::aes(x = x, y = y, group = ID, fill = color),
-        show.legend = FALSE
-    ) +
-    ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
-    ggplot2::scale_y_continuous(
-        breaks = seq(1L, max(dataCIs$y), 1L),
-        labels = ylabs
-    ) +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(
-        x = bquote(mu)
-    ) +
-    ggplot2::scale_fill_discrete(
-        type = c(
-            "gray20",
-            scales::hue_pal()(length(unique(dataPoly$color)) - 1L)
         )
-    ) +
-    ggplot2::theme(
-        axis.title.y = ggplot2::element_blank(),
-        panel.border = ggplot2::element_blank(),
-        axis.ticks = ggplot2::element_blank(),
-        panel.grid.minor = ggplot2::element_blank(),
-        panel.grid.major.y = ggplot2::element_blank()
     )
 }
 
-make_names <- function(FUN, heterogeneity = NULL, distr = NULL) {
-    # handle heterogeneity
-    if (!is.null(heterogeneity))
-        heterogeneity <- vapply(heterogeneity, function(x) {
-            switch(
-                x,
-                "none" = " none",
-                "additive" = " add.",
-                "multiplicative" = " mult."
-            )
-        }, character(1L))
-    else
-        heterogeneity <- rep("", length(FUN))
-    # handle distr
-    if (!is.null(distr))
-        distr <- ifelse(is.na(distr), "", paste0(" (", distr, ")"))
-    else
-        distr <- rep("", length(FUN))
-    # Make names
-    paste0(FUN, heterogeneity, distr)
-}
-
-# Assemble a data frame containing the points for a polygon
+# # Assemble a data frame containing the points for a polygon
 calculate_polygon  <- function(CIs, thetahat, gammas = NULL, height, level) {
     # Filter out minima lower than alpha
     if (!is.null(gammas))
@@ -430,4 +490,108 @@ calculate_polygon  <- function(CIs, thetahat, gammas = NULL, height, level) {
         out
     })
     as.data.frame(do.call("rbind", poly))
+}
+
+# Make the polygon df for classic methods
+
+# Make a df that contains the data for the diamonds
+calculate_polygon_2 <- function(
+    CIs,
+    thetahat,
+    f_thetahat,
+    gammas,
+    diamond_height,
+    level
+) {
+
+    # If gamma == NA, there is either one or no CI
+    no_ci <- if (all(is.na(CIs))) TRUE else FALSE
+    no_gamma <- if (all(is.na(gammas))) TRUE else FALSE
+
+    if (no_ci) {
+        return(NULL)
+    } else {
+        # remove f_thetahat where f_thetahat > alpha
+        # because those below alpha are not in CI
+        keep <- f_thetahat > 1 - level
+        f_thetahat <- f_thetahat[keep]
+        thetahat <- thetahat[keep]
+        # get lengths
+        l_thetahat <- length(f_thetahat)
+        l_ci <- nrow(CIs)
+        if (!no_gamma) {
+            # remove gammas where gammas > alpha
+            # because those below alpha are not in CI
+            gammas <- gammas[gammas[, 2L] > 1 - level, , drop = FALSE]
+            l_gamma <- nrow(gammas)
+            # set up x coordinates
+            x <- c(CIs[, 1L], gammas[, 1L], thetahat, CIs[, 2L])
+            # Get the y-coordinates
+            y <- vector("numeric", length(x))
+            # type of point
+            # 0 = lower ci
+            # 1 = minimum
+            # 2 = maximum
+            # 3 = upper ci
+            type <- c(
+                rep(0L, l_ci),
+                rep(1L, l_gamma),
+                rep(2L, l_thetahat),
+                rep(3L, l_ci)
+            )
+            y[type == 1L] <- gammas[, 2L]
+        } else {
+            # set up x coordinates
+            x <- c(CIs[, 1L], thetahat, CIs[, 2L])
+            # Get the y-coordinates
+            y <- vector("numeric", length(x))
+            type <- c(
+                rep(0L, l_ci),
+                rep(2L, l_thetahat),
+                rep(3L, l_ci)
+            )
+        }
+        y[type == 0L | type == 3L] <- 0 # 0 if lower/upper
+        y[type == 2L] <- f_thetahat
+        # Order the x & y coordinates
+        o <- order(x, decreasing = FALSE)
+        x <- x[o]
+        y <- y[o]
+        type <- type[o]
+        # Assign polygon id
+        is_upper <- which(type == 3L)
+        is_lower <- which(type == 0L)
+        id <- vector("numeric", length(x))
+        counter <- 1L
+        for (i in seq_along(is_upper)) {
+            id[is_lower[i]:is_upper[i]] <- counter
+            counter <- counter + 1L
+        }
+        # Arrange this such that it gives back a data.frame
+        # that can be used with ggplot
+        as.data.frame(
+            do.call(
+                "rbind",
+                lapply(
+                    unique(id),
+                    function(z) {
+                        idx <- id == z
+                        x_sub <- x[idx]
+                        y_sub <- y[idx] * diamond_height / 2
+                        l <- length(x_sub)
+                        mat <- matrix(
+                            NA_real_,
+                            ncol = 3,
+                            nrow = 2L * l - 2L
+                        )
+                        colnames(mat) <- c("x", "y", "id")
+                        mat[, 1L] <- c(x_sub, rev(x_sub[-c(1L, l)]))
+                        mat[, 2L] <- c(-y_sub, rev(y_sub[-c(1L, l)]))
+                        mat[, 3L] <- z
+                        as.data.frame(mat)
+                    }
+                )
+            )
+        )
+    }
 }
