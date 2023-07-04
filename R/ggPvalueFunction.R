@@ -116,8 +116,9 @@ ggPvalueFunction <- function(
         # make a data frame that contains the necessary information
         # gamma_min (for point on the minimum), p-values, etc.
         idx <- which.min(CIs$gamma[, 2])
-        gamma_min <- CIs$gamma[idx, 2]
-        x_gamma_min <- CIs$gamma[idx, 1]
+        gamma_exists <- length(idx) != 0L
+        gamma_min <- if (!gamma_exists) NA_real_ else CIs$gamma[idx, 2]
+        x_gamma_min <- if (!gamma_exists) NA_real_ else CIs$gamma[idx, 1]
         df1 <- data.frame(
             x = const$muSeq,
             y = pval,
@@ -137,6 +138,7 @@ ggPvalueFunction <- function(
           "multiplicative" = -1
         )
         # make a second data frame for the display of confidence intervals
+        xmin <- CIs$CI[, 1L]
         df2 <- data.frame(
             xmin = unname(CIs$CI[, 1]),
             xmax = unname(CIs$CI[, 2]),
@@ -172,6 +174,8 @@ ggPvalueFunction <- function(
         )
     )
 
+
+
     # Define function for secondary y-axis
     trans <- function(x) abs(x - 1) * 100
     # Define breaks for the primary y-axis
@@ -198,7 +202,8 @@ ggPvalueFunction <- function(
     ) +
     ggplot2::geom_line(alpha = transparency) +
     ggplot2::geom_point(
-        ggplot2::aes(x = x_gamma, y = y_gamma),
+        data = lines[!is.na(lines$x_gamma), ],
+        ggplot2::aes(x = x_gamma, y = y_gamma, color = group),
         alpha = transparency
     ) +
     ggplot2::geom_hline(yintercept = 1 - level, linetype = "dashed") +
@@ -215,15 +220,15 @@ ggPvalueFunction <- function(
     ) +
     # Draw intervals on x-axis
     ggplot2::geom_segment(
-        data = errorbars,
+        data = errorbars[!is.na(errorbars$xmin), ],
         ggplot2::aes(x = xmin, xend = xmax, y = y, yend = y)
     ) +
     ggplot2::geom_segment(
-        data = errorbars,
+        data = errorbars[!is.na(errorbars$xmin), ],
         ggplot2::aes(x = xmin, xend = xmin, y = ymin, yend = ymax)
     ) +
     ggplot2::geom_segment(
-        data = errorbars,
+        data = errorbars[!is.na(errorbars$xmin), ],
         ggplot2::aes(x = xmax, xend = xmax, y = ymin, yend = ymax)
     ) +
     # Set x-axis window, labels
