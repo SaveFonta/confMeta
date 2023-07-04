@@ -12,7 +12,7 @@ level <- 0.95
 diamond_height <- 0.5
 v_space <- 1.5
 studyNames <- NULL
-xlim <- NULL
+xlim <- c(-5, 5)
 rng_seed <- 43L
 pValueFUN_args <- list(check_inputs = FALSE)
 
@@ -38,7 +38,9 @@ make_plot <- function(pars) {
         heterogeneity = pars$het,
         distr = pars$distr,
         pValueFUN = pars$pValueFUN,
-        pValueFUN_args = pValueFUN_args
+        pValueFUN_args = pValueFUN_args,
+        xlim = pars$xlim
+
     )
     forest <- ForestPlot(
         thetahat = pars$thetahat,
@@ -46,7 +48,8 @@ make_plot <- function(pars) {
         level = pars$level,
         distr = pars$distr,
         pValueFUN = pars$pValueFUN,
-        heterogeneity = pars$het
+        heterogeneity = pars$het,
+        xlim = pars$xlim,
     )
     pval / forest
 }

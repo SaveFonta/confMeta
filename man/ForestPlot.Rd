@@ -14,7 +14,8 @@ ForestPlot(
   diamond_height = 0.5,
   v_space = 1.5,
   studyNames = NULL,
-  xlim = NULL
+  xlim = NULL,
+  show_studies = TRUE
 )
 }
 \arguments{
@@ -53,6 +54,11 @@ studies.}
 
 \item{xlim}{Either \code{NULL} (default) or a numeric vector of length 2,
 indicating the limits of the x-axis.}
+
+\item{show_studies}{Must be either \code{TRUE} (default) or \code{FALSE}.
+If \code{TRUE}, the confidence intervals for the individual studies will
+be shown in the forest plot. Otherwise, the plot will only show the diamonds
+for the meta-analyses.}
 }
 \value{
 An object of class \code{ggplot}. The object contains everything

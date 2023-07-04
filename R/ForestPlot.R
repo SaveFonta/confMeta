@@ -25,6 +25,10 @@
 #' indicating the limits of the x-axis.
 #' @param v_space A numeric vector of length 1 indicating the vertical space
 #' between the different rows of the plot. Default is 1.5.
+#' @param show_studies Must be either \code{TRUE} (default) or \code{FALSE}.
+#' If \code{TRUE}, the confidence intervals for the individual studies will
+#' be shown in the forest plot. Otherwise, the plot will only show the diamonds
+#' for the meta-analyses.
 #'
 #' @return An object of class \code{ggplot}. The object contains everything
 #' necessary to plot the forest plot.
@@ -58,7 +62,8 @@ ForestPlot <- function(
     diamond_height = 0.5,
     v_space = 1.5,
     studyNames = NULL,
-    xlim = NULL
+    xlim = NULL,
+    show_studies = TRUE
 ) {
 
     # get the p-value function(s)
@@ -142,22 +147,25 @@ ForestPlot <- function(
     polygons$color <- factor(polygons$color)
 
     # Make the plot
-    p <- ggplot2::ggplot() +
-        # ggplot2::ylim(c(0, max(spacing) + v_space)) +
-        ggplot2::geom_errorbarh(
-            data = studyCIs,
-            ggplot2::aes(
-                y = y,
-                xmin = lower,
-                xmax = upper,
-                height = diamond_height
-            ),
-            show.legend = FALSE
-        ) +
-        ggplot2::geom_point(
-            data = studyCIs,
-            ggplot2::aes(x = estimate, y = y)
-        ) +
+    p <- ggplot2::ggplot()
+    if (show_studies) {
+        p <- p +
+            ggplot2::geom_errorbarh(
+                data = studyCIs,
+                ggplot2::aes(
+                    y = y,
+                    xmin = lower,
+                    xmax = upper,
+                    height = diamond_height
+                ),
+                show.legend = FALSE
+            ) +
+            ggplot2::geom_point(
+                data = studyCIs,
+                ggplot2::aes(x = estimate, y = y)
+            )
+    }
+    p <- p +
         ggplot2::geom_polygon(
             data = polygons[polygons$ci_exists == TRUE, ],
             ggplot2::aes(
@@ -189,7 +197,9 @@ ForestPlot <- function(
         ggplot2::scale_fill_discrete(
             type = c(
                 "gray20",
-                scales::hue_pal()(length(unique(stats::na.omit(polygons$color))) - 1L)
+                scales::hue_pal()(
+                    length(unique(stats::na.omit(polygons$color))) - 1L
+                )
             )
         )
     if (na_cis) {
@@ -208,7 +218,6 @@ ForestPlot <- function(
 
     }
     p
-
 }
 
 

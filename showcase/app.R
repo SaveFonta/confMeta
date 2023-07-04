@@ -17,7 +17,8 @@ make_plot <- function(pars) {
                 pValueFUN = pValueFUN,
                 pValueFUN_args = list(
                     check_inputs = FALSE
-                )
+                ),
+                xlim = xlim
             )
             forest <- ForestPlot(
                 thetahat = thetahat,
@@ -25,7 +26,9 @@ make_plot <- function(pars) {
                 level = level,
                 distr = distr,
                 pValueFUN = pValueFUN,
-                heterogeneity = het
+                heterogeneity = het,
+                xlim = xlim,
+                show_studies = show_studies
             )
             pval / forest
         }
@@ -85,6 +88,11 @@ ui <- fluidPage(
                 min = -20,
                 max = 20,
                 value = c(-5, 5)
+            ),
+            selectInput(
+                "show_studies1", "Show study CIs",
+                choices = c("true", "false"),
+                multiple = FALSE, selected = TRUE
             )
         ),
         # column(
@@ -180,7 +188,8 @@ server <- function(input, output, session) {
                 pValueFUN = pValueFUN,
                 level = input$level1,
                 distr = distr,
-                xlim = input$xlim1
+                xlim = input$xlim1,
+                show_studies = input$show_studies1
             )
         }
     )
