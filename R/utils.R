@@ -74,31 +74,55 @@ make_grid <- function(pValueFUN, heterogeneity, distr) {
     grid <- do.call(
         "rbind",
         lapply(
-            grid_funs,
-            function(fun, heterogeneity, distr) {
-                fun(
+            seq_along(grid_funs),
+            function(i, heterogeneity, distr) {
+                fun <- grid_funs[[i]]
+                fun_char <- include_funs[i]
+                g <- fun(
                     heterogeneity = heterogeneity,
                     distr = distr
                 )
+                g$pretty_name <- include_funs[i]
+                g$name <- make_names(
+                    FUN = fun_char,
+                    heterogeneity = g$heterogeneity,
+                    distr = g$distr
+                )
+                g
             },
             heterogeneity = heterogeneity,
             distr = distr
         )
     )
-    # # Add the function column
-    # grid$funs <- lapply(
-    #     grid$fun_name,
-    #     function(x) {
-    #         switch(
-    #             x,
-    #             "hMean" = hMeanChiSqMu,
-    #             "k-Trials" = kTRMu,
-    #             "Pearson" = pPearsonMu
-    #         )
-    #     }
-    # )
+
     grid
 }
+
+# Construct names out of the function and its argument.
+# This is used to construct labels for plots etc.
+make_names <- function(FUN, heterogeneity, distr) {
+    # handle heterogeneity
+    heterogeneity <- vapply(
+        heterogeneity,
+        function(x) {
+            switch(
+                x,
+                "none" = " none",
+                "additive" = " add.",
+                "multiplicative" = " mult."
+            )
+        },
+        character(1L)
+    )
+    # handle distr
+    if (!is.na(distr))
+        distr <- ifelse(is.na(distr), "", paste0(" (", distr, ")"))
+    else
+        distr <- rep("", length(FUN))
+    # Make names
+    paste0(FUN, heterogeneity, distr)
+}
+
 
 ################################################################################
 # Check inputs for p-value functions                                           #
@@ -421,6 +445,6 @@ utils::globalVariables(
         # ggPvalueFunction
         "x", "y", "group", "x_gamma", "y_gamma", "xmin", "xmax", "ymin", "ymax",
         # ForestPlot
-        "lower", "upper", "estimate", "ID", "color"
+        "lower", "upper", "estimate", "id", "color", "name"
     )
 )
