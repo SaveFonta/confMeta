@@ -143,7 +143,13 @@ ForestPlot <- function(
         idx <- with(polygons, name == methods[i])
         polygons$y[idx] <- polygons$y[idx] + method_spacing[i]
     }
-    ## Try making color to factor
+    ## Manage colors
+    n_colors <- length(unique(polygons$color)) - 1L
+    if (n_colors > 0) {
+        colors <- scales::hue_pal()(n_colors)
+        col_idx <- with(polygons, unique(color[ci_exists & color != 0]))
+        colors <- c("gray20", colors[col_idx])
+    }
     polygons$color <- factor(polygons$color)
 
     # Make the plot
@@ -193,19 +199,9 @@ ForestPlot <- function(
         ) +
         ggplot2::labs(
             x = bquote(mu)
-        )
-    n_colors <- length(unique(stats::na.omit(polygons$color))) - 1L
-    if (n_colors > 0) {
-        p <- p +
-            ggplot2::scale_fill_discrete(
-                type = c(
-                    "gray20",
-                    scales::hue_pal()(n_colors)
-                )
-            )
-    } else {
-        p <- p + ggplot2::scale_fill_discrete(type = c("gray20"))
-    }
+        ) +
+        ggplot2::scale_fill_discrete(type = colors)
+
     if (na_cis) {
         na_rows <- polygons[polygons$ci_exists == FALSE, ]
         for (i in seq_len(nrow(na_rows))) {
@@ -217,10 +213,12 @@ ForestPlot <- function(
             )
         }
     }
+
     if (!is.null(xlim)) {
         p <- p + ggplot2::xlim(xlim)
 
     }
+
     p
 }
 
@@ -308,7 +306,7 @@ get_CI_new_methods <- function(
                 y = NA_real_,
                 id = NA_real_,
                 name = grid$name[r],
-                color = NA_real_
+                color = r
             )
         }
         # list(
