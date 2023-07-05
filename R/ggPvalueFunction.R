@@ -106,12 +106,6 @@ ggPvalueFunction <- function(
         CI_call <- make_CI_call(p_call = p_call, level = level)
         pval <- eval(p_call)
         CIs <- eval(CI_call)
-        # hMeanChiSqCI(
-        #     thetahat = thetahat,
-        #     se = se,
-        #     level = level,
-        #     pValueFUN = "Fisher"
-        # )
 
         # make a data frame that contains the necessary information
         # gamma_min (for point on the minimum), p-values, etc.
@@ -127,7 +121,9 @@ ggPvalueFunction <- function(
             distr = grid_row$distr,
             x_gamma = rep(x_gamma_min, length(const$muSeq)),
             y_gamma = rep(gamma_min, length(const$muSeq)),
-            stringsAsFactors = FALSE
+            group = factor(grid_row$name, levels = grid$name),
+            stringsAsFactors = FALSE,
+            row.names = NULL
         )
         # handle error bars (display errorbars with a little jitter depending on
         # heterogeneity)
@@ -140,13 +136,15 @@ ggPvalueFunction <- function(
         # make a second data frame for the display of confidence intervals
         xmin <- CIs$CI[, 1L]
         df2 <- data.frame(
-            xmin = unname(CIs$CI[, 1]),
-            xmax = unname(CIs$CI[, 2]),
+            xmin = CIs$CI[, 1],
+            xmax = CIs$CI[, 2],
             heterogeneity = grid_row$heterogeneity,
             p_val_fun = grid_row$fun_name,
             distr = grid_row$distr,
             y = rep(1 - level, nrow(CIs$CI)) + factor * const$eps,
-            stringsAsFactors = FALSE
+            group = factor(grid_row$name, levels = grid$name),
+            stringsAsFactors = FALSE,
+            row.names = NULL
         )
         df2$ymax <- df2$y + const$eb_height
         df2$ymin <- df2$y - const$eb_height
@@ -155,25 +153,8 @@ ggPvalueFunction <- function(
     # Extract the data frame for the lines with p-value functions and add
     # a group variable with the name of the legend entry
     lines <- do.call("rbind", lapply(data, "[[", i = 1L))
-    lines$group <- with(
-        lines,
-        paste0(
-            "p-val fct: ", p_val_fun,
-            "\nhet: ", heterogeneity,
-            ifelse(is.na(distr), "", paste0("\ndistr: ", distr))
-        )
-    )
     # Do the same for the data frame with the CIs
     errorbars <- do.call("rbind", lapply(data, "[[", i = 2L))
-    errorbars$group <- with(
-        errorbars,
-        paste0(
-            "p-val fct: ", p_val_fun,
-            "\nhet: ", heterogeneity,
-            ifelse(is.na(distr), "", paste0("\ndistr: ", distr))
-        )
-    )
-
 
 
     # Define function for secondary y-axis
@@ -184,17 +165,6 @@ ggPvalueFunction <- function(
     breaks_y2 <- sort(trans(c(breaks_y1)))
     # Set transparency
     transparency <- 1
-
-    ## TODO: create a function that constructs the title
-    # get_title <- function(lines){
-    #     has_hMean <- "hMean" %in% lines$p_val_fun
-    #     has_kTr <- "k-Trials" %in% lines$p_val_fun
-    #     if (p_val_fct == )
-    #     paste0(
-    #         "bquote(",
-    #        paste
-    #     )
-    # }
 
     ggplot2::ggplot(
         data = lines,
@@ -235,8 +205,7 @@ ggPvalueFunction <- function(
     ggplot2::xlim(xlim) +
     ggplot2::labs(
         x = bquote(mu),
-        color = "Configuration"#,
-        #title = title
+        color = "Configuration"
     ) +
     # Set theme
     ggplot2::theme_minimal() +
