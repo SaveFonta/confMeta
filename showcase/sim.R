@@ -1,19 +1,21 @@
 library(patchwork)
+library(devtools)
+# load_all()
 
-n <- 15
+n <- 20
 mean <- 0
-sd <- 1.3
+sd <- 1.5
 shape <- 5
 rate <- 5
 heterogeneity <- c("none", "additive")
-pValueFUN <- c("hMean", "Pearson", "Edgington", "Fisher")
+pValueFUN <- c("hMean", "Edgington", "Fisher")
 distr <- "chisq"
 level <- 0.95
 diamond_height <- 0.5
 v_space <- 1.5
 studyNames <- NULL
 xlim <- c(-5, 5)
-rng_seed <- 43L
+rng_seed <- 42L
 pValueFUN_args <- list(check_inputs = FALSE)
 
 set.seed(rng_seed)
@@ -40,7 +42,6 @@ make_plot <- function(pars) {
         pValueFUN = pars$pValueFUN,
         pValueFUN_args = pValueFUN_args,
         xlim = pars$xlim
-
     )
     forest <- ForestPlot(
         thetahat = pars$thetahat,
