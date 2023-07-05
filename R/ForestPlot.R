@@ -193,15 +193,19 @@ ForestPlot <- function(
         ) +
         ggplot2::labs(
             x = bquote(mu)
-        ) +
-        ggplot2::scale_fill_discrete(
-            type = c(
-                "gray20",
-                scales::hue_pal()(
-                    length(unique(stats::na.omit(polygons$color))) - 1L
+        )
+    n_colors <- length(unique(stats::na.omit(polygons$color))) - 1L
+    if (n_colors > 0) {
+        p <- p +
+            ggplot2::scale_fill_discrete(
+                type = c(
+                    "gray20",
+                    scales::hue_pal()(n_colors)
                 )
             )
-        )
+    } else {
+        p <- p + ggplot2::scale_fill_discrete(type = c("gray20"))
+    }
     if (na_cis) {
         na_rows <- polygons[polygons$ci_exists == FALSE, ]
         for (i in seq_len(nrow(na_rows))) {
