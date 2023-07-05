@@ -87,7 +87,8 @@ ui <- fluidPage(
                 "Range of x-axis",
                 min = -20,
                 max = 20,
-                value = c(-5, 5)
+                value = c(-5, 5),
+                step = 0.1
             ),
             selectInput(
                 "show_studies1", "Show study CIs",
