@@ -11,6 +11,7 @@ Makefile.defs
 DESCRIPTION-r
 showcase
 showcase/
+test_cases/
 
 ^.*\.Rproj$
 ^\.Rproj\.user$
