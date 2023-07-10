@@ -246,6 +246,7 @@ hMeanChiSqCI <- function(
         ## Get the thetahats we need to examine. These are all in
         ## between thetahat_min and thetahat_max
         thetahat <- thetahat[idx_min:idx_max]
+        f_thetahat <- f_thetahat[idx_min:idx_max]
 
         ## Get the number of intervals between these thetahats
         n_intervals <- length(thetahat) - 1L
@@ -277,24 +278,42 @@ hMeanChiSqCI <- function(
         # If there is no minimum (i.e. only one thetahat is positive),
         # then, we can also just use lower & upper for the CI
         minima <- gam[, 2L]
+        # only search roots if there is more than one positive f(thetahat)
+        # and there is at least one negative minimum
         one_pos_theta_only <- length(minima) == 1L && is.na(minima)
         exist_neg_minima <- any(minima < 0)
         search_roots <- !one_pos_theta_only && exist_neg_minima
         if (search_roots) {
-            negative <- seq_len(nrow(gam))[minima < 0]
-            min <- gam[, 1L][negative]
+            # Now that we know all the minima between the smallest and largest
+            # positive thetahat, we need to apply an algorithm to find the
+            # roots. These exist if the minimum between two thetahats i
+            # and j is negative and both f(thetahat[i]) and f(thetahat[j])
+            # are positive.
+
+            # In order to find the correct intervals to search, we first
+            # need to find all negative minima and then for each of them
+            # the closest smaller thetahat where f_thetahat > 0 and the
+            # closest larger thetahat where f_thetahat > 0. This is
+            # is implemented in the functions get_search_interval and
+            # find_closest_thetas
+            intervals <- get_search_interval(
+                x_max = thetahat,
+                y_max = f_thetahat,
+                x_min = gam[, 1L],
+                y_min = gam[, 2L]
+            )
             CI <- vapply(
-                seq_along(negative),
+                seq_len(ncol(intervals)),
                 function(i) {
                     l <- stats::uniroot(
                         f = f,
-                        lower = thetahat[negative[i]],
-                        upper = min[i]
+                        lower = intervals[1L, i],
+                        upper = intervals[3L, i]
                     )$root
                     u <- stats::uniroot(
                         f = f,
-                        lower = min[i],
-                        upper = thetahat[negative[i] + 1L]
+                        lower = intervals[3L, i],
+                        upper = intervals[2L, i]
                     )$root
                     c(l, u)
                 },
@@ -327,6 +346,43 @@ hMeanChiSqCI <- function(
     out
 }
 
+
+################################################################################
+# Helper functions to determine which intervals to search for roots            #
+################################################################################
+
+get_search_interval <- function(x_max, y_max, x_min, y_min) {
+    # find x-vals where gamma is negative
+    neg_min_x <- x_min[y_min < 0]
+    # for each of these x-vals, find the closest theta i, where
+    # f(theta[i]) > 0 and theta[i] < x-val. Also find theta j,
+    # where f(theta[j]) > 0 and theta[j] > x-val.
+    interval <- vapply(
+        neg_min_x,
+        find_closest_thetas,
+        x_max = x_max,
+        y_max = y_max,
+        FUN.VALUE = double(3L)
+    )
+    # remove duplicate intervals
+    keep <- !duplicated(interval[1:2, , drop = FALSE], MARGIN = 2L)
+    interval[, keep, drop = FALSE]
+}
+
+# This function finds the closest smaller and larger
+# value to `minimum` in `x_max` where y_max is positive
+find_closest_thetas <- function(minimum, x_max, y_max) {
+    cond1 <- y_max > 0
+    cond2 <- x_max < minimum
+    lower <- max(which(cond1 & cond2))
+    cond3 <- x_max > minimum
+    upper <- min(which(cond1 & cond3))
+    c(
+        "lower" = x_max[lower],
+        "upper" = x_max[upper],
+        "minimum" = minimum
+    )
+}
 
 ################################################################################
 # Helper function that returns a function to optimize                          #
@@ -393,7 +449,7 @@ make_function <- function(
     }
 
     function(limit) {
-        do.call(pValueFUN, pValueFUN_args) - alpha
+        do.call("pValueFUN", pValueFUN_args) - alpha
     }
 }
 

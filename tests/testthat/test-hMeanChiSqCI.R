@@ -12,14 +12,14 @@ test_that("Results of hMeanChiSqCI are consistent.", {
   wGamma <- rep(1, length(thetahat) - 1)
   level <- 0.99
   check_inputs <- TRUE
-  
+
   grid <- expand.grid(
     alternative = c("none", "less", "greater", "two.sided"),
     pValueFUN = c("hMeanChiSqMu", "kTRMu", "pPearsonMu"),
     heterogeneity = c("none", "additive", "multiplicative"),
     stringsAsFactors = FALSE
   )
-  
+
   # Run new function
   res <- lapply(
     seq_len(nrow(grid)),
@@ -41,13 +41,13 @@ test_that("Results of hMeanChiSqCI are consistent.", {
       )
     }
   )
-  
+
   # Get the old function, vectorise it, and run the same inputs
   old_fun <- get_old_FUN(
     path = "https://raw.githubusercontent.com/felix-hof/hMean/main/R/hMeanChiSqCI.R",
     fun_name = "hMeanChiSqCI"
   )
-  
+
   old_res <- lapply(
     seq_len(nrow(grid)),
     function(x) {
@@ -68,7 +68,7 @@ test_that("Results of hMeanChiSqCI are consistent.", {
       )
     }
   )
-  
+
   # compare results
   expect_equal(res, old_res)
 })
