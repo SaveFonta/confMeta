@@ -10,8 +10,7 @@ Makefile.defs
 ^man-roxygen
 DESCRIPTION-r
 showcase
-showcase/
-test_cases/
+test_cases
 
 ^.*\.Rproj$
 ^\.Rproj\.user$

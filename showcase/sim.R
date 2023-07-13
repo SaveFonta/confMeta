@@ -33,7 +33,8 @@ pars <- list(
 
 # Define a function that does the plots
 make_plot <- function(pars) {
-    pval <- ggPvalueFunction(
+    # pval <- ggPvalueFunction(
+    ggPvalueFunction(
         thetahat = pars$thetahat,
         se = pars$se,
         level = pars$level,
@@ -43,7 +44,8 @@ make_plot <- function(pars) {
         pValueFUN_args = pValueFUN_args,
         xlim = pars$xlim
     )
-    forest <- ForestPlot(
+    # forest <- ForestPlot(
+    ForestPlot(
         thetahat = pars$thetahat,
         se = pars$se,
         level = pars$level,
