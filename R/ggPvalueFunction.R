@@ -107,20 +107,26 @@ ggPvalueFunction <- function(
         pval <- eval(p_call)
         CIs <- eval(CI_call)
 
-        # make a data frame that contains the necessary information
-        # gamma_min (for point on the minimum), p-values, etc.
-        idx <- which.min(CIs$gamma[, 2])
-        gamma_exists <- length(idx) != 0L
-        gamma_min <- if (!gamma_exists) NA_real_ else CIs$gamma[idx, 2]
-        x_gamma_min <- if (!gamma_exists) NA_real_ else CIs$gamma[idx, 1]
+        # # make a data frame that contains the necessary information
+        # # gamma_min (for point on the minimum), p-values, etc.
+        # idx <- which.min(CIs$gamma[, 2])
+        # gamma_exists <- length(idx) != 0L
+        # gamma_min <- if (!gamma_exists) NA_real_ else CIs$gamma[idx, 2]
+        # x_gamma_min <- if (!gamma_exists) NA_real_ else CIs$gamma[idx, 1]
+
+        # Instead of gamma_min, calculate the value where the p-value function
+        # is 0
+        y0_call <- p_call
+        y0_call[["mu"]] <- 0
+        y0 <- eval(y0_call)
+
         df1 <- data.frame(
             x = const$muSeq,
             y = pval,
             heterogeneity = grid_row$heterogeneity,
             p_val_fun = grid_row$fun_name,
             distr = grid_row$distr,
-            x_gamma = rep(x_gamma_min, length(const$muSeq)),
-            y_gamma = rep(gamma_min, length(const$muSeq)),
+            y0 = y0,
             group = factor(grid_row$name, levels = grid$name),
             stringsAsFactors = FALSE,
             row.names = NULL
@@ -134,7 +140,6 @@ ggPvalueFunction <- function(
           "multiplicative" = -1
         )
         # make a second data frame for the display of confidence intervals
-        xmin <- CIs$CI[, 1L]
         df2 <- data.frame(
             xmin = CIs$CI[, 1],
             xmax = CIs$CI[, 2],
@@ -157,27 +162,29 @@ ggPvalueFunction <- function(
     errorbars <- do.call("rbind", lapply(data, "[[", i = 2L))
 
 
-    # Define function for secondary y-axis
-    trans <- function(x) abs(x - 1) * 100
+    # Define function to convert breaks from primary y-axis to
+    # breaks for secondary y-axis
+    trans <- function(x) rev(abs(x - 1) * 100)
     # Define breaks for the primary y-axis
-    breaks_y1 <- sort(c(1 - level, pretty(lines$y)))
+    breaks_y1 <- sort(c(1 - level, pretty(c(lines$y, 1))))
     # Compute breaks for the secondary y-axis
-    breaks_y2 <- sort(trans(c(breaks_y1)))
+    breaks_y2 <- trans(breaks_y1)
     # Set transparency
     transparency <- 1
 
-    ggplot2::ggplot(
+    p <- ggplot2::ggplot(
         data = lines,
         ggplot2::aes(x = x, y = y, color = group)
     ) +
-    ggplot2::geom_line(alpha = transparency) +
-    ggplot2::geom_point(
-        data = lines[!is.na(lines$x_gamma), ],
-        ggplot2::aes(x = x_gamma, y = y_gamma, color = group),
-        alpha = transparency
-    ) +
     ggplot2::geom_hline(yintercept = 1 - level, linetype = "dashed") +
     ggplot2::geom_vline(xintercept = thetahat, linetype = "dashed") +
+    ggplot2::geom_vline(xintercept = 0, linetype = "solid") +
+    ggplot2::geom_line(alpha = transparency) +
+    ggplot2::geom_point(
+        data = lines[!is.na(lines$y0), ],
+        ggplot2::aes(x = 0, y = y0, color = group),
+        alpha = transparency
+    ) +
     ggplot2::scale_y_continuous(
         name = "p-value",
         breaks = breaks_y1,
@@ -212,6 +219,14 @@ ggPvalueFunction <- function(
     ggplot2::theme(
         axis.title.y.right = ggplot2::element_text(angle = 90),
         legend.position = "bottom"
+    )
+
+    # make the plot
+    print(p)
+
+    # return
+    invisible(
+        list(plot = p, p_0 = unique(lines[c("group", "y0")]))
     )
 }
 
