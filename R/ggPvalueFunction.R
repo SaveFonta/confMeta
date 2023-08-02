@@ -155,12 +155,15 @@ ggPvalueFunction <- function(
         df2$ymin <- df2$y - const$eb_height
         list(df1, df2)
     })
-    # Extract the data frame for the lines with p-value functions and add
-    # a group variable with the name of the legend entry
-    lines <- do.call("rbind", lapply(data, "[[", i = 1L))
-    # Do the same for the data frame with the CIs
-    errorbars <- do.call("rbind", lapply(data, "[[", i = 2L))
-
+    # Extract the data frame for the lines with p-value functions
+    # as well as the data frame for the error bars
+    plot_data <- lapply(
+        list(lines = 1L, errorbars = 2L),
+        function(z, data) do.call("rbind", lapply(data, "[[", i = z)),
+        data = data
+    )
+    lines <- plot_data[["lines"]]
+    errorbars <- plot_data[["errorbars"]]
 
     # Define function to convert breaks from primary y-axis to
     # breaks for secondary y-axis
