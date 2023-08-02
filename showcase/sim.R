@@ -1,6 +1,6 @@
 library(patchwork)
 library(devtools)
-# load_all()
+load_all()
 
 n <- 20
 mean <- 0
@@ -14,7 +14,8 @@ level <- 0.95
 diamond_height <- 0.5
 v_space <- 1.5
 studyNames <- NULL
-xlim <- c(-5, 5)
+xlim <- c(-5.4, 5)
+scale_diamonds <- TRUE
 rng_seed <- 42L
 pValueFUN_args <- list(check_inputs = FALSE)
 
@@ -28,7 +29,8 @@ pars <- list(
     pValueFUN = pValueFUN,
     level = level,
     dist = distr,
-    xlim = xlim
+    xlim = xlim,
+    scale_diamonds = scale_diamonds
 )
 
 # Define a function that does the plots
@@ -53,6 +55,7 @@ make_plot <- function(pars) {
         pValueFUN = pars$pValueFUN,
         heterogeneity = pars$het,
         xlim = pars$xlim,
+        scale_diamonds = pars$scale_diamonds
     )
     pval / forest
 }
