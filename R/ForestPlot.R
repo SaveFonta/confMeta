@@ -29,6 +29,11 @@
 #' If \code{TRUE}, the confidence intervals for the individual studies will
 #' be shown in the forest plot. Otherwise, the plot will only show the diamonds
 #' for the meta-analyses.
+#' @param scale_diamonds Must be either \code{TRUE} or \code{FALSE} with
+#' \code{FALSE} being the default. If \code{TRUE}, the maximum height of the
+#' diamond is always \code{diamond_height}, even if the p-value function never
+#' reaches 1. If \code{FALSE}, the the maximum height of the diamond is
+#' \code{diamond_heigth} * max(p-value function).
 #'
 #' @return An object of class \code{ggplot}. The object contains everything
 #' necessary to plot the forest plot.
@@ -63,7 +68,8 @@ ForestPlot <- function(
     v_space = 1.5,
     studyNames = NULL,
     xlim = NULL,
-    show_studies = TRUE
+    show_studies = TRUE,
+    scale_diamonds = FALSE
 ) {
 
     # get the p-value function(s)
@@ -78,7 +84,6 @@ ForestPlot <- function(
     # make a table with the study intervals
     studyNames  <- if (is.null(studyNames)) paste("Study", seq_along(thetahat))
     se_term <- stats::qnorm(level) * se
-    l_theta <- length(thetahat)
 
     # Make a data frame for the single studies
     studyCIs <- data.frame(
@@ -100,7 +105,8 @@ ForestPlot <- function(
         pValueFUN = pValueFUN,
         distr = distr,
         level = level,
-        diamond_height = diamond_height
+        diamond_height = diamond_height,
+        scale_diamonds = scale_diamonds
     )
 
     # Get the dataframe for the polygons of the old methods
@@ -230,7 +236,8 @@ get_CI_new_methods <- function(
     pValueFUN,
     distr,
     level,
-    diamond_height
+    diamond_height,
+    scale_diamonds
 ) {
 
     # Set up the grid to loop over
@@ -293,7 +300,8 @@ get_CI_new_methods <- function(
                 f_thetahat = f_thetahat,
                 gammas = gamma,
                 diamond_height = diamond_height,
-                level = level
+                level = level,
+                scale_diamonds = scale_diamonds
             )
             polygons$name <- grid$name[r]
             polygons$color <- r
@@ -494,7 +502,8 @@ calculate_polygon_2 <- function(
     f_thetahat,
     gammas,
     diamond_height,
-    level
+    level,
+    scale_diamonds
 ) {
 
     # If gamma == NA, there is either one or no CI
@@ -546,6 +555,11 @@ calculate_polygon_2 <- function(
         }
         y[type == 0L | type == 3L] <- 0 # 0 if lower/upper
         y[type == 2L] <- f_thetahat
+        # rescale the diamonds if needed (such that the max height is always 1)
+        if (scale_diamonds) {
+            scale_factor <- 1 / max(y)
+            y <- y * scale_factor
+        }
         # Order the x & y coordinates
         o <- order(x, decreasing = FALSE)
         x <- x[o]
@@ -581,7 +595,7 @@ calculate_polygon_2 <- function(
                         mat[, 1L] <- c(x_sub, rev(x_sub[-c(1L, l)]))
                         mat[, 2L] <- c(-y_sub, rev(y_sub[-c(1L, l)]))
                         mat[, 3L] <- z
-                        as.data.frame(mat)
+                        mat
                     }
                 )
             )

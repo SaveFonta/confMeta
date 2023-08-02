@@ -15,7 +15,8 @@ ForestPlot(
   v_space = 1.5,
   studyNames = NULL,
   xlim = NULL,
-  show_studies = TRUE
+  show_studies = TRUE,
+  scale_diamonds = FALSE
 )
 }
 \arguments{
@@ -59,6 +60,12 @@ indicating the limits of the x-axis.}
 If \code{TRUE}, the confidence intervals for the individual studies will
 be shown in the forest plot. Otherwise, the plot will only show the diamonds
 for the meta-analyses.}
+
+\item{scale_diamonds}{Must be either \code{TRUE} or \code{FALSE} with
+\code{FALSE} being the default. If \code{TRUE}, the maximum height of the
+diamond is always \code{diamond_height}, even if the p-value function never
+reaches 1. If \code{FALSE}, the the maximum height of the diamond is
+\code{diamond_heigth} * max(p-value function).}
 }
 \value{
 An object of class \code{ggplot}. The object contains everything

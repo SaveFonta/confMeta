@@ -446,6 +446,6 @@ utils::globalVariables(
         # ggPvalueFunction
         "x", "y", "group", "x_gamma", "y_gamma", "xmin", "xmax", "ymin", "ymax",
         # ForestPlot
-        "lower", "upper", "estimate", "id", "color", "name"
+        "lower", "upper", "estimate", "id", "color", "name", "y0"
     )
 )
