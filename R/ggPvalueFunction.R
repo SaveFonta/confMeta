@@ -22,9 +22,17 @@
 #' @template pValueFUN_args
 #' @param xlim Numeric vector of length 2 denoting the range of values
 #' on the x-axis, i.e. the effect size.
+# @param plot Either \code{TRUE} (the default) or \code{FALSE}, whether the
+# plot should be printed or not.
 #'
-#' @return An object of class \code{ggplot}. It contains the plot of the p-value
-#' functions specified by the input arguments.
+#' @return The function invisibly returns a list with the following elements:
+#' \describe{
+#'   \item{plot}{An object of class \code{ggplot}. It contains the plot of
+#'               the p-value functions specified by the input arguments.}
+#'   \item{p_0}{A data frame containing p-values at \code{mu = 0}.}
+#' }
+# @return An object of class \code{ggplot}. It contains the plot of the p-value
+# functions specified by the input arguments.
 #'
 #' @examples
 #' thetahat <- c(-0.49, -0.17, -0.52, -0.48, -0.26, -0.36, -0.47, -0.3, -0.15,
@@ -224,12 +232,15 @@ ggPvalueFunction <- function(
         legend.position = "bottom"
     )
 
-    # make the plot
-    print(p)
+    # Return also the value at 0
+    p_0 <- unique(lines[c("group", "y0")])
+    names(p_0) <- c("function", "p_0")
+    rownames(p_0) <- NULL
 
     # return
-    invisible(
-        list(plot = p, p_0 = unique(lines[c("group", "y0")]))
+    list(
+        plot = p,
+        p_0 = p_0
     )
 }
 

@@ -46,8 +46,12 @@ included in this list.}
 on the x-axis, i.e. the effect size.}
 }
 \value{
-An object of class \code{ggplot}. It contains the plot of the p-value
-functions specified by the input arguments.
+The function invisibly returns a list with the following elements:
+\describe{
+\item{plot}{An object of class \code{ggplot}. It contains the plot of
+the p-value functions specified by the input arguments.}
+\item{p_0}{A data frame containing p-values at \code{mu = 0}.}
+}
 }
 \description{
 Plot the p-value function(s) for a given set of studies
