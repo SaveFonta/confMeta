@@ -117,8 +117,11 @@ ForestPlot <- function(
         diamond_height = diamond_height
     )
 
+    # Assemble p_0
+    p_0 <- rbind(old_methods_cis$p_0, new_method_cis$p_0)
+
     # Assemble the dataset
-    polygons <- rbind(old_methods_cis, new_method_cis)
+    polygons <- rbind(old_methods_cis$CIs, new_method_cis$CIs)
 
     # Some cosmetics
     ## If any of the CIs does not exist, replace the row
@@ -225,7 +228,10 @@ ForestPlot <- function(
 
     }
 
-    p
+    list(
+        plot = p,
+        p_0 = p_0
+    )
 }
 
 
@@ -280,6 +286,8 @@ get_CI_new_methods <- function(
             pValueFUN = pValueFUN,
             pValueFUN_args = pValueFUN_args
         )
+
+        # Calculate polygons
         ci_exists <- if (all(is.na(res$CI))) FALSE else TRUE
         if (ci_exists) {
             # evaluate pValueFUN at thetahat to get the maxima for the diamond
@@ -306,10 +314,8 @@ get_CI_new_methods <- function(
             polygons$name <- grid$name[r]
             polygons$color <- r
 
-            ## Assemble output
-            polygons
         } else {
-            data.frame(
+            polygons <- data.frame(
                 x = NA_real_,
                 y = NA_real_,
                 id = NA_real_,
@@ -317,20 +323,28 @@ get_CI_new_methods <- function(
                 color = r
             )
         }
-        # list(
-        #     CI = data.frame(
-        #         lower = CI[, 1L],
-        #         upper = CI[, 2L],
-        #         name = grid$name[r],
-        #         plottype = 1L,
-        #         color = r,
-        #         stringsAsFactors = FALSE,
-        #         row.names = NULL
-        #     ),
-        #     polygons = polygons
-        # )
+
+        # Calculate the p-value at mu = 0
+        p_0_args <- list(thetahat = thetahat, se = se, mu = 0)
+        p_0 <- do.call("pValueFUN", append(p_0_args, pValueFUN_args))
+        p_0 <- data.frame(
+            name = grid$name[r],
+            p_0 = p_0
+        )
+
+        # Return
+        list(
+            CIs = polygons,
+            p_0 = p_0
+        )
     })
-    do.call("rbind", out)
+
+    # Reorganize list
+    CIs <- do.call("rbind", lapply(out, "[[", i = 1L))
+    p_0 <- do.call("rbind", lapply(out, "[[", i = 2L))
+
+    # Return
+    list(CIs = CIs, p_0 = p_0)
 }
 
 
@@ -340,7 +354,6 @@ get_CI_old_methods <- function(
     level,
     diamond_height
 ) {
-
 
     # Get the object
     get_obj_reml <- function(thetahat, se, level) {
@@ -405,34 +418,116 @@ get_CI_old_methods <- function(
         )
     }
 
+    # Get the p-value for the null-effect
+    get_pval_reml <- get_pval_hk <- function(obj) {
+        obj$pval.random
+    }
+    get_pval_hc <- function(obj, level) {
+        ci <- get_ci_hc(obj)
+        ReplicationSuccess::ci2p(
+            lower = ci[, "lower"],
+            upper = ci[, "upper"],
+            conf.level = level,
+            ratio = FALSE,
+            alternative = "two.sided"
+        )
+    }
+    get_pval <- function(method, obj, level) {
+        switch(
+            method,
+            "Random Effects, REML" = get_pval_reml(obj = obj),
+            "Hartung & Knapp" = get_pval_hk(obj = obj),
+            "Henmi & Copas" = get_pval_hc(obj = obj, level = level)
+        )
+    }
+
     # Make a table with the classic methods
     other_methods <- c(
         "Random Effects, REML", "Hartung & Knapp", "Henmi & Copas"
     )
 
-    do.call(
-        "rbind",
-        lapply(
-            other_methods,
-            function(x) {
-                obj <- get_obj(
-                    method = x,
-                    thetahat = thetahat,
-                    se = se,
-                    level = level
-                )
-                ci <- get_ci(method = x, obj = obj)
-                est <- mean(ci)
-                data.frame(
-                    x = c(ci[, "lower"], est, ci[, "upper"], est),
-                    y = c(0, -diamond_height / 2, 0, diamond_height / 2),
-                    id = 1,
-                    name = x,
-                    color = 0
-                )
-            }
+    # Calculate all the measures we want
+    ## CIs
+    l <- length(other_methods) # The number of methods
+    n_pts <- 4L                # The number of points for each CI
+    l_tot <- l * n_pts         # The total number of rows
+    # Data frame columns for list element CIs
+    cis_x <- numeric(l_tot)    # The x coordinates
+    cis_y <- numeric(l_tot)    # The y coordinates
+    cis_id <- rep(1, l_tot)    # The polygon id
+    cis_name <- character(l_tot) # The method name
+    cis_color <- rep(0, l_tot) # The polygon color
+    # Data frame columns for p_0
+    p_0_name <- character(l) # The name column
+    p_0_p_0 <- numeric(l) # The p_0 column
+
+    # Calculate stuff for all methodsk
+    cis_cnt <- 1L:n_pts
+    p_0_cnt <- 1L
+    for (meth in other_methods) {
+        # Fit the model
+        obj <- get_obj(
+            method = meth,
+            thetahat = thetahat,
+            se = se,
+            level = level
+        )
+        # Get the CI and estimate
+        ci <- get_ci(method = meth, obj = obj)
+        est <- mean(ci)
+        # Calculate the p-value from the CI
+        p_0_p_0[p_0_cnt] <- get_pval(method = meth, obj = obj, level = level)
+        p_0_name[p_0_cnt] <- meth
+        # Convert CI to polygon and store in vectors above
+        cis_x[cis_cnt] <- c(ci[, "lower"], est, ci[, "upper"], est)
+        cis_y[cis_cnt] <- c(0, -diamond_height / 2, 0, diamond_height / 2)
+        cis_name[cis_cnt] <- meth
+        # Get indices for next iteration
+        cis_cnt <- cis_cnt + n_pts
+        p_0_cnt <- p_0_cnt + 1L
+    }
+
+    list(
+        CIs = data.frame(
+            x = cis_x,
+            y = cis_y,
+            id = cis_id,
+            name = cis_name,
+            color = cis_color,
+            stringsAsFactors = FALSE,
+            row.names = NULL
+        ),
+        p_0 = data.frame(
+            name = p_0_name,
+            p_0 = p_0_p_0,
+            stringsAsFactors = FALSE,
+            row.names = NULL
         )
     )
+
+    # do.call(
+    #     "rbind",
+    #     lapply(
+    #         other_methods,
+    #         function(x) {
+    #             obj <- get_obj(
+    #                 method = x,
+    #                 thetahat = thetahat,
+    #                 se = se,
+    #                 level = level
+    #             )
+    #             ci <- get_ci(method = x, obj = obj)
+    #             est <- mean(ci)
+    #             data.frame(
+    #                 x = c(ci[, "lower"], est, ci[, "upper"], est),
+    #                 y = c(0, -diamond_height / 2, 0, diamond_height / 2),
+    #                 id = 1,
+    #                 name = x,
+    #                 color = 0
+    #             )
+    #         }
+    #     )
+    # )
 }
 
 # # Assemble a data frame containing the points for a polygon
