@@ -188,9 +188,11 @@ ggPvalueFunction <- function(
     # breaks for secondary y-axis
     trans <- function(x) rev(abs(x - 1) * 100)
     # Define breaks for the primary y-axis
-    breaks_y1 <- sort(c(1 - level, pretty(c(lines$y, 1))))
+    b_points <- c(1 - level, pretty(c(lines$y, 1)))
+    o <- order(b_points, decreasing = FALSE)
+    breaks_y1 <- b_points[o]
     # Compute breaks for the secondary y-axis
-    breaks_y2 <- trans(breaks_y1)
+    breaks_y2 <- trans(b_points[o[o != 1L]])
     # Set transparency
     transparency <- 1
 
