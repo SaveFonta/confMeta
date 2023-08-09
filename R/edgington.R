@@ -1,4 +1,4 @@
-#' Calculate the p-value using the Pearson combination test.
+#' Calculate the p-value using Edgington's method
 #'
 #' @details
 #' The function is is vectorized over the \code{mu} argument.
@@ -31,27 +31,6 @@
 #' )
 #' heterogeneity <- "multiplicative"
 #' phi <- estimatePhi(thetahat = thetahat, se = se)
-#' resP <- pPearsonMu(
-#'     thetahat = thetahat,
-#'     se = se,
-#'     mu = mu,
-#'     heterogeneity = heterogeneity,
-#'     phi = phi
-#' )
-#' resH <- hMeanChiSqMu(
-#'     thetahat = thetahat,
-#'     se = se,
-#'     mu = mu,
-#'     heterogeneity = heterogeneity,
-#'     phi = phi
-#' )
-#' resTR <- kTRMu(
-#'     thetahat = thetahat,
-#'     se = se,
-#'     mu = mu,
-#'     heterogeneity = heterogeneity,
-#'     phi = phi
-#' )
 #' resE <- pEdgingtonMu(
 #'     thetahat = thetahat,
 #'     se = se,
@@ -59,22 +38,18 @@
 #'     heterogeneity = heterogeneity,
 #'     phi = phi
 #' )
+#' opar <- par(no.readonly = TRUE)
 #' par(las = 1)
-#' matplot(
-#'   mu,
-#'   cbind(resP, resH, resTR, resE),
-#'   type = "l",
-#'   lty = 1,
-#'   lwd = 2,
-#'   ylab = "p-value function"
+#' plot(
+#'     mu,
+#'     resE,
+#'     type = "l",
+#'     main = "Edgington's p-Value function",
+#'     xlab = expression(mu),
+#'     ylab = "p-Value"
 #' )
-#' legend("topleft",
-#'   col=c(1, 2, 3, 4),
-#'   lwd=2,
-#'   lty=1,
-#'   c("Pearson", "hMean","kTR","Edgington")
-#' )
-#' title(paste("Phi =", as.character(round(phi, 2))))
+#' abline(v = thetahat, lty = 2, col = "grey")
+#' par(opar)
 
 pEdgingtonMu <- function(
     thetahat,
