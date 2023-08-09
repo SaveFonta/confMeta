@@ -12,7 +12,8 @@ ggPvalueFunction(
   heterogeneity = c("none", "additive", "multiplicative"),
   pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
   pValueFUN_args,
-  xlim = c(min(thetahat - 2 * se), max(thetahat + 2 * se))
+  xlim = c(min(thetahat - 2 * se), max(thetahat + 2 * se)),
+  drapery = TRUE
 )
 }
 \arguments{
@@ -44,6 +45,10 @@ included in this list.}
 
 \item{xlim}{Numeric vector of length 2 denoting the range of values
 on the x-axis, i.e. the effect size.}
+
+\item{drapery}{Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE},
+individual studies are represented as drapery plots. Otherwise, the studies
+are represented by a simple vertical line at their effect estimates.}
 }
 \value{
 The function invisibly returns a list with the following elements:

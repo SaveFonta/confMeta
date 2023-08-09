@@ -22,8 +22,9 @@
 #' @template pValueFUN_args
 #' @param xlim Numeric vector of length 2 denoting the range of values
 #' on the x-axis, i.e. the effect size.
-# @param plot Either \code{TRUE} (the default) or \code{FALSE}, whether the
-# plot should be printed or not.
+#' @param drapery Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE},
+#' individual studies are represented as drapery plots. Otherwise, the studies
+#' are represented by a simple vertical line at their effect estimates.
 #'
 #' @return The function invisibly returns a list with the following elements:
 #' \describe{
@@ -59,7 +60,8 @@ ggPvalueFunction <- function(
     heterogeneity = c("none", "additive", "multiplicative"),
     pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
     pValueFUN_args,
-    xlim = c(min(thetahat - 2 * se), max(thetahat + 2 * se))
+    xlim = c(min(thetahat - 2 * se), max(thetahat + 2 * se)),
+    drapery = TRUE
 ) {
 
     # get the p-value function(s)
@@ -173,6 +175,15 @@ ggPvalueFunction <- function(
     lines <- plot_data[["lines"]]
     errorbars <- plot_data[["errorbars"]]
 
+    # Calculate the drapery lines
+    if (drapery) {
+        dp <- get_drapery_df(
+            thetahat = const$thetahat,
+            se = const$se,
+            mu = const$muSeq
+        )
+    }
+
     # Define function to convert breaks from primary y-axis to
     # breaks for secondary y-axis
     trans <- function(x) rev(abs(x - 1) * 100)
@@ -187,9 +198,21 @@ ggPvalueFunction <- function(
         data = lines,
         ggplot2::aes(x = x, y = y, color = group)
     ) +
-    ggplot2::geom_hline(yintercept = 1 - level, linetype = "dashed") +
-    ggplot2::geom_vline(xintercept = thetahat, linetype = "dashed") +
+    ggplot2::geom_hline(yintercept = 1 - level, linetype = "dashed")
+    if (!drapery) {
+        p <- p + ggplot2::geom_vline(xintercept = thetahat, linetype = "dashed")
+    } else {
+        p <- p + ggplot2::geom_line(
+            data = dp,
+            mapping = ggplot2::aes(x = x, y = y, group = study),
+            linetype = "dashed",
+            color = "lightgrey",
+            show.legend = FALSE
+        )
+    }
+    p <- p +
     ggplot2::geom_vline(xintercept = 0, linetype = "solid") +
+    ggplot2::geom_hline(yintercept = 0, linetype = "solid") +
     ggplot2::geom_line(alpha = transparency) +
     ggplot2::geom_point(
         data = lines[!is.na(lines$y0), ],
@@ -243,6 +266,32 @@ ggPvalueFunction <- function(
         p_0 = p_0
     )
 }
+
+# Calculate the drapery lines
+get_drapery_df <- function(thetahat, se, mu) {
+    # get lenghts
+    l_t <- length(thetahat)
+    l_m <- length(mu)
+    l_tot <- l_t * l_m
+    # Initialize vectors
+    x_dp <- rep(mu, times = l_t)
+    y_dp <- study <- numeric(l_tot)
+    # Indices to loop over
+    idx <- seq_len(l_m)
+    for (i in seq_along(thetahat)) {
+        y_dp[idx] <- 2 *
+        (1 - stats::pnorm(abs(thetahat[i] - mu) / se[i]))
+        study[idx] <- rep(i, l_m)
+        idx <- idx + l_m
+    }
+    data.frame(
+        x = x_dp,
+        y = y_dp,
+        study = study,
+        stringsAsFactors = FALSE
+    )
+}
+
 
 ## This function constructs calls
 make_p_call <- function(grid_row, const) {
