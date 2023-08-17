@@ -72,7 +72,7 @@
 #'             )
 #'         )
 #'     }
-#'
+#' )
 #' @export
 hMeanChiSqCI <- function(
   thetahat,
@@ -170,19 +170,19 @@ hMeanChiSqCI <- function(
         idx_min <- min(thetahat_pos)
         idx_max <- max(thetahat_pos)
         thetahat_min <- thetahat[idx_min]
-        se_min <- se[idx_min]
         thetahat_max <- thetahat[idx_max]
-        se_max <- se[idx_max]
+        step <- max(se)
+
         # 2.
         lower <- find_lower(
             f = f,
             thetahat_min = thetahat_min,
-            se_min = se_min
+            se_min = step
         )
         upper <- find_upper(
             f = f,
             thetahat_max = thetahat_max,
-            se_max = se_max
+            se_max = step
         )
         # 3.
         ## Get the thetahats we need to examine. These are all in
