@@ -306,21 +306,25 @@ get_CI_new_methods <- function(
             # and thetahat_{i+1} can be concave.
             # Thus, finding maxima for the diamond:
             # - Find the maximum between all thetahats
-            f_thetahat <- do.call(
-                "pValueFUN",
-                append(
-                    list(thetahat = thetahat, se = se, mu = thetahat),
-                    pValueFUN_args
-                )
-            )
+            # f_thetahat <- do.call(
+            #     "pValueFUN",
+            #     append(
+            #         list(
+            #             thetahat = thetahat,
+            #             se = se,
+            #             mu = res$forest_plot_eval
+            #         ),
+            #         pValueFUN_args
+            #     )
+            # )
             # Extract the CIs and minima
             CI  <- res$CI
             gamma  <- res$gamma
             # Calculate the polygons for the diamond
             polygons <- calculate_polygon_2(
                 CIs = CI,
-                thetahat = thetahat,
-                f_thetahat = f_thetahat,
+                thetahat = res$forest_plot_thetahat,
+                f_thetahat = res$forest_plot_f_thetahat,
                 gammas = gamma,
                 diamond_height = diamond_height,
                 level = level,

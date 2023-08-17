@@ -283,7 +283,9 @@ hMeanChiSqCI <- function(
             CI = CI,
             gamma = gam,
             gammaMean = mean(gam[, 2L]),
-            gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L])
+            gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L]),
+            forest_plot_thetahat = thetahat,
+            forest_plot_f_thetahat = f_thetahat
         )
     }
     out
