@@ -3,6 +3,7 @@
 export(ForestPlot)
 export(estimatePhi)
 export(estimateTau2)
+export(forest2CI)
 export(ggPvalueFunction)
 export(hMeanChiSqCI)
 export(hMeanChiSqMu)
