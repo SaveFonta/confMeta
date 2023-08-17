@@ -40,8 +40,8 @@
 #'   \item{plot}{An object of class \code{ggplot}. It shows a forest plot for
 #'               the individual studies as well as the overall estimate derived
 #'               using the specified methods.}
-#'   \item{p_0}{A data frame containing the p-values for the null-effect according
-#'              to the specified methods.}
+#'   \item{p_0}{A data frame containing the p-values for the null-effect
+#'              according to the specified methods.}
 #' }
 # @return An object of class \code{ggplot}. The object contains everything
 # necessary to plot the forest plot.
