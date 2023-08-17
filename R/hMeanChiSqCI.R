@@ -107,7 +107,10 @@ hMeanChiSqCI <- function(
         pValueFUN_args = pValueFUN_args
     )
 
-    # sort thetahat and se
+    # remove duplicates and sort thetahat and se
+    keep <- !duplicated(thetahat)
+    thetahat <- thetahat[keep]
+    se <- se[keep]
     o <- order(thetahat, decreasing = FALSE)
     thetahat <- thetahat[o]
     se <- se[o]

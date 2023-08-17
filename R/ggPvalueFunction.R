@@ -117,12 +117,15 @@ ggPvalueFunction <- function(
         pval <- eval(p_call)
         CIs <- eval(CI_call)
 
-        # # make a data frame that contains the necessary information
-        # # gamma_min (for point on the minimum), p-values, etc.
-        # idx <- which.min(CIs$gamma[, 2])
-        # gamma_exists <- length(idx) != 0L
-        # gamma_min <- if (!gamma_exists) NA_real_ else CIs$gamma[idx, 2]
-        # x_gamma_min <- if (!gamma_exists) NA_real_ else CIs$gamma[idx, 1]
+        # hMeanChiSqCI(
+        #     thetahat = CI_call[["thetahat"]],
+        #     se = CI_call[["se"]],
+        #     level = CI_call[["level"]],
+        #     pValueFUN = CI_call[["pValueFUN"]],
+        #     pValueFUN_args = CI_call[["pValueFUN_args"]],
+        #     alternative = "none",
+        #     check_inputs = TRUE
+        # )
 
         # Instead of gamma_min, calculate the value where the p-value function
         # is 0
