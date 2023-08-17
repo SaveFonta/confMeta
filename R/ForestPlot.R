@@ -298,7 +298,14 @@ get_CI_new_methods <- function(
         # Calculate polygons
         ci_exists <- if (all(is.na(res$CI))) FALSE else TRUE
         if (ci_exists) {
-            # evaluate pValueFUN at thetahat to get the maxima for the diamond
+            # Most p-value functions have maxima at thetahat, i.e. the p-value
+            # function between thetahat_{i} and thetahat_{i+1} is convex.
+            # Thus, finding maxima for the diamond:
+            # - evaluate pValueFUN at thetahat to get the maxima for the diamond
+            # For Fisher, however, the p-value function between thetahat_{i}
+            # and thetahat_{i+1} can be concave.
+            # Thus, finding maxima for the diamond:
+            # - Find the maximum between all thetahats
             f_thetahat <- do.call(
                 "pValueFUN",
                 append(
