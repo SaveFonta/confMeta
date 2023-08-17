@@ -9,10 +9,6 @@
 #' \code{thetahat} and \code{se} as these are passed by this function.
 #' Must further have an argument \code{mu} that specifies the null-hypothesis.
 #' Defaults to \code{\link[hMean]{hMeanChiSqMu}}.
-#' @param wGamma Numeric vector of length \code{unique(thetahat) - 1} specifying
-#' weights used to
-#' summarize the gamma values, i.e., the local minima of the p-value function
-#' between the thetahats. Default is a vector of 1s.
 #' @template check_inputs
 #' @template pValueFUN_args
 #' @return Returns a list containing confidence interval(s)
@@ -21,9 +17,10 @@
 #' \item{CI}{Confidence interval(s).}\cr\cr
 #' If the \code{alternative} is "none", the list also contains:
 #' \item{gamma}{Local minima of the p-value function between the thetahats.}
-#' \item{gammaMean}{Mean of all gammas weighted by \code{wGamma}.}
-#' \item{gammaHMean}{Harmonic mean of all gammas weighted by \code{wGamma}.}
+#' \item{gammaMean}{Mean of all gammas.}
+#' \item{gammaHMean}{Harmonic mean of all gammas.}
 #' @examples
+#' ## Simulate thetahat and se
 #' n <- 15
 #' mean <- 0
 #' sd <- 1.1
@@ -31,6 +28,8 @@
 #' rate <- 5
 #' thetahat <- rnorm(n, mean = mean, sd = sd)
 #' se <- rgamma(n, shape = shape, rate = rate)
+#'
+#' ## Set heterogeneity
 #' heterogeneity <- "none"
 #' phi <- if (heterogeneity == "multiplicative") {
 #'     estimatePhi(thetahat = thetahat, se = se)
@@ -42,12 +41,11 @@
 #' } else {
 #'     NULL
 #' }
-#' mu <- seq(
-#'   min(thetahat) - 0.5 * max(se),
-#'   max(thetahat) + 0.5 * max(se),
-#'   length.out = 1e5
-#' )
-#' alpha <- 0.05
+#'
+#' ## Set confidence level
+#' conf.level <- 0.95
+#'
+#' ## Determine the p-value functions
 #' funs <- list(
 #'     "pearson" = hMean::pPearsonMu,
 #'     "hMean" = hMean::hMeanChiSqMu,
@@ -55,30 +53,15 @@
 #'     "edgington" = hMean::pEdgingtonMu,
 #'     "fisher" = hMean::pFisherMu
 #' )
-#' p_vals <- do.call(
-#'     "cbind",
-#'     lapply(
-#'         funs,
-#'         function(f) {
-#'             f(
-#'                 thetahat = thetahat,
-#'                 mu = mu,
-#'                 se = se,
-#'                 heterogeneity = heterogeneity,
-#'                 phi = phi,
-#'                 tau2 = tau2,
-#'                 check_inputs = FALSE
-#'             )
-#'         }
-#'     )
-#' )
+#'
+#' ## Calculate the CIs
 #' cis <- lapply(
 #'     funs,
 #'     function(f) {
 #'         hMeanChiSqCI(
 #'             thetahat = thetahat,
 #'             se = se,
-#'             level = 1 - alpha,
+#'             level = conf.level,
 #'             alternative = "none",
 #'             pValueFUN = f,
 #'             pValueFUN_args = list(
@@ -89,76 +72,6 @@
 #'             )
 #'         )
 #'     }
-#' )
-#' plot_res <- function(
-#'     mu,
-#'     p_vals,
-#'     cis = NULL,
-#'     barheight = 0.05
-#' ) {
-#'     opar <- par(no.readonly = TRUE)
-#'     par(las = 1)
-#'     matplot(
-#'         mu,
-#'         p_vals,
-#'         type = "l", lty = 1, lwd = 3,
-#'         ylab = "p-value function", xlab = expression(mu)
-#'     )
-#'     legend("topleft",
-#'         col = c(1, 2, 3, 4, 5),
-#'         lwd = 3,
-#'         lty = 1,
-#'         legend = c("Pearson", "hMean", "k-Trials", "Edgington", "Fisher"),
-#'         bty = "n",
-#'         cex = 2
-#'     )
-#'     abline(h = 0.05, lty = 2)
-#'     if (!is.null(cis)) {
-#'         cis <- lapply(cis, "[[", i = "CI")
-#'         jitter_inc <- 0.001
-#'         jitter <- jitter_inc
-#'         for (j in seq_along(cis)) {
-#'             x <- cis[[j]]
-#'             y_horiz <- alpha + (-1)^j * jitter
-#'             if (j %% 2 == 0L) jitter <- jitter + jitter_inc
-#'             for (i in seq_len(nrow(x))) {
-#'                 l <- x[i, "lower"]
-#'                 u <- x[i, "upper"]
-#'                 lty <- 1
-#'                 lwd <- 2
-#'                 segments( # horizontal
-#'                     x0 = l,
-#'                     x1 = u,
-#'                     y0 = y_horiz,
-#'                     y1 = y_horiz,
-#'                     lty = lty,
-#'                     lwd = lwd,
-#'                     col = j
-#'                 )
-#'                 segments( # error bar left
-#'                     x0 = l,
-#'                     x1 = l,
-#'                     y0 = y_horiz - barheight / 2,
-#'                     y1 = y_horiz + barheight / 2,
-#'                     lty = lty,
-#'                     lwd = lwd,
-#'                     col = j
-#'                 )
-#'                 segments( # error bar left
-#'                     x0 = u,
-#'                     x1 = u,
-#'                     y0 = y_horiz - barheight / 2,
-#'                     y1 = y_horiz + barheight / 2,
-#'                     lty = lty,
-#'                     lwd = lwd,
-#'                     col = j
-#'                 )
-#'             }
-#'         }
-#'     }
-#'     par(opar)
-#' }
-#' plot_res(mu = mu, p_vals = p_vals, cis = cis)
 #'
 #' @export
 hMeanChiSqCI <- function(
@@ -166,7 +79,6 @@ hMeanChiSqCI <- function(
   se,
   level = 0.95,
   alternative = "none",
-  wGamma = rep(1, length(unique(thetahat)) - 1),
   check_inputs = TRUE,
   pValueFUN = hMeanChiSqMu,
   pValueFUN_args
@@ -178,7 +90,6 @@ hMeanChiSqCI <- function(
             se = se,
             level = level,
             alternative = alternative,
-            wGamma = wGamma,
             pValueFUN = pValueFUN,
             pValueFUN_args = pValueFUN_args
         )
@@ -200,10 +111,41 @@ hMeanChiSqCI <- function(
     thetahat <- thetahat[o]
     se <- se[o]
 
-    # Check if CI even exists: This is the case if
+    # Check if CI exists: This is the case if
     # the function f(thetahat) returns at least one
-    # positive value
-    f_thetahat <- f(thetahat)
+    # positive value or we can find a local maximum x
+    # between the thetahats where f(x) > 0.
+    # Also, keep track of the status:
+    # - 0 = estimate
+    # - 1 = maximum
+    # - 2 = minimum
+    thetahat <- matrix(
+        c(thetahat, f(thetahat), rep(0, length(thetahat))),
+        ncol = 3L,
+        dimnames = list(NULL, c("x", "y", "status"))
+    )
+    ## search for local maxima in between thetahats
+    maxima <- find_optima(thetahat = thetahat[, 1L], f = f, maximum = TRUE)
+    ## Find out which of these maxima is relevant, i.e. it has a higher p-value
+    ## than both, the next smaller and the next larger thetahat
+    isRelevant_max <- is_relevant(
+        f_thetahat = thetahat[, 2L],
+        f_extremum = maxima[, 2L],
+        maximum = TRUE
+    )
+
+    ## For searching CIs: Add the relevant maxima to the thetahats
+    ## Here, we only care about the maxima since they might be > 0
+    ## even though none of the thetahats are
+    if (any(isRelevant_max)) {
+        thetahat <- rbind(thetahat, maxima[isRelevant_max, ])
+        ## Sort this by the x-coordinate
+        o <- order(thetahat[, 1L], decreasing = FALSE)
+        thetahat <- thetahat[o, ]
+    }
+    f_thetahat <- thetahat[, 2L]
+    thetahat <- thetahat[, 1L]
+
     if (all(f_thetahat <= 0)) {
         # If it does not exist, return same format but all NAs
         out <- list(
@@ -341,17 +283,55 @@ hMeanChiSqCI <- function(
             CI = CI,
             gamma = gam,
             gammaMean = mean(gam[, 2L]),
-            # gammaMean = stats::weighted.mean(
-            #     x = gam[, 2L],
-            #     w = wGamma
-            # ),
-            # gammaHMean = sum(wGamma) / sum(wGamma / gam[, 2L])
             gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L])
         )
     }
     out
 }
 
+################################################################################
+# Helper function to find out whether a local maximum is relevant or not       #
+# Relevant here means that it has a higher p-value than the next smaller and   #
+# the next larger effect estimate                                              #
+################################################################################
+
+is_relevant <- function(f_thetahat, f_extremum, maximum) {
+    lower <- f_thetahat[-length(f_thetahat)]
+    upper <- f_thetahat[-1L]
+    if (maximum) {
+        f_extremum > lower & f_extremum > upper
+    } else {
+        f_extremum < lower & f_extremum < upper
+    }
+}
+
+################################################################################
+# Helper function to find local maxima/minima between thetahats                #
+################################################################################
+
+find_optima <- function(f, thetahat, maximum, ...) {
+
+    n_intervals <- length(thetahat) - 1L
+    status <- if (maximum) 1 else 2
+    out <- t(
+        vapply(
+            seq_len(n_intervals),
+            function(i) {
+                opt <- stats::optimize(
+                    f = f,
+                    lower = thetahat[i],
+                    upper = thetahat[i + 1L],
+                    maximum = maximum,
+                    ...
+                )
+                c(opt[[1L]], opt[[2L]], status)
+            },
+            double(3L)
+        )
+    )
+    colnames(out) <- c("x", "y", "status")
+    out
+}
 
 ################################################################################
 # Helper functions to determine which intervals to search for roots            #

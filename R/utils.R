@@ -386,7 +386,6 @@ check_inputs_CI <- function(
     check_se_arg(se = se, l_thetahat = length(thetahat))
     check_level_arg(level = level)
     check_alternative_arg_CI(alternative = alternative)
-    check_wGamma_arg(wGamma = wGamma, thetahat = thetahat)
     check_pValueFUN_arg(pValueFUN = pValueFUN)
     check_pValueFUNArgs_arg(pValueFUN_args = pValueFUN_args)
 }
