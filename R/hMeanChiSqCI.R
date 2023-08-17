@@ -98,10 +98,11 @@ hMeanChiSqCI <- function(
     # Get the function we need to optimise
     # This is calls the p-value function with specified
     # args and subtracts alpha
+    alpha <- 1 - level
     f <- make_function(
         thetahat = thetahat,
         se = se,
-        alpha = 1 - level,
+        alpha = alpha,
         pValueFUN = pValueFUN,
         pValueFUN_args = pValueFUN_args
     )
@@ -147,12 +148,16 @@ hMeanChiSqCI <- function(
     thetahat <- thetahat[, 1L]
 
     if (all(f_thetahat <= 0)) {
-        # If it does not exist, return same format but all NAs
+        # Calculate p_max
+        idx <- f_thetahat == max(f_thetahat)
+        # If it does not exist, return same format
         out <- list(
             CI = matrix(rep(NA_real_, 2L), ncol = 2L),
             gamma = matrix(rep(NA_real_, 2L), ncol = 2L),
             gammaMean = NA_real_,
-            gammaHMean = NA_real_
+            gammaHMean = NA_real_,
+            forest_plot_thetahat = thetahat[idx],
+            forest_plot_f_thetahat = f_thetahat[idx] + alpha
         )
         colnames(out$CI) <- c("lower", "upper")
         colnames(out$gamma) <- c("minimum", "pvalue_fun/gamma")
@@ -275,7 +280,7 @@ hMeanChiSqCI <- function(
 
         # Increase the y-coordinate of the minima by alpha
         if (!one_pos_theta_only) {
-            gam[, 2L] <- gam[, 2L] + get("alpha", envir = environment(f))
+            gam[, 2L] <- gam[, 2L] + alpha
         }
 
         # return
@@ -285,7 +290,7 @@ hMeanChiSqCI <- function(
             gammaMean = mean(gam[, 2L]),
             gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L]),
             forest_plot_thetahat = thetahat,
-            forest_plot_f_thetahat = f_thetahat
+            forest_plot_f_thetahat = f_thetahat + alpha
         )
     }
     out

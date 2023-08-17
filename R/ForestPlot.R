@@ -238,7 +238,8 @@ ForestPlot <- function(
 
     list(
         plot = p,
-        p_0 = p_0
+        p_0 = p_0,
+        p_max = new_method_cis$p_max
     )
 }
 
@@ -298,26 +299,6 @@ get_CI_new_methods <- function(
         # Calculate polygons
         ci_exists <- if (all(is.na(res$CI))) FALSE else TRUE
         if (ci_exists) {
-            # Most p-value functions have maxima at thetahat, i.e. the p-value
-            # function between thetahat_{i} and thetahat_{i+1} is convex.
-            # Thus, finding maxima for the diamond:
-            # - evaluate pValueFUN at thetahat to get the maxima for the diamond
-            # For Fisher, however, the p-value function between thetahat_{i}
-            # and thetahat_{i+1} can be concave.
-            # Thus, finding maxima for the diamond:
-            # - Find the maximum between all thetahats
-            # f_thetahat <- do.call(
-            #     "pValueFUN",
-            #     append(
-            #         list(
-            #             thetahat = thetahat,
-            #             se = se,
-            #             mu = res$forest_plot_eval
-            #         ),
-            #         pValueFUN_args
-            #     )
-            # )
-            # Extract the CIs and minima
             CI  <- res$CI
             gamma  <- res$gamma
             # Calculate the polygons for the diamond
@@ -348,22 +329,34 @@ get_CI_new_methods <- function(
         p_0 <- do.call("pValueFUN", append(p_0_args, pValueFUN_args))
         p_0 <- data.frame(
             name = grid$name[r],
-            p_0 = p_0
+            p_0 = p_0,
+            stringsAsFactors = FALSE
+        )
+
+        # Calculate the maximum p-value and return it
+        idx <- with(res, forest_plot_f_thetahat == max(forest_plot_f_thetahat))
+        p_max <- data.frame(
+            name = grid$name[r],
+            mu = res$forest_plot_thetahat[idx],
+            p_max = res$forest_plot_f_thetahat[idx],
+            stringsAsFactors = FALSE
         )
 
         # Return
         list(
             CIs = polygons,
-            p_0 = p_0
+            p_0 = p_0,
+            p_max = p_max
         )
     })
 
     # Reorganize list
     CIs <- do.call("rbind", lapply(out, "[[", i = 1L))
     p_0 <- do.call("rbind", lapply(out, "[[", i = 2L))
+    p_max <- do.call("rbind", lapply(out, "[[", i = 3L))
 
     # Return
-    list(CIs = CIs, p_0 = p_0)
+    list(CIs = CIs, p_0 = p_0, p_max = p_max)
 }
 
 
