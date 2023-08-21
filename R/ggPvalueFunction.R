@@ -189,13 +189,13 @@ ggPvalueFunction <- function(
 
     # Define function to convert breaks from primary y-axis to
     # breaks for secondary y-axis
-    trans <- function(x) rev(abs(x - 1) * 100)
+    trans <- function(x) abs(x - 1) * 100
     # Define breaks for the primary y-axis
     b_points <- c(1 - level, pretty(c(lines$y, 1)))
     o <- order(b_points, decreasing = FALSE)
     breaks_y1 <- b_points[o]
     # Compute breaks for the secondary y-axis
-    breaks_y2 <- trans(b_points[o[o != 1L]])
+    # breaks_y2 <- trans(b_points[o])
     # Set transparency
     transparency <- 1
 
@@ -228,10 +228,11 @@ ggPvalueFunction <- function(
         name = "p-value",
         breaks = breaks_y1,
         limits = c(0, 1),
+        expand = c(0, 0),
         sec.axis = ggplot2::sec_axis(
             trans = trans,
             name = "Confidence level [%]",
-            breaks = breaks_y2
+            breaks = trans(breaks_y1)
         )
     ) +
     # Draw intervals on x-axis
