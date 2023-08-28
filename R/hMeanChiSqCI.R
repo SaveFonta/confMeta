@@ -8,7 +8,7 @@
 #' @param pValueFUN A function that calculates the p-value. Must have arguments
 #' \code{thetahat} and \code{se} as these are passed by this function.
 #' Must further have an argument \code{mu} that specifies the null-hypothesis.
-#' Defaults to \code{\link[hMean]{hMeanChiSqMu}}.
+#' Defaults to \code{\link[confMeta]{hMeanChiSqMu}}.
 #' @template check_inputs
 #' @template pValueFUN_args
 #' @return Returns a list containing confidence interval(s)
@@ -47,11 +47,11 @@
 #'
 #' ## Determine the p-value functions
 #' funs <- list(
-#'     "pearson" = hMean::pPearsonMu,
-#'     "hMean" = hMean::hMeanChiSqMu,
-#'     "k-Trials" = hMean::kTRMu,
-#'     "edgington" = hMean::pEdgingtonMu,
-#'     "fisher" = hMean::pFisherMu
+#'     "pearson" = confMeta::pPearsonMu,
+#'     "hMean" = confMeta::hMeanChiSqMu,
+#'     "k-Trials" = confMeta::kTRMu,
+#'     "edgington" = confMeta::pEdgingtonMu,
+#'     "fisher" = confMeta::pFisherMu
 #' )
 #'
 #' ## Calculate the CIs

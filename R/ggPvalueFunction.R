@@ -8,14 +8,14 @@
 #' used in cases where \code{pValueFUN = "hMean"} but ignored otherwise.
 #' @param pValueFUN Character vector of length 1, 2 or 3. Valid options consist
 #' of any combination of \code{"hMean"}, \code{"k-Trials"}, or \code{"Pearson"}.
-#' \code{"hMean"} will add a line using \code{\link[hMean]{hMeanChiSqMu}} as the
-#' p-value function, \code{"k-Trials"} adds a line using
-#' \code{\link[hMean]{kTRMu}} as the p-value function, and \code{"Pearson} uses
-#' \code{\link[hMean]{pPearsonMu}} as the p-value function.
+#' \code{"hMean"} will add a line using \code{\link[confMeta]{hMeanChiSqMu}} as
+#' the p-value function, \code{"k-Trials"} adds a line using
+#' \code{\link[confMeta]{kTRMu}} as the p-value function, and \code{"Pearson}
+#' uses \code{\link[confMeta]{pPearsonMu}} as the p-value function.
 #' @param heterogeneity The heterogeneity model used to adjust the standard
 #' errors \code{se}. Valid options are any combination of \code{"none"},
 #' \code{"additive"}, or \code{"multiplicative"}. See also
-#' \code{\link[hMean]{hMeanChiSqMu}}.
+#' \code{\link[confMeta]{hMeanChiSqMu}}.
 #' @param pValueFUN Any combination of \code{"hMean"}, \code{"k-Trials"}, and
 #' \code{"Pearson"}. This argument determines which methods are plotted in the
 #' resulting image.
@@ -315,7 +315,7 @@ make_p_call <- function(grid_row, const) {
     if (nrow(grid_row) != 1L)
         stop("Argument 'grid_row' must have exactly 1 row.")
     # Construct the call to the p-value function
-    currentFUN <- get(grid_row$fun_name, pos = "package:hMean")
+    currentFUN <- get(grid_row$fun_name, pos = "package:confMeta")
     args <- list(
         thetahat = const$thetahat,
         se = const$se,

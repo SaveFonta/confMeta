@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/reference/test_package.html#special-files
 
 library(testthat)
-library(hMean)
+library(confMeta)
 
-test_check("hMean")
+test_check("confMeta")

@@ -1,4 +1,4 @@
-path <- "https://raw.githubusercontent.com/felix-hof/hMean/main/R/kTRMu.R"
+path <- "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/kTRMu.R"
 fun_name <- "kTRMu"
 
 # get the old function
@@ -10,7 +10,7 @@ get_old_FUN <- function(
     # Source the utils file as well
     code_utils <- paste0(
         readLines(
-            "https://raw.githubusercontent.com/felix-hof/hMean/main/R/utils.R",
+            "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/utils.R",
             warn = FALSE
         ),
         collapse = "\n"

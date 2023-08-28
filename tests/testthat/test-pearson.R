@@ -37,13 +37,13 @@ test_that("Results of pPearsonMu are consistent.", {
       )
     }
   )
-  
+
   # Get the old function, vectorise it, and run the same inputs
   old_fun <- get_old_FUN(
-    path = "https://raw.githubusercontent.com/felix-hof/hMean/main/R/pearson.R",
+    path = "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/pearson.R",
     fun_name = "pPearsonMu"
   )
-  
+
   old_vec <- function(
     thetahat,
     se,
