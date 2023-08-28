@@ -33,7 +33,7 @@ to \code{FALSE} might be dangerous.}
 \item{pValueFUN}{A function that calculates the p-value. Must have arguments
 \code{thetahat} and \code{se} as these are passed by this function.
 Must further have an argument \code{mu} that specifies the null-hypothesis.
-Defaults to \code{\link[hMean]{hMeanChiSqMu}}.}
+Defaults to \code{\link[confMeta]{hMeanChiSqMu}}.}
 
 \item{pValueFUN_args}{A named \code{list} with arguments passed to
 \code{pValueFUN}. This list should contain all arguments of \code{pValueFUN}
@@ -82,11 +82,11 @@ conf.level <- 0.95
 
 ## Determine the p-value functions
 funs <- list(
-    "pearson" = hMean::pPearsonMu,
-    "hMean" = hMean::hMeanChiSqMu,
-    "k-Trials" = hMean::kTRMu,
-    "edgington" = hMean::pEdgingtonMu,
-    "fisher" = hMean::pFisherMu
+    "pearson" = confMeta::pPearsonMu,
+    "hMean" = confMeta::hMeanChiSqMu,
+    "k-Trials" = confMeta::kTRMu,
+    "edgington" = confMeta::pEdgingtonMu,
+    "fisher" = confMeta::pFisherMu
 )
 
 ## Calculate the CIs

@@ -7,7 +7,7 @@
 forest2CI(forest)
 }
 \arguments{
-\item{forest}{The output of a call to \code{\link[hMean]{ForestPlot}}}
+\item{forest}{The output of a call to \code{\link[confMeta]{ForestPlot}}}
 }
 \value{
 A list with confidence intervals from all the methods specified

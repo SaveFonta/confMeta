@@ -263,8 +263,8 @@ get_CI_new_methods <- function(
     )
 
     # Calculate phi and tau2 (This is the same for all scenarios)
-    phi <- hMean::estimatePhi(thetahat, se)
-    tau2 <- hMean::estimateTau2(thetahat, se)
+    phi <- confMeta::estimatePhi(thetahat, se)
+    tau2 <- confMeta::estimateTau2(thetahat, se)
 
     out <- lapply(seq_len(nrow(grid)), function(r) {
 

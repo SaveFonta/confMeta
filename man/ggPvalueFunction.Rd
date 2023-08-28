@@ -31,7 +31,7 @@ used in cases where \code{pValueFUN = "hMean"} but ignored otherwise.}
 \item{heterogeneity}{The heterogeneity model used to adjust the standard
 errors \code{se}. Valid options are any combination of \code{"none"},
 \code{"additive"}, or \code{"multiplicative"}. See also
-\code{\link[hMean]{hMeanChiSqMu}}.}
+\code{\link[confMeta]{hMeanChiSqMu}}.}
 
 \item{pValueFUN}{Any combination of \code{"hMean"}, \code{"k-Trials"}, and
 \code{"Pearson"}. This argument determines which methods are plotted in the
