@@ -9,7 +9,6 @@ hMeanChiSqCI(
   se,
   level = 0.95,
   alternative = "none",
-  wGamma = rep(1, length(unique(thetahat)) - 1),
   check_inputs = TRUE,
   pValueFUN = hMeanChiSqMu,
   pValueFUN_args
@@ -25,11 +24,6 @@ confidence interval. Defaults to 0.95.}
 
 \item{alternative}{Either \code{"greater"}, \code{"less"}, \code{"two.sided"}, or \code{"none"} (default).
 Specifies the alternative to be considered in the computation of the p-value.}
-
-\item{wGamma}{Numeric vector of length \code{unique(thetahat) - 1} specifying
-weights used to
-summarize the gamma values, i.e., the local minima of the p-value function
-between the thetahats. Default is a vector of 1s.}
 
 \item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
 The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
@@ -54,9 +48,64 @@ study-specific estimates and standard errors. The list contains:
 \item{CI}{Confidence interval(s).}\cr\cr
 If the \code{alternative} is "none", the list also contains:
 \item{gamma}{Local minima of the p-value function between the thetahats.}
-\item{gammaMean}{Mean of all gammas weighted by \code{wGamma}.}
-\item{gammaHMean}{Harmonic mean of all gammas weighted by \code{wGamma}.}
+\item{gammaMean}{Mean of all gammas.}
+\item{gammaHMean}{Harmonic mean of all gammas.}
 }
 \description{
 Calculate confidence intervals based on the harmonic mean chi-squared test
+}
+\examples{
+## Simulate thetahat and se
+n <- 15
+mean <- 0
+sd <- 1.1
+shape <- 5
+rate <- 5
+thetahat <- rnorm(n, mean = mean, sd = sd)
+se <- rgamma(n, shape = shape, rate = rate)
+
+## Set heterogeneity
+heterogeneity <- "none"
+phi <- if (heterogeneity == "multiplicative") {
+    estimatePhi(thetahat = thetahat, se = se)
+} else {
+    NULL
+}
+tau2 <- if (heterogeneity == "additive") {
+    estimateTau2(thetahat = thetahat, se = se)
+} else {
+    NULL
+}
+
+## Set confidence level
+conf.level <- 0.95
+
+## Determine the p-value functions
+funs <- list(
+    "pearson" = hMean::pPearsonMu,
+    "hMean" = hMean::hMeanChiSqMu,
+    "k-Trials" = hMean::kTRMu,
+    "edgington" = hMean::pEdgingtonMu,
+    "fisher" = hMean::pFisherMu
+)
+
+## Calculate the CIs
+cis <- lapply(
+    funs,
+    function(f) {
+        hMeanChiSqCI(
+            thetahat = thetahat,
+            se = se,
+            level = conf.level,
+            alternative = "none",
+            pValueFUN = f,
+            pValueFUN_args = list(
+                check_inputs = FALSE,
+                heterogeneity = heterogeneity,
+                phi = phi,
+                tau2 = tau2
+            )
+        )
+    }
+)
 }

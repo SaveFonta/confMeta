@@ -9,10 +9,14 @@ ForestPlot(
   se,
   level = 0.95,
   distr = c("chisq", "f"),
-  pValueFUN = c("hMean", "k-Trials", "Pearson"),
+  pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
   heterogeneity = c("none", "additive", "multiplicative"),
-  height = 0.5,
-  studyNames = NULL
+  diamond_height = 0.5,
+  v_space = 1.5,
+  studyNames = NULL,
+  xlim = NULL,
+  show_studies = TRUE,
+  scale_diamonds = FALSE
 )
 }
 \arguments{
@@ -39,18 +43,39 @@ errors \code{se}. Valid options are any combination of \code{"none"},
 \code{"additive"}, or \code{"multiplicative"}. See also
 \code{\link[hMean]{hMeanChiSqMu}}.}
 
-\item{height}{The height of the polygons. Must be a numeric vector of length
-\enumerate{
-\item Defaults to 0.5.
-}}
+\item{diamond_height}{The height of the polygons. Must be a numeric vector of
+length 1. Defaults to 0.5.}
+
+\item{v_space}{A numeric vector of length 1 indicating the vertical space
+between the different rows of the plot. Default is 1.5.}
 
 \item{studyNames}{Either \code{NULL} (the default) or a character vector of
 the same length as \code{thetahat} indicating the names of the individual
 studies.}
+
+\item{xlim}{Either \code{NULL} (default) or a numeric vector of length 2,
+indicating the limits of the x-axis.}
+
+\item{show_studies}{Must be either \code{TRUE} (default) or \code{FALSE}.
+If \code{TRUE}, the confidence intervals for the individual studies will
+be shown in the forest plot. Otherwise, the plot will only show the diamonds
+for the meta-analyses.}
+
+\item{scale_diamonds}{Must be either \code{TRUE} or \code{FALSE} with
+\code{FALSE} being the default. If \code{TRUE}, the maximum height of the
+diamond is always \code{diamond_height}, even if the p-value function never
+reaches 1. If \code{FALSE}, the the maximum height of the diamond is
+\code{diamond_heigth} * max(p-value function).}
 }
 \value{
-An object of class \code{ggplot}. The object contains everything
-necessary to plot the forest plot.
+The function invisibly returns a list with the following elements:
+\describe{
+\item{plot}{An object of class \code{ggplot}. It shows a forest plot for
+the individual studies as well as the overall estimate derived
+using the specified methods.}
+\item{p_0}{A data frame containing the p-values for the null-effect
+according to the specified methods.}
+}
 }
 \description{
 Plot the forest plot for a given meta-analysis
@@ -62,15 +87,15 @@ se <- c(0.346945150708765, 0.214289651908355, 0.239800324754587,
         0.372455823554997, 0.25000459389308, 0.295923805016299,
         0.219391786477601, 0.14796190250815, 0.270413132170067,
         0.500009187786161)
-pValueFUN <- c("hMean", "k-Trials", "Pearson")
+pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher")
 distr <- c("chisq")
 heterogeneity <- "none"
 ForestPlot(
     thetahat = thetahat,
     se = se,
     distr = distr,
-    pValueFUN = c("hMean", "k-Trials", "Pearson"),
-    heterogeneity = NULL
+    pValueFUN = pValueFUN,
+    heterogeneity = heterogeneity
 )
 
 }

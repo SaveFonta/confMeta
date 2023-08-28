@@ -2,7 +2,7 @@
 
 #' @details
 #' The function is vectorized over the argument \code{mu}.
-#' 
+#'
 #' @template thetahat
 #' @template se
 #' @template mu
@@ -45,51 +45,50 @@
 #'     heterogeneity = "multiplicative"
 #' )
 kTRMu <- function(
-  thetahat,
-  se,
-  mu,
-  phi = NULL,
-  tau2 = NULL,
-  heterogeneity = "none",
-  alternative = "none",
-  check_inputs = TRUE
+    thetahat,
+    se,
+    mu,
+    phi = NULL,
+    tau2 = NULL,
+    heterogeneity = "none",
+    alternative = "none",
+    check_inputs = TRUE
 ) {
 
-  if (check_inputs) {
-      check_inputs_p_value(
-        thetahat = thetahat,
+    if (check_inputs) {
+        check_inputs_p_value(
+            thetahat = thetahat,
+            se = se,
+            mu = mu,
+            heterogeneity = heterogeneity,
+            phi = phi,
+            tau2 = tau2
+        )
+        check_alternative_arg_ktr(alternative = alternative)
+    }
+
+    # recycle `se` if needed
+    if (length(se) == 1L) se <- rep(se, length(thetahat))
+
+    # adjust se based on heterogeneity model
+    se <- adjust_se(
         se = se,
-        mu = mu,
         heterogeneity = heterogeneity,
-        alternative = alternative,
         phi = phi,
         tau2 = tau2
-      )
-  }
-  
-  # recycle `se` if needed
-  if (length(se) == 1L) se <- rep(se, length(thetahat))
-  
-  # adjust se based on heterogeneity model
-  se <- adjust_se(
-    se = se,
-    heterogeneity = heterogeneity,
-    phi = phi,
-    tau2 = tau2
-  )
-  
-  # Get lengths
-  n <- length(thetahat)
-  
-  if(alternative == "none") {
-    z <- vapply(mu, function(mu) (thetahat - mu) / se, double(length(thetahat)))
-    if (is.null(dim(z)))
-      dim(z) <- c(1L, length(z))
-    p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # ReplicationSuccess::z2p
-    pmax <- apply(p, 2L, max)
-  } else {
-    stop("Invalid argument 'alternative'.")
-  }
-  
-  return(pmax^n)
+    )
+
+    # Get lengths
+    n <- length(thetahat)
+
+    if (alternative == "none") {
+        z <- get_z(thetahat = thetahat, se = se, mu = mu)
+        # p <- ReplicationSuccess::z2p(z, "two.sided")
+        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
+        res <- apply(p, 2L, max)^n
+    } else {
+        stop("Invalid argument 'alternative'.")
+    }
+
+    return(res)
 }

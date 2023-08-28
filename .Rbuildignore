@@ -9,6 +9,8 @@ Makefile.defs
 ^pkgdown$
 ^man-roxygen
 DESCRIPTION-r
+showcase
+test_cases
 
 ^.*\.Rproj$
 ^\.Rproj\.user$

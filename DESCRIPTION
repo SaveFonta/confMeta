@@ -1,6 +1,6 @@
 Package: hMean
 Title: Utilities for Our Simulation Study
-Version: 0.1.2
+Version: 0.1.0.9001
 Authors@R: c(
     person("Felix", "Hofmann", email = "felix.hofmann2@uzh.ch", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3891-6239")),
     person("Leonhard", "Held", email = "leonhard.held@uzh.ch", role = c("aut"), comment = c(ORCID = "0000-0002-8686-5325"))
@@ -14,6 +14,7 @@ Imports:
     ggplot2,
     meta,
     metafor,
+    ReplicationSuccess,
     scales,
     stats
 Suggests: 

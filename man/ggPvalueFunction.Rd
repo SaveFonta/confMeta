@@ -10,9 +10,10 @@ ggPvalueFunction(
   level = 0.95,
   distr = c("chisq", "f"),
   heterogeneity = c("none", "additive", "multiplicative"),
-  pValueFUN = c("hMean", "k-Trials", "Pearson"),
+  pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
   pValueFUN_args,
-  xlim = c(min(thetahat - 3 * se), max(thetahat + 3 * se))
+  xlim = c(min(thetahat - 2 * se), max(thetahat + 2 * se)),
+  drapery = TRUE
 )
 }
 \arguments{
@@ -44,10 +45,18 @@ included in this list.}
 
 \item{xlim}{Numeric vector of length 2 denoting the range of values
 on the x-axis, i.e. the effect size.}
+
+\item{drapery}{Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE},
+individual studies are represented as drapery plots. Otherwise, the studies
+are represented by a simple vertical line at their effect estimates.}
 }
 \value{
-An object of class \code{ggplot}. It contains the plot of the p-value
-functions specified by the input arguments.
+The function invisibly returns a list with the following elements:
+\describe{
+\item{plot}{An object of class \code{ggplot}. It contains the plot of
+the p-value functions specified by the input arguments.}
+\item{p_0}{A data frame containing p-values at \code{mu = 0}.}
+}
 }
 \description{
 Plot the p-value function(s) for a given set of studies
@@ -59,7 +68,7 @@ se <- c(0.346945150708765, 0.214289651908355, 0.239800324754587,
         0.372455823554997, 0.25000459389308, 0.295923805016299,
         0.219391786477601, 0.14796190250815, 0.270413132170067,
         0.500009187786161)
-pValueFUN <- c("hMean", "k-Trials", "Pearson")
+pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington")
 distr <- c("chisq")
 heterogeneity <- "none"
 ggPvalueFunction(thetahat = thetahat,

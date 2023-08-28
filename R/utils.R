@@ -38,47 +38,92 @@ make_grid <- function(pValueFUN, heterogeneity, distr) {
             stringsAsFactors = FALSE
         )
     }
+    make_grid_edgington <- function(heterogeneity, distr) {
+        distr <- NA_character_
+        expand.grid(
+            fun_name = "pEdgingtonMu",
+            heterogeneity = heterogeneity,
+            distr = distr,
+            stringsAsFactors = FALSE
+        )
+    }
+    make_grid_fisher <- function(heterogeneity, distr) {
+        distr <- NA_character_
+        expand.grid(
+            fun_name = "pFisherMu",
+            heterogeneity = heterogeneity,
+            distr = distr,
+            stringsAsFactors = FALSE
+        )
+    }
     # Put functions in a named list
     grid_funs <- list(
         "hMean" = make_grid_hMean,
         "k-Trials" = make_grid_kTRMu,
-        "Pearson" = make_grid_pearson
+        "Pearson" = make_grid_pearson,
+        "Edgington" = make_grid_edgington,
+        "Fisher" = make_grid_fisher
     )
     # Which P-value functions should be included in the grid
-    include_funs <- c("hMean", "k-Trials", "Pearson")
+    include_funs <- c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher")
     include_funs <- include_funs[include_funs %in% pValueFUN]
     # Subset the list with function to include only those
     # p-value functions that were requested
     grid_funs <- grid_funs[include_funs]
     # Make the grid
     grid <- do.call(
-        rbind,
+        "rbind",
         lapply(
-            grid_funs,
-            function(fun, heterogeneity, distr) {
-                fun(
+            seq_along(grid_funs),
+            function(i, heterogeneity, distr) {
+                fun <- grid_funs[[i]]
+                fun_char <- include_funs[i]
+                g <- fun(
                     heterogeneity = heterogeneity,
                     distr = distr
                 )
+                g$pretty_name <- include_funs[i]
+                g$name <- make_names(
+                    FUN = fun_char,
+                    heterogeneity = g$heterogeneity,
+                    distr = g$distr
+                )
+                g
             },
             heterogeneity = heterogeneity,
             distr = distr
         )
     )
-    # # Add the function column
-    # grid$funs <- lapply(
-    #     grid$fun_name,
-    #     function(x) {
-    #         switch(
-    #             x,
-    #             "hMean" = hMeanChiSqMu,
-    #             "k-Trials" = kTRMu,
-    #             "Pearson" = pPearsonMu
-    #         )
-    #     }
-    # )
+
     grid
 }
+
+# Construct names out of the function and its argument.
+# This is used to construct labels for plots etc.
+make_names <- function(FUN, heterogeneity, distr) {
+    # handle heterogeneity
+    heterogeneity <- vapply(
+        heterogeneity,
+        function(x) {
+            switch(
+                x,
+                "none" = " none",
+                "additive" = " add.",
+                "multiplicative" = " mult."
+            )
+        },
+        character(1L)
+    )
+    # handle distr
+    do_distr <- !(length(distr) == 1L && is.na(distr))
+    if (do_distr)
+        distr <- ifelse(is.na(distr), "", paste0(" (", distr, ")"))
+    else
+        distr <- rep("", length(FUN))
+    # Make names
+    paste0(FUN, heterogeneity, distr)
+}
+
 
 ################################################################################
 # Check inputs for p-value functions                                           #
@@ -163,7 +208,7 @@ check_phiTau2_arg <- function(heterogeneity, phi, tau2) {
 }
 
 ## Checks the alternative argument
-check_alternative_arg <- function(alternative) {
+check_alternative_arg_hmean <- function(alternative) {
     if (
         length(alternative) != 1L ||
         !(alternative %in% c("none", "less", "greater", "two.sided"))
@@ -172,6 +217,48 @@ check_alternative_arg <- function(alternative) {
             paste0(
                 "Argument 'alternative' must be one of ",
                 "c('none', 'less', 'greater', 'two.sided')."
+            )
+        )
+}
+
+## Checks the alternative argument
+check_alternative_arg_edg <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("one.sided", "two.sided"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('one.sided', 'two.sided')."
+            )
+        )
+}
+
+## Checks the alternative argument
+check_alternative_arg_pearson <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none')."
+            )
+        )
+}
+
+## Checks the alternative argument
+check_alternative_arg_ktr <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none')."
             )
         )
 }
@@ -210,28 +297,24 @@ check_inputs_p_value <- function(
     heterogeneity,
     phi,
     tau2,
-    mu,
-    alternative
+    mu
 ) {
-    
+
     # Check thetahat and se are numeric and finite
     ## thetahat
     check_thetahat_arg(thetahat = thetahat)
-    
+
     ## se
     check_se_arg(se = se, l_thetahat = length(thetahat))
-    
+
     # Check mu
     check_mu_arg(mu = mu)
-    
+
     # Check heterogeneity
     check_heterogeneity_arg(heterogeneity = heterogeneity)
-    
+
     # Check phi and tau2
     check_phiTau2_arg(heterogeneity = heterogeneity, phi = phi, tau2 = tau2)
-    
-    # Check alternative argument
-    check_alternative_arg(alternative = alternative)
 }
 
 ################################################################################
@@ -275,6 +358,19 @@ check_pValueFUNArgs_arg <- function(pValueFUN_args, pValueFUN) {
     # arguments. Custom pValueFUNs might have entirely different Arguments.
 }
 
+check_alternative_arg_CI <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none", "two.sided", "one.sided", "less", "greater"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none', 'two.sided', 'one.sided', 'less', 'greater')."
+            )
+        )
+}
+
 # Summarise the above functions into one
 check_inputs_CI <- function(
     thetahat,
@@ -289,8 +385,7 @@ check_inputs_CI <- function(
     check_thetahat_arg(thetahat)
     check_se_arg(se = se, l_thetahat = length(thetahat))
     check_level_arg(level = level)
-    check_alternative_arg(alternative = alternative)
-    check_wGamma_arg(wGamma = wGamma, thetahat = thetahat)
+    check_alternative_arg_CI(alternative = alternative)
     check_pValueFUN_arg(pValueFUN = pValueFUN)
     check_pValueFUNArgs_arg(pValueFUN_args = pValueFUN_args)
 }
@@ -314,11 +409,33 @@ adjust_se <- function(se, heterogeneity, phi, tau2) {
         )
 }
 
+
+################################################################################
+# Compute the z-values based on thetahat, se and vectorize over mu             #
+################################################################################
+# This function calculates the z values of thetahat and se for every value of mu
+# this function is used in the p-value functions:
+# - kTRMu
+# - hMeanChiSqMu
+# - pPearsonMu
+# - pEdgingtonMu
+
+get_z <- function(thetahat, se, mu) {
+    n <- length(thetahat)
+    z <- vapply(
+        mu,
+        function(mu) (thetahat - mu) / se,
+        double(n)
+    )
+    if (is.null(dim(z))) dim(z) <- c(1L, n)
+    z
+}
+
 ################################################################################
 # Global variables                                                             #
 # This section is necessary because some of the functions in the ggplot2       #
 # package use non-standard evaluation (NSE) which leads to warnings/notes in   #
-# R CMD check. Thus we declare all of the variables here.                      # 
+# R CMD check. Thus we declare all of the variables here.                      #
 # ##############################################################################
 
 utils::globalVariables(
@@ -327,7 +444,8 @@ utils::globalVariables(
         "limit",
         # ggPvalueFunction
         "x", "y", "group", "x_gamma", "y_gamma", "xmin", "xmax", "ymin", "ymax",
+        "study",
         # ForestPlot
-        "lower", "upper", "estimate", "ID", "color"
+        "lower", "upper", "estimate", "id", "color", "name", "y0"
     )
 )

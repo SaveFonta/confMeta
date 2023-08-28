@@ -1,4 +1,4 @@
-#' Calculate the p-value using the Pearson combination test.
+#' Calculate the p-value using the Fisher test.
 #'
 #' @details
 #' The function is is vectorized over the \code{mu} argument.
@@ -9,12 +9,9 @@
 #' @template phi
 #' @template tau2
 #' @template heterogeneity
-#' @template alternative
 #' @template check_inputs
 #'
 #' @return The corresponding p-values given mu under the null-hypothesis.
-#' @export
-#'
 #' @examples
 #' n <- 15
 #' thetahat <- rnorm(n)
@@ -24,48 +21,69 @@
 #'   max(thetahat) + 0.5 * max(se),
 #'   length.out = 1e5
 #' )
+#' heterogeneity <- "multiplicative"
 #' phi <- estimatePhi(thetahat = thetahat, se = se)
 #' resP <- pPearsonMu(
 #'     thetahat = thetahat,
 #'     se = se,
 #'     mu = mu,
-#'     heterogeneity = "multiplicative",
+#'     heterogeneity = heterogeneity,
 #'     phi = phi
 #' )
 #' resH <- hMeanChiSqMu(
 #'     thetahat = thetahat,
 #'     se = se,
 #'     mu = mu,
-#'     heterogeneity = "multiplicative",
+#'     heterogeneity = heterogeneity,
 #'     phi = phi
 #' )
 #' resTR <- kTRMu(
 #'     thetahat = thetahat,
 #'     se = se,
 #'     mu = mu,
-#'     heterogeneity = "multiplicative",
+#'     heterogeneity = heterogeneity,
 #'     phi = phi
 #' )
-#' par(las=1)
+#' resE <- pEdgingtonMu(
+#'     thetahat = thetahat,
+#'     se = se,
+#'     mu = mu,
+#'     heterogeneity = heterogeneity,
+#'     phi = phi
+#' )
+#' resF <- pFisherMu(
+#'     thetahat = thetahat,
+#'     se = se,
+#'     mu = mu,
+#'     heterogeneity = heterogeneity,
+#'     phi = phi
+#' )
+#' par(las = 1)
 #' matplot(
 #'   mu,
-#'   cbind(resP, resH, resTR),
+#'   cbind(resP, resH, resTR, resE, resF),
 #'   type = "l",
 #'   lty = 1,
-#'   lwd = 2,
+#'   lwd = 3,
 #'   ylab = "p-value function"
 #' )
-#' legend("topleft", col=c(1,2,3), lwd=2, lty=1, c("Pearson", "hMean","kTR"))
+#' legend("topleft",
+#'   col = 1:5,
+#'   lwd = 3,
+#'   lty = 1,
+#'   c("Pearson", "hMean", "kTR", "Edgington", "Fisher")
+#' )
 #' title(paste("Phi =", as.character(round(phi, 2))))
-
-pPearsonMu <- function(
+#'
+#' @export
+#'
+pFisherMu <- function(
     thetahat,
     se,
     mu = 0,
     phi = NULL,
     tau2 = NULL,
-    heterogeneity = c("none", "additive", "multiplicative"),
-    alternative = "none",
+    heterogeneity = "none",
     check_inputs = TRUE
 ) {
 
@@ -79,7 +97,6 @@ pPearsonMu <- function(
             phi = phi,
             tau2 = tau2
         )
-        check_alternative_arg_pearson(alternative = alternative)
     }
 
     # recycle `se` if needed
@@ -87,24 +104,25 @@ pPearsonMu <- function(
 
     # adjust se based on heterogeneity model
     se <- adjust_se(
-        se = se,
-        heterogeneity = heterogeneity,
-        phi = phi,
-        tau2 = tau2
+      se = se,
+      heterogeneity = heterogeneity,
+      phi = phi,
+      tau2 = tau2
     )
 
-    # Get lengths
+    # Get length
     n <- length(thetahat)
 
-    # implement alternatives
-    if (alternative == "none") {
-        z <- get_z(thetahat = thetahat, se = se, mu = mu)
-        # ReplicationSuccess::z2p
-        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
-        tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
-        p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
-    } else {
-        stop("Invalid argument 'alternative'.")
-    }
+    # get the z-values
+    z <- get_z(thetahat = thetahat, se = se, mu = mu)
+    # convert them to p-values
+    # p <- ReplicationSuccess::z2p(z, "two.sided")
+    p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
+    # sum up the p-values and calculate the probability
+    p <- stats::pchisq(
+        q = -2 * colSums(log(p)),
+        df = 2 * n,
+        lower.tail = FALSE
+    )
     return(p)
 }
