@@ -8,14 +8,14 @@
 #' used in cases where \code{pValueFUN = "hMean"} but ignored otherwise.
 #' @param pValueFUN Character vector of length 1, 2 or 3. Valid options consist
 #' of any combination of \code{"hMean"}, \code{"k-Trials"}, or \code{"Pearson"}.
-#' \code{"hMean"} will add a line using \code{\link[hMean]{hMeanChiSqMu}} as the
-#' p-value function, \code{"k-Trials"} adds a line using
-#' \code{\link[hMean]{kTRMu}} as the p-value function, and \code{"Pearson"} uses
-#' \code{\link[hMean]{pPearsonMu}} as the p-value function.
+#' \code{"hMean"} will add a line using \code{\link[confMeta]{hMeanChiSqMu}} as
+#' the p-value function, \code{"k-Trials"} adds a line using
+#' \code{\link[confMeta]{kTRMu}} as the p-value function, and \code{"Pearson"}
+#' uses \code{\link[confMeta]{pPearsonMu}} as the p-value function.
 #' @param heterogeneity The heterogeneity model used to adjust the standard
 #' errors \code{se}. Valid options are any combination of \code{"none"},
 #' \code{"additive"}, or \code{"multiplicative"}. See also
-#' \code{\link[hMean]{hMeanChiSqMu}}.
+#' \code{\link[confMeta]{hMeanChiSqMu}}.
 #' @param diamond_height The height of the polygons. Must be a numeric vector of
 #' length 1. Defaults to 0.5.
 #' @param studyNames Either \code{NULL} (the default) or a character vector of

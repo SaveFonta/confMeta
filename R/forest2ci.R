@@ -1,6 +1,6 @@
 #' Extract the confidence interval from forest plots
 #'
-#' @param forest The output of a call to \code{\link[hMean]{ForestPlot}}
+#' @param forest The output of a call to \code{\link[confMeta]{ForestPlot}}
 #'
 #' @return A list with confidence intervals from all the methods specified
 #' in the call to \code{ForestPlot}.

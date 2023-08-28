@@ -1,6 +1,6 @@
-# remotes::install_github("felix-hof/hMean", ref = "dev")
+# remotes::install_github("felix-hof/confMeta", ref = "dev")
 library(shiny)
-library(hMean)
+library(confMeta)
 library(patchwork)
 
 # Define a function that does the plots
@@ -37,7 +37,7 @@ make_plot <- function(pars) {
 
 ui <- fluidPage(
     # Title bar
-    titlePanel("Package hMean"),
+    titlePanel("Package confMeta"),
     # Inputs
     fluidRow(
         column(

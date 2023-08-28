@@ -1,7 +1,7 @@
 include Makefile.defs
 
-PACKAGE = hMean
-VERSION = 0.1.0.9001
+PACKAGE = confMeta
+VERSION = 0.2.0.9001
 TAR = $(PACKAGE)_$(VERSION).tar.gz
 
 

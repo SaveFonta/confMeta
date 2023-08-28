@@ -42,13 +42,13 @@ test_that("Results of hMeanChiSqMu are consistent.", {
       )
     }
   )
-  
+
   # Get the old function, vectorise it, and run the same inputs
   old_fun <- get_old_FUN(
-    path = "https://raw.githubusercontent.com/felix-hof/hMean/main/R/hMeanChiSqMu.R",
+    path = "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/hMeanChiSqMu.R",
     fun_name = "hMeanChiSqMu"
   )
-  
+
   old_res <- lapply(
     seq_len(nrow(grid)),
     function(x) {

@@ -40,7 +40,7 @@ test_that("Results of kTRMu are consistent", {
   
   # Get the old function, vectorise it, and run the same inputs
   old_fun <- get_old_FUN(
-    path = "https://raw.githubusercontent.com/felix-hof/hMean/main/R/kTRMu.R",
+    path = "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/kTRMu.R",
     fun_name = "kTRMu"
   )
   
