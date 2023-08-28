@@ -1,6 +1,6 @@
 Package: confMeta
 Title: Utilities for Our Simulation Study
-Version: 0.2.0.9001
+Version: 0.2.0
 Authors@R: c(
     person("Felix", "Hofmann", email = "felix.hofmann2@uzh.ch", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3891-6239")),
     person("Leonhard", "Held", email = "leonhard.held@uzh.ch", role = c("aut"), comment = c(ORCID = "0000-0002-8686-5325"))
