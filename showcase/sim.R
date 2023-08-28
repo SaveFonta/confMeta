@@ -2,25 +2,26 @@ library(patchwork)
 library(devtools)
 load_all()
 
-n <- 20
+n <- 9
 mean <- 0
-sd <- 1.5
-shape <- 5
+sd <- 2.5
+shape <- 8
 rate <- 5
 heterogeneity <- c("none", "additive")
-pValueFUN <- c("hMean", "Edgington", "Fisher")
+pValueFUN <- c("hMean", "Fisher")
 distr <- "chisq"
 level <- 0.95
 diamond_height <- 0.5
 v_space <- 1.5
 studyNames <- NULL
-xlim <- c(-5.4, 5)
+xlim <- c(-6, 7)
 scale_diamonds <- TRUE
 v_space <- 1.5
 diamond_height <- 0.5
 show_studies <- TRUE
 rng_seed <- 42L
 pValueFUN_args <- list(check_inputs = FALSE)
+drapery <- TRUE
 
 set.seed(rng_seed)
 thetahat <- rnorm(n, mean = mean, sd = sd)
@@ -38,7 +39,8 @@ pars <- list(
     studyNames = studyNames,
     xlim = xlim,
     show_studies = show_studies,
-    scale_diamonds = scale_diamonds
+    scale_diamonds = scale_diamonds,
+    drapery = drapery
 )
 
 list2env(pars, globalenv())
