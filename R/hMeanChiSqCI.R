@@ -73,7 +73,6 @@
 #'         )
 #'     }
 #' )
-#' @export
 hMeanChiSqCI <- function(
   thetahat,
   se,
