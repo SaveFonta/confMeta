@@ -9,7 +9,7 @@ new_confMeta <- function(
 
     # Calculate individual CIs
     alpha <- 1 - conf_level
-    se_term <- alpha / 2 * SEs # Maybe include a one-sided option?
+    se_term <- alpha / 2 * SEs # Note: At some point include a one-sided option?
     individual_cis <- matrix(
         c(
             estimates - se_term,
@@ -99,14 +99,12 @@ confMeta <- function(
         p_fun = p_fun
     )
 
-    validate_confMeta(
-        new_confMeta(
-            estimates = estimates,
-            SEs = SEs,
-            conf_level = conf_level,
-            p_fun = p_fun,
-            ... = ...
-        )
+    new_confMeta(
+        estimates = estimates,
+        SEs = SEs,
+        conf_level = conf_level,
+        p_fun = p_fun,
+        ... = ...
     )
 }
 
