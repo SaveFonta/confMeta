@@ -21,5 +21,5 @@ rng_seed <- 42L
 # drapery <- TRUE
 
 set.seed(rng_seed)
-thetahat <- rnorm(n, mean = mean, sd = sd)
-se <- rgamma(n, shape = shape, rate = rate)
+estimates <- rnorm(n, mean = mean, sd = sd)
+SEs <- rgamma(n, shape = shape, rate = rate)

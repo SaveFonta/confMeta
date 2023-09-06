@@ -1,3 +1,43 @@
+# Helper function
+confMeta <- function(
+    estimates,
+    SEs,
+    study_names = NULL,
+    conf_level = 0.95,
+    fun,
+    ...
+) {
+
+    # coerce inputs into correct format
+    estimates <- as.double(estimates)
+    SEs <- as.double(SEs)
+    conf_level <- as.double(conf_level)
+
+    # recycle to appropriate lengths
+
+    # run input checks
+    validate_inputs(
+        estimates = estimates,
+        SEs = SEs,
+        study_names = study_names,
+        conf_level = conf_level,
+        fun = fun
+    )
+
+    # Make the p-value function
+    p_fun <- make_p_fun(
+        fun = fun,
+        ... = ...
+    )
+
+    new_confMeta(
+        estimates = estimates,
+        SEs = SEs,
+        conf_level = conf_level,
+        p_fun = p_fun
+    )
+}
+
 # Constructor function
 new_confMeta <- function(
     estimates = double(),
@@ -38,8 +78,8 @@ new_confMeta <- function(
 validate_inputs <- function(
     estimates,
     SEs,
-    study_names = NULL,
-    conf_level = 0.95,
+    study_names,
+    conf_level,
     p_fun
 ) {
 
@@ -64,6 +104,8 @@ validate_inputs <- function(
     check_all_finite(x = conf_level)       # no NAs, NaNs etc in conf_level
     check_prob(x = conf_level)             # conf_level must be between 0 & 1
 
+    # Check that p_fun has an argument named mu
+
     # Return NULL if all checks passed
     invisible(NULL)
 }
@@ -73,39 +115,46 @@ validate_confMeta <- function(confMeta) {
 }
 
 
-# Helper function
-confMeta <- function(
-    estimates,
-    SEs,
-    studyNames = NULL,
-    conf_level = 0.95,
-    p_fun,
-    ...
-) {
+# ==============================================================================
+# Make the p-value function  ===================================================
+# ==============================================================================
 
-    # coerce inputs into correct format
-    estimates <- as.double(estimates)
-    SEs <- as.double(SEs)
-    conf_level <- as.double(conf_level)
+make_p_fun <- function(fun, ...) {
+    fa <- methods::formalArgs(fun)
+    if (length(fa) == 1L && "mu" %in% fa) {
+        # if the function is already only a function with exactly one argument
+        # `mu`, return it as is
+        fun
+    } else {
+        # otherwise construct a function that calls `fun` with the ellipsis
+        # arguments fixed
+        function(mu) {
+            arglist <- append(list(...), alist(mu))
+            do.call("fun", arglist)
+        }
+    }
+}
 
-    # recycle to appropriate lengths
+################################################################################
+# Checking the type of a variable                                              #
+################################################################################
 
-    # run input checks
-    validate_inputs(
-        estimates = estimates,
-        SEs = SEs,
-        study_names = study_names,
-        conf_level = conf_level,
-        p_fun = p_fun
-    )
 
-    new_confMeta(
-        estimates = estimates,
-        SEs = SEs,
-        conf_level = conf_level,
-        p_fun = p_fun,
-        ... = ...
-    )
+# ==============================================================================
+# Argument checks ==============================================================
+# ==============================================================================
+
+################################################################################
+# Checking the type of a variable                                              #
+################################################################################
+
+check_type <- function(x, type) {
+    if (!(typeof(x) == type)) {
+        obj <- deparse1(substitute(x))
+        msg <- paste0("Argument `", obj, "` must be of type '", type, "'.")
+        stop(msg, call. = FALSE)
+    }
+    invisible(NULL)
 }
 
 ################################################################################
