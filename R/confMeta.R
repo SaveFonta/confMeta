@@ -80,7 +80,7 @@ validate_inputs <- function(
     SEs,
     study_names,
     conf_level,
-    p_fun
+    fun
 ) {
 
     # Check inputs
@@ -103,6 +103,7 @@ validate_inputs <- function(
     check_all_finite(x = SEs)              # no NAs, NaNs etc in SEs
     check_all_finite(x = conf_level)       # no NAs, NaNs etc in conf_level
     check_prob(x = conf_level)             # conf_level must be between 0 & 1
+    check_fun_args(x = fun)                # function must have correct args
 
     # Check that p_fun has an argument named mu
 
@@ -121,14 +122,14 @@ validate_confMeta <- function(confMeta) {
 
 make_p_fun <- function(fun, ...) {
     fa <- methods::formalArgs(fun)
-    if (length(fa) == 1L && "mu" %in% fa) {
+    if (length(fa) > 4L && "mu" %in% fa) {
         # if the function is already only a function with exactly one argument
         # `mu`, return it as is
         fun
     } else {
         # otherwise construct a function that calls `fun` with the ellipsis
         # arguments fixed
-        function(mu) {
+        function(estimates, SEs, level, mu) {
             arglist <- append(list(...), alist(mu))
             do.call("fun", arglist)
         }
@@ -201,6 +202,31 @@ check_class <- function(x, class) {
         msg <- paste0("Argument `", obj, "` must be of class '", class, "'.")
         stop(msg, call. = FALSE)
     }
+    invisible(NULL)
+}
+
+################################################################################
+# Check that the function has correct arguments                                #
+################################################################################
+
+check_fun_args <- function(fun, ...) {
+
+    must_have_args <- c(
+        "estimates",
+        "SEs",
+        "conf_level",
+        "mu"
+    )
+
+    dotarg <- list(...)  # ellipsis args
+    nms_dot <- names(dotargs)
+    f <- formals(fun)     # formals
+    fa <- names(f)        # formalArgs
+
+    cond1 <- all(must_have_args %in% fa) # all required arguments are there
+    cond2 <- all(names)                           # dotargs must be in formalArgs
+
+
     invisible(NULL)
 }
 
