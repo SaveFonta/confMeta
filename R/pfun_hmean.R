@@ -16,7 +16,7 @@
 #' @return Returns the p-value from the harmonic mean chi-squared test
 #' based on study-specific estimates and standard errors.
 #' @export
-hMeanChiSqMu <- function(
+p_hmean <- function(
     thetahat,
     se,
     mu = 0,

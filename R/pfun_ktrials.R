@@ -44,7 +44,7 @@
 #'     phi = phi,
 #'     heterogeneity = "multiplicative"
 #' )
-kTRMu <- function(
+p_ktrials <- function(
     thetahat,
     se,
     mu,

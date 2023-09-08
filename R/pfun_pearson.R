@@ -58,7 +58,7 @@
 #' legend("topleft", col=c(1,2,3), lwd=2, lty=1, c("Pearson", "hMean","kTR"))
 #' title(paste("Phi =", as.character(round(phi, 2))))
 
-pPearsonMu <- function(
+p_pearson <- function(
     thetahat,
     se,
     mu = 0,
