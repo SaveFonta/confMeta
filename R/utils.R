@@ -272,16 +272,16 @@ check_distr_arg <- function(distr) {
 
 ## Check the w argument used in hMeanChiSqMu()
 ## - hMeanChiSqMu
-# check_w_arg <- function(w, thetahat) {
-#     if (!is_num_fin(w) || length(w) != length(thetahat) || min(w) < 0)
-#         stop(
-#             paste0(
-#                 "Argument 'w' must be a numeric vector of the ",
-#                 "same length as ",
-#                 "'thetahat' with finite and positive elements."
-#             )
-#         )
-# }
+check_w_arg <- function(w, thetahat) {
+    if (!is_num_fin(w) || length(w) != length(thetahat) || min(w) < 0)
+        stop(
+            paste0(
+                "Argument 'w' must be a numeric vector of the ",
+                "same length as ",
+                "'thetahat' with finite and positive elements."
+            )
+        )
+}
 
 check_checkInputs_arg <- function(check_inputs) {
     isTRUE(check_inputs) || isFALSE(check_inputs)

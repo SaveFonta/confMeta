@@ -1,20 +1,21 @@
-#' Calculate the p-value using the harmonic mean chi-squared test.
+#' @rdname p_value_functions
+#' @order 3
 #'
-#' @details
-#' The function is vectorized over the argument \code{mu}.
-#'
-#' @template thetahat
-#' @template se
-#' @template mu
-#' @template phi
-#' @template tau2
-#' @template heterogeneity
-#' @template alternative
-#' @template check_inputs
 #' @template w
 #' @template distr
-#' @return Returns the p-value from the harmonic mean chi-squared test
-#' based on study-specific estimates and standard errors.
+#'
+#' @examples
+#'     # Using the harmonic mean method to calculate the combined p-value
+#'     # for each of the means with additive adjustment for SEs.
+#'     p_hmean(
+#'         estimates = estimates,
+#'         SEs = SEs,
+#'         mu = mu,
+#'         heterogeneity = "additive",
+#'         tau2 = tau2,
+#'         distr = "chisq"
+#'     )
+#'
 #' @export
 p_hmean <- function(
     thetahat,

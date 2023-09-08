@@ -1,52 +1,21 @@
-#' Calculate the p-value using the k-Trials method.
+#' @rdname p_value_functions
+#' @order 4
 
-#' @details
-#' The function is vectorized over the argument \code{mu}.
-#'
-#' @template thetahat
-#' @template se
-#' @template mu
-#' @template phi
-#' @template tau2
-#' @template heterogeneity
-#' @template alternative
-#' @template check_inputs
-#'
-#' @return The corresponding p-value given mu under the null-hypothesis.
 #' @export
 #'
 #' @examples
-#' thetahat <- c(0.38041824, -0.22170681, -0.09155859)
-#' se <- c(0.2256202, 0.2432796, 0.1051743)
-#' phi <- estimatePhi(thetahat = thetahat, se = se)
-#' tau2 <- estimateTau2(
-#'     thetahat,
-#'     se,
-#'     control = list(stepadj = 0.5, maxiter = 1000, threshold = 1e-6)
-#' )
-#' mymu <- seq(
-#'     min(thetahat - 3 * se),
-#'     max(thetahat + 3 * se),
-#'     length.out = 1000
-#' )
-#' p_add <- kTRMu(
-#'     thetahat, se,
-#'     mymu,
-#'     tau2 = tau2,
-#'     phi = phi,
-#'     heterogeneity = "additive"
-#' )
-#' p_mult <- kTRMu(
-#'     thetahat,
-#'     se,
-#'     mymu,
-#'     tau2 = tau2,
-#'     phi = phi,
-#'     heterogeneity = "multiplicative"
-#' )
+#'     # Using the k-trials method to calculate the combined p-value
+#'     # for each of the means with multiplicative adjustement for SEs
+#'     p_ktrials(
+#'         estimates = estimates,
+#'         SEs = SEs,
+#'         mu = mu,
+#'         heterogeneity = "multiplicative",
+#'         phi = phi,
+#'     )
 p_ktrials <- function(
-    thetahat,
-    se,
+    estimates,
+    SEs,
     mu,
     phi = NULL,
     tau2 = NULL,
@@ -57,8 +26,8 @@ p_ktrials <- function(
 
     if (check_inputs) {
         check_inputs_p_value(
-            thetahat = thetahat,
-            se = se,
+            estimates = estimates,
+            SEs = SEs,
             mu = mu,
             heterogeneity = heterogeneity,
             phi = phi,
@@ -68,21 +37,21 @@ p_ktrials <- function(
     }
 
     # recycle `se` if needed
-    if (length(se) == 1L) se <- rep(se, length(thetahat))
+    if (length(SEs) == 1L) SEs <- rep(SEs, length(estimates))
 
     # adjust se based on heterogeneity model
-    se <- adjust_se(
-        se = se,
+    SEs <- adjust_se(
+        SEs = SEs,
         heterogeneity = heterogeneity,
         phi = phi,
         tau2 = tau2
     )
 
     # Get lengths
-    n <- length(thetahat)
+    n <- length(estimates)
 
     if (alternative == "none") {
-        z <- get_z(thetahat = thetahat, se = se, mu = mu)
+        z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
         # p <- ReplicationSuccess::z2p(z, "two.sided")
         p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
         res <- apply(p, 2L, max)^n
