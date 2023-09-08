@@ -138,22 +138,22 @@ is_num_fin <- function(x) {
     is.numeric(x) && length(x) > 0L && all(is.finite(x))
 }
 
-## Checks thetahat
-check_thetahat_arg <- function(thetahat) {
-    if (!is_num_fin(thetahat))
+## Checks estimates
+check_estimates_arg <- function(estimates) {
+    if (!is_num_fin(estimates))
         stop(
-            "Argument 'thetahat' must be a numeric vector with finite elements."
+            "Argument 'estimates' must be a numeric vector with finite elements."
         )
 }
 
-## Checks se
-check_se_arg <- function(se, l_thetahat) {
-    if (!is_num_fin(se))
-        stop("Argument 'se' must be a numeric vector with finite elements.")
-    if (min(se) <= 0)
-        stop("All entries of argument 'se' must be positive.")
-    if (length(se) != l_thetahat && length(se) != 1L)
-        stop("Argument 'se' must have length of either 1 or length(thetahat).")
+## Checks SEs
+check_SEs_arg <- function(SEs, l_estimates) {
+    if (!is_num_fin(SEs))
+        stop("Argument 'SEs' must be a numeric vector with finite elements.")
+    if (min(SEs) <= 0)
+        stop("All entries of argument 'SEs' must be positive.")
+    if (length(SEs) != l_estimates && length(SEs) != 1L)
+        stop("Argument 'SEs' must have length of either 1 or length(estimates).")
 }
 
 ## Checks mu
@@ -208,60 +208,60 @@ check_phiTau2_arg <- function(heterogeneity, phi, tau2) {
 }
 
 ## Checks the alternative argument
-check_alternative_arg_hmean <- function(alternative) {
-    if (
-        length(alternative) != 1L ||
-        !(alternative %in% c("none", "less", "greater", "two.sided"))
-    )
-        stop(
-            paste0(
-                "Argument 'alternative' must be one of ",
-                "c('none', 'less', 'greater', 'two.sided')."
-            )
-        )
-}
+# check_alternative_arg_hmean <- function(alternative) {
+#     if (
+#         length(alternative) != 1L ||
+#         !(alternative %in% c("none", "less", "greater", "two.sided"))
+#     )
+#         stop(
+#             paste0(
+#                 "Argument 'alternative' must be one of ",
+#                 "c('none', 'less', 'greater', 'two.sided')."
+#             )
+#         )
+# }
 
 ## Checks the alternative argument
-check_alternative_arg_edg <- function(alternative) {
-    if (
-        length(alternative) != 1L ||
-        !(alternative %in% c("one.sided", "two.sided"))
-    )
-        stop(
-            paste0(
-                "Argument 'alternative' must be one of ",
-                "c('one.sided', 'two.sided')."
-            )
-        )
-}
+# check_alternative_arg_edg <- function(alternative) {
+#     if (
+#         length(alternative) != 1L ||
+#         !(alternative %in% c("one.sided", "two.sided"))
+#     )
+#         stop(
+#             paste0(
+#                 "Argument 'alternative' must be one of ",
+#                 "c('one.sided', 'two.sided')."
+#             )
+#         )
+# }
 
 ## Checks the alternative argument
-check_alternative_arg_pearson <- function(alternative) {
-    if (
-        length(alternative) != 1L ||
-        !(alternative %in% c("none"))
-    )
-        stop(
-            paste0(
-                "Argument 'alternative' must be one of ",
-                "c('none')."
-            )
-        )
-}
+# check_alternative_arg_pearson <- function(alternative) {
+#     if (
+#         length(alternative) != 1L ||
+#         !(alternative %in% c("none"))
+#     )
+#         stop(
+#             paste0(
+#                 "Argument 'alternative' must be one of ",
+#                 "c('none')."
+#             )
+#         )
+# }
 
 ## Checks the alternative argument
-check_alternative_arg_ktr <- function(alternative) {
-    if (
-        length(alternative) != 1L ||
-        !(alternative %in% c("none"))
-    )
-        stop(
-            paste0(
-                "Argument 'alternative' must be one of ",
-                "c('none')."
-            )
-        )
-}
+# check_alternative_arg_ktr <- function(alternative) {
+#     if (
+#         length(alternative) != 1L ||
+#         !(alternative %in% c("none"))
+#     )
+#         stop(
+#             paste0(
+#                 "Argument 'alternative' must be one of ",
+#                 "c('none')."
+#             )
+#         )
+# }
 
 ## Check the distribution argument used in hMeanChiSqMu()
 ## - hMeanChiSqMu
@@ -272,15 +272,16 @@ check_distr_arg <- function(distr) {
 
 ## Check the w argument used in hMeanChiSqMu()
 ## - hMeanChiSqMu
-check_w_arg <- function(w, thetahat) {
-    if (!is_num_fin(w) || length(w) != length(thetahat) || min(w) < 0)
-        stop(
-            paste0(
-                "Argument 'w' must be a numeric vector of the same length as ",
-                "'thetahat' with finite and positive elements."
-            )
-        )
-}
+# check_w_arg <- function(w, thetahat) {
+#     if (!is_num_fin(w) || length(w) != length(thetahat) || min(w) < 0)
+#         stop(
+#             paste0(
+#                 "Argument 'w' must be a numeric vector of the ",
+#                 "same length as ",
+#                 "'thetahat' with finite and positive elements."
+#             )
+#         )
+# }
 
 check_checkInputs_arg <- function(check_inputs) {
     isTRUE(check_inputs) || isFALSE(check_inputs)
@@ -292,20 +293,20 @@ check_checkInputs_arg <- function(check_inputs) {
 # - hMeanChiSqMu
 # - kTRMu
 check_inputs_p_value <- function(
-    thetahat,
-    se,
+    estimates,
+    SEs,
     heterogeneity,
     phi,
     tau2,
     mu
 ) {
 
-    # Check thetahat and se are numeric and finite
-    ## thetahat
-    check_thetahat_arg(thetahat = thetahat)
+    # Check estimates and SEs are numeric and finite
+    ## estimates
+    check_estimates_arg(estimates = estimates)
 
-    ## se
-    check_se_arg(se = se, l_thetahat = length(thetahat))
+    ## SEs
+    check_SEs_arg(SEs = SEs, l_estimates = length(estimates))
 
     # Check mu
     check_mu_arg(mu = mu)
@@ -330,16 +331,16 @@ check_level_arg <- function(level) {
 }
 
 # Check wGamma
-check_wGamma_arg <- function(wGamma, thetahat) {
-    if (length(wGamma) != length(unique(thetahat)) - 1L)
-        stop(
-            "Argument 'wGamma' must have length length(unique(thetahat)) - 1L."
-        )
-    if (!is_num_fin(wGamma))
-        stop(
-            "Argument 'wGamma' must be numeric and all entries must be finite."
-        )
-}
+# check_wGamma_arg <- function(wGamma, thetahat) {
+#     if (length(wGamma) != length(unique(thetahat)) - 1L)
+#         stop(
+#             "Argument 'wGamma' must have length length(unique(thetahat)) - 1L."
+#         )
+#     if (!is_num_fin(wGamma))
+#         stop(
+#             "Argument 'wGamma' must be numeric and all entries must be finite."
+#         )
+# }
 
 # Check pValueFUN
 check_pValueFUN_arg <- function(pValueFUN) {
@@ -373,17 +374,16 @@ check_alternative_arg_CI <- function(alternative) {
 
 # Summarise the above functions into one
 check_inputs_CI <- function(
-    thetahat,
-    se,
+    estimates,
+    SEs,
     level,
     alternative,
-    wGamma,
     check_inputs,
     pValueFUN,
     pValueFUN_args
 ) {
-    check_thetahat_arg(thetahat)
-    check_se_arg(se = se, l_thetahat = length(thetahat))
+    check_estimates_arg(estimates)
+    check_SEs_arg(SEs = SEs, l_estimates = length(estimates))
     check_level_arg(level = level)
     check_alternative_arg_CI(alternative = alternative)
     check_pValueFUN_arg(pValueFUN = pValueFUN)
@@ -398,33 +398,34 @@ check_inputs_CI <- function(
 # - kTRMu
 # - hMeanChiSqMu
 # - pPearsonMu
-adjust_se <- function(se, heterogeneity, phi, tau2) {
+adjust_se <- function(SEs, heterogeneity, phi, tau2) {
     if (heterogeneity == "none")
-        se
+        SEs
     else
         switch(
             heterogeneity,
-            "additive" = sqrt(se^2 + tau2),
-            "multiplicative" = se * sqrt(phi)
+            "additive" = sqrt(SEs^2 + tau2),
+            "multiplicative" = SEs * sqrt(phi)
         )
 }
 
 
 ################################################################################
-# Compute the z-values based on thetahat, se and vectorize over mu             #
+# Compute the z-values based on estimates, SEs and vectorize over mu           #
 ################################################################################
-# This function calculates the z values of thetahat and se for every value of mu
+# This function calculates the z values of estimates and SEs for every value of
+# mu.
 # this function is used in the p-value functions:
 # - kTRMu
 # - hMeanChiSqMu
 # - pPearsonMu
 # - pEdgingtonMu
 
-get_z <- function(thetahat, se, mu) {
-    n <- length(thetahat)
+get_z <- function(estimates, SEs, mu) {
+    n <- length(estimates)
     z <- vapply(
         mu,
-        function(mu) (thetahat - mu) / se,
+        function(mu) (estimates - mu) / SEs,
         double(n)
     )
     if (is.null(dim(z))) dim(z) <- c(1L, n)
@@ -440,8 +441,6 @@ get_z <- function(thetahat, se, mu) {
 
 utils::globalVariables(
     c(
-        # whereever
-        "limit",
         # ggPvalueFunction
         "x", "y", "group", "x_gamma", "y_gamma", "xmin", "xmax", "ymin", "ymax",
         "study",

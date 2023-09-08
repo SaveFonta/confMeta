@@ -1,63 +1,61 @@
-#' Calculate the p-value using Edgington's method
+#' @rdname p_value_functions
+#' @order 1
 #'
-#' @details
-#' The function is is vectorized over the \code{mu} argument.
+#' Methods for combining p-values
 #'
-#' @template thetahat
-#' @template se
+#' @template estimates
+#' @template SEs
 #' @template mu
+#' @template heterogeneity
 #' @template phi
 #' @template tau2
-#' @template heterogeneity
 #' @template alternative
 #' @template check_inputs
 #' @param approx Must be either TRUE (default) or FALSE. If TRUE, the p-value
-#' is computed using the normal approximation of the exact Irwin-Hall
-#' distribution if \code{length(thetahat) >= 12}. This avoids issues that can
-#' lead to overflow of the double precision floating point numbers R uses for
-#' numeric vectors.
+#'     is computed using the normal approximation of the Irwin-Hall distribution
+#'     whenever \code{length(estimates) >= 12}. This avoids issues that
+#'     can lead to overflow of the double precision floating point numbers R
+#'     uses for numeric vectors.
+#'
+#' @details All functions are vectorized over the \code{mu} argument.
 #'
 #' @return The corresponding p-values given mu under the null-hypothesis.
+#'
 #' @export
 #'
 #' @examples
-#' n <- 15
-#' thetahat <- rnorm(n)
-#' se <- rgamma(n, 5, 5)
-#' mu <- seq(
-#'   min(thetahat) - 0.5 * max(se),
-#'   max(thetahat) + 0.5 * max(se),
-#'   length.out = 1e5
-#' )
-#' heterogeneity <- "multiplicative"
-#' phi <- estimatePhi(thetahat = thetahat, se = se)
-#' resE <- pEdgingtonMu(
-#'     thetahat = thetahat,
-#'     se = se,
-#'     mu = mu,
-#'     heterogeneity = heterogeneity,
-#'     phi = phi
-#' )
-#' opar <- par(no.readonly = TRUE)
-#' par(las = 1)
-#' plot(
-#'     mu,
-#'     resE,
-#'     type = "l",
-#'     main = "Edgington's p-Value function",
-#'     xlab = expression(mu),
-#'     ylab = "p-Value"
-#' )
-#' abline(v = thetahat, lty = 2, col = "grey")
-#' par(opar)
-
-pEdgingtonMu <- function(
-    thetahat,
-    se,
+#'     # Simulating estimates and standard errors
+#'     n <- 15
+#'     estimates <- rnorm(n)
+#'     SEs <- rgamma(n, 5, 5)
+#'
+#'     # Calculate the between-study variance tau2
+#'     tau2 <- estimate_tau2(estimates = estimates, SEs = SEs)
+#'     phi <- estimate_phi(estimates = estimates, SEs = SEs)
+#'
+#'     # Set up a vector of means under the null hypothesis
+#'     mu <- seq(
+#'       min(thetahat) - 0.5 * max(se),
+#'       max(thetahat) + 0.5 * max(se),
+#'       length.out = 1e5
+#'     )
+#'
+#'     # Using Edgington's method to calculate the combined p-value
+#'     # for each of the means with additive adjustement for SEs
+#'     p_edgington(
+#'         estimates = estimates,
+#'         SEs = SEs,
+#'         mu = mu,
+#'         heterogeneity = "additive",
+#'         tau2 = tau2
+#'     )
+p_edgington <- function(
+    estimates,
+    SEs,
     mu = 0,
+    heterogeneity = "none",
     phi = NULL,
     tau2 = NULL,
-    heterogeneity = "none",
     alternative = "two.sided",
     check_inputs = TRUE,
     approx = TRUE
@@ -66,8 +64,8 @@ pEdgingtonMu <- function(
     # check inputs
     if (check_inputs) {
         check_inputs_p_value(
-            thetahat = thetahat,
-            se = se,
+            estimates = estimates,
+            SEs = SEs,
             mu = mu,
             heterogeneity = heterogeneity,
             phi = phi,
@@ -77,30 +75,30 @@ pEdgingtonMu <- function(
     }
 
     # recycle `se` if needed
-    if (length(se) == 1L) se <- rep(se, length(thetahat))
+    if (length(SEs) == 1L) SEs <- rep(SEs, length(estimates))
 
     # adjust se based on heterogeneity model
-    se <- adjust_se(
-      se = se,
+    SEs <- adjust_se(
+      SEs = SEs,
       heterogeneity = heterogeneity,
       phi = phi,
       tau2 = tau2
     )
 
     # Get length
-    n <- length(thetahat)
+    n <- length(estimates)
 
     # get the z-values
-    z <- get_z(thetahat = thetahat, se = se, mu = mu)
+    z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
     # convert them to p-values
     # p <- ReplicationSuccess::z2p(z, "two.sided")
     p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
     # sum up the p-values and calculate the probability
-    tp <- pirwinhall(q = colSums(p), n = n, approx = approx)
+    sp <- pirwinhall(q = colSums(p), n = n, approx = approx)
     p <- switch(
         alternative,
-        "one.sided" = 2 * apply(matrix(c(tp, 1 - tp), ncol = 2L), 1L, min),
-        "two.sided" = tp
+        "one.sided" = 2 * apply(matrix(c(sp, 1 - sp), ncol = 2L), 1L, min),
+        "two.sided" = sp
     )
     return(p)
 }
@@ -288,7 +286,7 @@ dirwinhall_approx <- function(x, n) {
         idx_approx <- s_l_n[norm_approx]
         idx_non_approx <- s_l_n[!norm_approx]
         # create the output vector
-        out <- vector("numeric", l_n)
+        out <- vector("double", l_n)
         # fill it with the respective probabilities
         n_norm <- n[idx_approx]
         x_norm <- x[idx_approx]
@@ -314,7 +312,7 @@ dirwinhall_approx <- function(x, n) {
 dirwinhall_vec <- function(x, n) {
 
     l_x <- length(x)
-    out <- vector("numeric", l_x)
+    out <- vector("double", l_x)
     for (i in seq_len(l_x)) {
         out[i] <- dirwinhall1(x = x[i], n = n[i])
     }
