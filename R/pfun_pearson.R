@@ -4,7 +4,15 @@
 #' @export
 #'
 #' @examples
-
+#'     # Using Pearson's method to calculate the combined p-value
+#'     # for each of the means with multiplicative adjustement for SEs
+#'     p_pearson(
+#'         estimates = estimates,
+#'         SEs = SEs,
+#'         mu = mu,
+#'         heterogeneity = "multiplicative",
+#'         phi = phi
+#'     )
 p_pearson <- function(
     estimates,
     SEs,
@@ -12,7 +20,6 @@ p_pearson <- function(
     phi = NULL,
     tau2 = NULL,
     heterogeneity = c("none", "additive", "multiplicative"),
-    alternative = "none",
     check_inputs = TRUE
 ) {
 
@@ -26,7 +33,6 @@ p_pearson <- function(
             phi = phi,
             tau2 = tau2
         )
-        check_alternative_arg_pearson(alternative = alternative)
     }
 
     # recycle `se` if needed
@@ -44,14 +50,10 @@ p_pearson <- function(
     n <- length(estimates)
 
     # implement alternatives
-    if (alternative == "none") {
-        z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-        # ReplicationSuccess::z2p
-        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
-        tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
-        p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
-    } else {
-        stop("Invalid argument 'alternative'.")
-    }
+    z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
+    # ReplicationSuccess::z2p
+    p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
+    tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
+    p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
     return(p)
 }

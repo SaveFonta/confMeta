@@ -18,23 +18,23 @@
 #'
 #' @export
 p_hmean <- function(
-    thetahat,
-    se,
+    estimates,
+    SEs,
     mu = 0,
     phi = NULL,
     tau2 = NULL,
     heterogeneity = "none",
     alternative = "none",
     check_inputs = TRUE,
-    w = rep(1, length(thetahat)),
+    w = rep(1, length(estimates)),
     distr = "chisq"
 ) {
 
     # Check inputs
     if (check_inputs) {
         check_inputs_p_value(
-            thetahat = thetahat,
-            se = se,
+            estimates = estimates,
+            SEs = SEs,
             mu = mu,
             heterogeneity = heterogeneity,
             phi = phi,
@@ -42,26 +42,26 @@ p_hmean <- function(
         )
         check_alternative_arg_hmean(alternative = alternative)
         check_distr_arg(distr = distr)
-        check_w_arg(w = w, thetahat = thetahat)
+        check_w_arg(w = w, estimates = estimates)
     }
 
     # match arguments
-    if (length(se) == 1L) se <- rep(se, length(thetahat))
+    if (length(SEs) == 1L) SEs <- rep(SEs, length(estimates))
 
     # adjust se based on heterogeneity model
-    se <- adjust_se(
-        se = se,
+    SEs <- adjust_se(
+        SEs = SEs,
         heterogeneity = heterogeneity,
         phi = phi,
         tau2 = tau2
     )
 
     # store lengths of input vector
-    n <- length(thetahat)
+    n <- length(estimates)
 
     # Calculate harmonic mean test statistic
     sw <- sum(sqrt(w))^2
-    z <- get_z(thetahat = thetahat, se = se, mu = mu)
+    z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
     zh2 <- apply(z, 2L, function(z) sw / sum(w / z^2))
     # Calculate the p-value
     res <- switch(

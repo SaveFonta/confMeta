@@ -4,14 +4,6 @@ confMeta <- function(
     SEs,
     study_names = NULL,
     conf_level = 0.95,
-    fun,
-    ...
-) {
-
-    # coerce inputs into correct format
-    estimates <- as.double(estimates)
-    SEs <- as.double(SEs)
-    conf_level <- as.double(conf_level)
 
     # recycle to appropriate lengths
 

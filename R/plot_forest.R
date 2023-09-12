@@ -1,8 +1,8 @@
 #' Plot the forest plot for a given meta-analysis
 #'
-#' @template thetahat
-#' @template se
-#' @template level
+#' @template estimates
+#' @template SEs
+#' @template conf_level
 #' @param distr Character vector of length 1 or 2. Valid options are
 #' either \code{"f"} or \code{"chisq"} or both. Denotes the distribution
 #' used in cases where \code{pValueFUN = "hMean"} but ignored otherwise.
@@ -64,10 +64,9 @@
 #'     heterogeneity = heterogeneity
 #' )
 #'
-#' @export
 ForestPlot <- function(
-    thetahat,
-    se,
+    estimates,
+    SEs,
     level = 0.95,
     distr = c("chisq", "f"),
     pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),

@@ -35,8 +35,8 @@
 #'
 #'     # Set up a vector of means under the null hypothesis
 #'     mu <- seq(
-#'       min(thetahat) - 0.5 * max(se),
-#'       max(thetahat) + 0.5 * max(se),
+#'       min(estimates) - 0.5 * max(SEs),
+#'       max(estimates) + 0.5 * max(SEs),
 #'       length.out = 1e5
 #'     )
 #'

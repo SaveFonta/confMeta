@@ -11,7 +11,7 @@
 #'         SEs = SEs,
 #'         mu = mu,
 #'         heterogeneity = "multiplicative",
-#'         phi = phi,
+#'         phi = phi
 #'     )
 p_ktrials <- function(
     estimates,

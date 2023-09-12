@@ -1,6 +1,21 @@
+#' @rdname p_value_functions
+#' @order 6
+#'
+#' @export
+#'
+#' @examples
+#'     # Using Tippett's method to calculate the combined p-value
+#'     # for each of the means with multiplicative adjustement for SEs
+#'     p_tippett(
+#'         estimates = estimates,
+#'         SEs = SEs,
+#'         mu = mu,
+#'         heterogeneity = "multiplicative",
+#'         phi = phi
+#'     )
 p_tippett <- function(
-    thetahat,
-    se,
+    estimates,
+    SEs,
     mu = 0,
     phi = NULL,
     tau2 = NULL,
@@ -11,8 +26,8 @@ p_tippett <- function(
     # check inputs
     if (check_inputs) {
         check_inputs_p_value(
-            thetahat = thetahat,
-            se = se,
+            estimates = estimates,
+            SEs = SEs,
             mu = mu,
             heterogeneity = heterogeneity,
             phi = phi,
@@ -21,7 +36,7 @@ p_tippett <- function(
     }
 
     # recycle `se` if needed
-    if (length(se) == 1L) se <- rep(se, length(thetahat))
+    if (length(SEs) == 1L) SEs <- rep(SEs, length(estimates))
 
     # adjust se based on heterogeneity model
     se <- adjust_se(
@@ -32,10 +47,10 @@ p_tippett <- function(
     )
 
     # Get length
-    n <- length(thetahat)
+    n <- length(estimates)
 
     # get the z-values
-    z <- get_z(thetahat = thetahat, se = se, mu = mu)
+    z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
     # convert them to p-values
     # p <- ReplicationSuccess::z2p(z, "two.sided")
     p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
