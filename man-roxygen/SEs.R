@@ -1,1 +1,2 @@
-#' @param se Numeric vector of standard errors.
+#' @param SEs Numeric vector containing the standard errors of the effect
+#'     estimates.

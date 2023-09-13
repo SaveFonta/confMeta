@@ -1,4 +1,4 @@
-#' Plot the forest plot for a given meta-analysis
+#' @title Plot the forest plot for a given meta-analysis
 #'
 #' @template estimates
 #' @template SEs
@@ -47,33 +47,32 @@
 # necessary to plot the forest plot.
 #'
 #' @examples
-#' thetahat <- c(-0.49, -0.17, -0.52, -0.48, -0.26, -0.36, -0.47, -0.3, -0.15,
-#'               -0.28)
-#' se <- c(0.346945150708765, 0.214289651908355, 0.239800324754587,
-#'         0.372455823554997, 0.25000459389308, 0.295923805016299,
-#'         0.219391786477601, 0.14796190250815, 0.270413132170067,
-#'         0.500009187786161)
+#' estimates <- c(-0.49, -0.17, -0.52, -0.48, -0.26, -0.36, -0.47, -0.3, -0.15,
+#'                -0.28)
+#' SEs <- c(0.346945150708765, 0.214289651908355, 0.239800324754587,
+#'          0.372455823554997, 0.25000459389308, 0.295923805016299,
+#'          0.219391786477601, 0.14796190250815, 0.270413132170067,
+#'          0.500009187786161)
 #' pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher")
 #' distr <- c("chisq")
 #' heterogeneity <- "none"
 #' ForestPlot(
-#'     thetahat = thetahat,
-#'     se = se,
+#'     estimates = estimates,
+#'     SEs = SEs,
 #'     distr = distr,
 #'     pValueFUN = pValueFUN,
 #'     heterogeneity = heterogeneity
 #' )
-#'
 ForestPlot <- function(
     estimates,
     SEs,
-    level = 0.95,
+    conf_level = 0.95,
     distr = c("chisq", "f"),
     pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
     heterogeneity = c("none", "additive", "multiplicative"),
     diamond_height = 0.5,
     v_space = 1.5,
-    studyNames = NULL,
+    study_names = NULL,
     xlim = NULL,
     show_studies = TRUE,
     scale_diamonds = FALSE
@@ -89,15 +88,15 @@ ForestPlot <- function(
     distr <- match.arg(distr, several.ok = TRUE)
 
     # make a table with the study intervals
-    studyNames  <- if (is.null(studyNames)) paste("Study", seq_along(thetahat))
-    se_term <- stats::qnorm(level) * se
+    study_names  <- if (is.null(study_names)) paste("Study", seq_along(estimates))
+    se_term <- stats::qnorm(conf_level) * SEs
 
     # Make a data frame for the single studies
     studyCIs <- data.frame(
-        lower = thetahat - se_term,
-        upper = thetahat + se_term,
-        estimate = thetahat,
-        name = studyNames,
+        lower = estimates - se_term,
+        upper = estimates + se_term,
+        estimates = estimates,
+        name = study_names,
         plottype = 0L,
         color = 0L,
         stringsAsFactors = FALSE,
@@ -106,21 +105,21 @@ ForestPlot <- function(
 
     # Get the dataframe for the polygons of the new methods
     new_method_cis <- get_CI_new_methods(
-        thetahat = thetahat,
-        se = se,
+        estimates = estimates,
+        SEs = SEs,
         heterogeneity = heterogeneity,
         pValueFUN = pValueFUN,
         distr = distr,
-        level = level,
+        conf_level = conf_level,
         diamond_height = diamond_height,
         scale_diamonds = scale_diamonds
     )
 
     # Get the dataframe for the polygons of the old methods
     old_methods_cis <- get_CI_old_methods(
-        thetahat = thetahat,
-        se = se,
-        level = level,
+        estimates = estimates,
+        SEs = SEs,
+        conf_level = conf_level,
         diamond_height = diamond_height
     )
 
@@ -244,12 +243,12 @@ ForestPlot <- function(
 
 
 get_CI_new_methods <- function(
-    thetahat,
-    se,
+    estimates,
+    SEs,
     heterogeneity,
     pValueFUN,
     distr,
-    level,
+    conf_level,
     diamond_height,
     scale_diamonds
 ) {
@@ -262,8 +261,8 @@ get_CI_new_methods <- function(
     )
 
     # Calculate phi and tau2 (This is the same for all scenarios)
-    phi <- confMeta::estimatePhi(thetahat, se)
-    tau2 <- confMeta::estimateTau2(thetahat, se)
+    phi <- confMeta::estimate_phi(estimates, SEs)
+    tau2 <- confMeta::estimate_tau2(estimates, SEs)
 
     out <- lapply(seq_len(nrow(grid)), function(r) {
 
@@ -286,10 +285,10 @@ get_CI_new_methods <- function(
             pValueFUN_args <- append(pValueFUN_args, list(distr = distr))
         }
         # Calculate the CIs and the minima
-        res <- hMeanChiSqCI(
-            thetahat = thetahat,
-            se = se,
-            level = level,
+        res <- get_ci(
+            estimates = estimates,
+            SEs = SEs,
+            conf_level = conf_level,
             alternative = "none",
             pValueFUN = pValueFUN,
             pValueFUN_args = pValueFUN_args
@@ -303,11 +302,11 @@ get_CI_new_methods <- function(
             # Calculate the polygons for the diamond
             polygons <- calculate_polygon_2(
                 CIs = CI,
-                thetahat = res$forest_plot_thetahat,
-                f_thetahat = res$forest_plot_f_thetahat,
+                estimates = res$forest_plot_estimates,
+                f_estimates = res$forest_plot_f_estimates,
                 gammas = gamma,
                 diamond_height = diamond_height,
-                level = level,
+                conf_level = conf_level,
                 scale_diamonds = scale_diamonds
             )
             polygons$name <- grid$name[r]
@@ -324,7 +323,7 @@ get_CI_new_methods <- function(
         }
 
         # Calculate the p-value at mu = 0
-        p_0_args <- list(thetahat = thetahat, se = se, mu = 0)
+        p_0_args <- list(estimates = estimates, SEs = SEs, mu = 0)
         p_0 <- do.call("pValueFUN", append(p_0_args, pValueFUN_args))
         p_0 <- data.frame(
             name = grid$name[r],
@@ -333,7 +332,10 @@ get_CI_new_methods <- function(
         )
 
         # Calculate the maximum p-value and return it
-        idx <- with(res, forest_plot_f_thetahat == max(forest_plot_f_thetahat))
+        idx <- with(
+            res,
+            forest_plot_f_estimates == max(forest_plot_f_estimates)
+        )
         p_max <- data.frame(
             name = grid$name[r],
             mu = res$forest_plot_thetahat[idx],
@@ -360,47 +362,47 @@ get_CI_new_methods <- function(
 
 
 get_CI_old_methods <- function(
-    thetahat,
-    se,
-    level,
+    estimates,
+    SEs,
+    conf_level,
     diamond_height
 ) {
 
     # Get the object
-    get_obj_reml <- function(thetahat, se, level) {
+    get_obj_reml <- function(estimates, SEs, conf_level) {
         meta::metagen(
-            TE = thetahat, seTE = se, sm = "MD",
-            level = level, method.tau = "REML"
+            TE = estimates, seTE = SEs, sm = "MD",
+            level = conf_level, method.tau = "REML"
         )
     }
-    get_obj_hk <- function(thetahat, se, level) {
+    get_obj_hk <- function(estimates, SEs, conf_level) {
         meta::metagen(
-            TE = thetahat, seTE = se, sm = "MD",
-            level = level, method.tau = "REML", hakn = TRUE
+            TE = estimates, seTE = SEs, sm = "MD",
+            level = conf_level, method.tau = "REML", hakn = TRUE
         )
     }
-    get_obj_hc <- function(thetahat, se, level) {
+    get_obj_hc <- function(estimates, SEs, conf_level) {
         metafor::hc(
-            object = metafor::rma(yi = thetahat, sei = se, level = level)
+            object = metafor::rma(yi = estimates, sei = SEs, level = conf_level)
         )
     }
-    get_obj <- function(method, thetahat, se, level) {
+    get_obj <- function(method, estimates, SEs, conf_level) {
         switch(
             method,
             "Random Effects, REML" = get_obj_reml(
-                thetahat = thetahat,
-                se = se,
-                level = level
+                estimates = estimates,
+                SEs = SEs,
+                conf_level = conf_level
             ),
             "Hartung & Knapp" = get_obj_hk(
-                thetahat = thetahat,
-                se = se,
-                level = level
+                estimates = estimates,
+                SEs = SEs,
+                conf_level = conf_level
             ),
             "Henmi & Copas" = get_obj_hc(
-                thetahat = thetahat,
-                se = se,
-                level = level
+                estimates = estimates,
+                SEs = SEs,
+                conf_level = conf_level
             )
         )
     }
@@ -433,22 +435,22 @@ get_CI_old_methods <- function(
     get_pval_reml <- get_pval_hk <- function(obj) {
         obj$pval.random
     }
-    get_pval_hc <- function(obj, level) {
+    get_pval_hc <- function(obj, conf_level) {
         ci <- get_ci_hc(obj)
         ReplicationSuccess::ci2p(
             lower = ci[, "lower"],
             upper = ci[, "upper"],
-            conf.level = level,
+            conf.level = conf_level,
             ratio = FALSE,
             alternative = "two.sided"
         )
     }
-    get_pval <- function(method, obj, level) {
+    get_pval <- function(method, obj, conf_level) {
         switch(
             method,
             "Random Effects, REML" = get_pval_reml(obj = obj),
             "Hartung & Knapp" = get_pval_hk(obj = obj),
-            "Henmi & Copas" = get_pval_hc(obj = obj, level = level)
+            "Henmi & Copas" = get_pval_hc(obj = obj, level = conf_level)
         )
     }
 
@@ -479,15 +481,19 @@ get_CI_old_methods <- function(
         # Fit the model
         obj <- get_obj(
             method = meth,
-            thetahat = thetahat,
-            se = se,
-            level = level
+            estimates = estimates,
+            SEs = SEs,
+            conf_level = conf_level
         )
         # Get the CI and estimate
         ci <- get_ci(method = meth, obj = obj)
         est <- mean(ci)
         # Calculate the p-value from the CI
-        p_0_p_0[p_0_cnt] <- get_pval(method = meth, obj = obj, level = level)
+        p_0_p_0[p_0_cnt] <- get_pval(
+            method = meth,
+            obj = obj,
+            conf_level = conf_level
+        )
         p_0_name[p_0_cnt] <- meth
         # Convert CI to polygon and store in vectors above
         cis_x[cis_cnt] <- c(ci[, "lower"], est, ci[, "upper"], est)
@@ -542,18 +548,24 @@ get_CI_old_methods <- function(
 }
 
 # # Assemble a data frame containing the points for a polygon
-calculate_polygon  <- function(CIs, thetahat, gammas = NULL, height, level) {
+calculate_polygon  <- function(
+    CIs,
+    estimates,
+    gammas = NULL,
+    height,
+    conf_level
+) {
     # Filter out minima lower than alpha
     if (!is.null(gammas))
-        gammas <- gammas[gammas[, 2L] >= (1 - level), , drop = FALSE]
+        gammas <- gammas[gammas[, 2L] >= (1 - conf_level), , drop = FALSE]
     ## get the x-values
-    xVals  <- c(CIs, thetahat)
+    xVals  <- c(CIs, estimates)
     if (!is.null(gammas))
         xVals <- c(xVals, gammas[, 1L])
     xVals <- unname(xVals)
     ## precompute some things
     lci <- length(CIs)
-    lth <- length(thetahat)
+    lth <- length(estimates)
     lx <- length(xVals)
     ## compute the y values
     is_lower <- seq_along(CIs[, 1L])
@@ -569,7 +581,7 @@ calculate_polygon  <- function(CIs, thetahat, gammas = NULL, height, level) {
     yVals[is_lower | is_upper] <- 0
     yVals[is_theta] <- -height / 2
     if (!is.null(gamma))
-        yVals[is_minimum] <- -((gammas[, 2L] - (1 - level)) / level) *
+        yVals[is_minimum] <- -((gammas[, 2L] - (1 - conf_level)) / conf_level) *
             (height / 2)
     ## reorder vectors according to the x coordinates
     o <- order(xVals)
@@ -604,11 +616,11 @@ calculate_polygon  <- function(CIs, thetahat, gammas = NULL, height, level) {
 # Make a df that contains the data for the diamonds
 calculate_polygon_2 <- function(
     CIs,
-    thetahat,
-    f_thetahat,
+    estimates,
+    f_estimates,
     gammas,
     diamond_height,
-    level,
+    conf_level,
     scale_diamonds
 ) {
 
@@ -621,19 +633,19 @@ calculate_polygon_2 <- function(
     } else {
         # remove f_thetahat where f_thetahat > alpha
         # because those below alpha are not in CI
-        keep <- f_thetahat > 1 - level
-        f_thetahat <- f_thetahat[keep]
-        thetahat <- thetahat[keep]
+        keep <- f_estimates > 1 - conf_level
+        f_estimates <- f_estimates[keep]
+        estimates <- estimates[keep]
         # get lengths
-        l_thetahat <- length(f_thetahat)
+        l_estimates <- length(f_estimates)
         l_ci <- nrow(CIs)
         if (!no_gamma) {
             # remove gammas where gammas > alpha
             # because those below alpha are not in CI
-            gammas <- gammas[gammas[, 2L] > 1 - level, , drop = FALSE]
+            gammas <- gammas[gammas[, 2L] > 1 - conf_level, , drop = FALSE]
             l_gamma <- nrow(gammas)
             # set up x coordinates
-            x <- c(CIs[, 1L], gammas[, 1L], thetahat, CIs[, 2L])
+            x <- c(CIs[, 1L], gammas[, 1L], estimates, CIs[, 2L])
             # Get the y-coordinates
             y <- vector("numeric", length(x))
             # type of point
@@ -644,23 +656,23 @@ calculate_polygon_2 <- function(
             type <- c(
                 rep(0L, l_ci),
                 rep(1L, l_gamma),
-                rep(2L, l_thetahat),
+                rep(2L, l_estimates),
                 rep(3L, l_ci)
             )
             y[type == 1L] <- gammas[, 2L]
         } else {
             # set up x coordinates
-            x <- c(CIs[, 1L], thetahat, CIs[, 2L])
+            x <- c(CIs[, 1L], estimates, CIs[, 2L])
             # Get the y-coordinates
             y <- vector("numeric", length(x))
             type <- c(
                 rep(0L, l_ci),
-                rep(2L, l_thetahat),
+                rep(2L, l_estimates),
                 rep(3L, l_ci)
             )
         }
         y[type == 0L | type == 3L] <- 0 # 0 if lower/upper
-        y[type == 2L] <- f_thetahat
+        y[type == 2L] <- f_estimates
         # rescale the diamonds if needed (such that the max height is always 1)
         if (scale_diamonds) {
             scale_factor <- 1 / max(y)

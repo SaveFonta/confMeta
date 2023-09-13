@@ -1,10 +1,6 @@
-# Multiplicative heterogeneity -------------------------------------------------
-
-
+#' @title Estimation of between-study heterogeneity
 #' @rdname estimate_heterogeneity
-#'
-#' Estimate the between-study heterogeneity using either an
-#' additive or a multiplicative model.
+#' @order 2
 #'
 #' @description
 #'     \code{estimate_phi} estimates the the between-study heterogeneity
@@ -27,15 +23,8 @@
 #' @export
 #'
 #' @examples
-#' # Example estimates and std. errors
-#' estimates <- c(0.21, 0.53, 0.24, 0.32, 0.19)
-#' SEs <- c(0.19, 0.39, 0.7, 1, 0.97)
-#'
-#' # Estimating heterogeneity using the multiplicative model
-#' estimate_phi(estimates = estimates, SEs = SEs)
-#'
-#' estimates[1] <- 7
-#' estimate_phi(estimates = estimates, SEs = SEs)
+#'     # Estimating heterogeneity using the multiplicative model
+#'     estimate_phi(estimates = estimates, SEs = SEs)
 estimate_phi <- function(estimates, SEs) {
 
     m <- stats::lm(estimates ~ 1, weights = 1 / SEs^2)
@@ -50,11 +39,13 @@ estimate_phi <- function(estimates, SEs) {
 # Additive heterogeneity -------------------------------------------------------
 
 #' @rdname estimate_heterogeneity
+#' @order 1
 #'
 #' @description
-#'     \code{estimate_tau2} estimates the between-study heterogeneity using an
-#'     additive model. The resulting parameter \eqn{\tau^2} is estimated through
-#'     a call to \code{\link[meta]{metagen}} with \code{TE = estimates} and
+#'     \code{estimate_tau2} estimates the between-study heterogeneity
+#'     \eqn{\tau^2} using an additive model. The resulting parameter
+#'     \eqn{\tau^2} is estimated through a call to
+#'     \code{\link[meta]{metagen}} with \code{TE = estimates} and
 #'     \code{seTE = SEs}. Other arguments to \code{\link[meta]{metagen}} can be
 #'     passed via the \code{...} argument. If no arguments are passed via
 #'     \code{...}, the following defaults are applied.
@@ -73,10 +64,12 @@ estimate_phi <- function(estimates, SEs) {
 #' @export
 #'
 #' @examples
-#' # Estimating heterogeneity using the multiplicative model
-#' estimate_tau2(estimates = estimates, SEs = SEs)
-#' estimates[1] <- 7
-#' estimate_tau2(estimates = estimates, SEs = SEs)
+#'     # Example estimates and std. errors
+#'     estimates <- c(0.21, 0.53, 0.24, 0.32, 0.19)
+#'     SEs <- c(0.19, 0.39, 0.7, 1, 0.97)
+#'
+#'     # Estimating heterogeneity using the multiplicative model
+#'     estimate_tau2(estimates = estimates, SEs = SEs)
 estimate_tau2 <- function(estimates, SEs, ...) {
 
     # get names of ... arguments

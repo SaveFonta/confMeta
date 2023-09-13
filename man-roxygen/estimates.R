@@ -1,1 +1,1 @@
-#' @param thetahat Numeric vector of parameter estimates.
+#' @param estimates Numeric vector of effect estimates.

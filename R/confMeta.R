@@ -4,6 +4,14 @@ confMeta <- function(
     SEs,
     study_names = NULL,
     conf_level = 0.95,
+    fun,
+    ...
+) {
+
+    # coerce inputs into correct format
+    estimates <- as.double(estimates)
+    SEs <- as.double(SEs)
+    conf_level <- as.double(conf_level)
 
     # recycle to appropriate lengths
 
@@ -203,6 +211,7 @@ check_class <- function(x, class) {
 
 check_fun_args <- function(fun, ...) {
 
+    # fun must have the following arguments
     must_have_args <- c(
         "estimates",
         "SEs",
@@ -210,13 +219,18 @@ check_fun_args <- function(fun, ...) {
         "mu"
     )
 
-    dotarg <- list(...)  # ellipsis args
-    nms_dot <- names(dotargs)
-    f <- formals(fun)     # formals
-    fa <- names(f)        # formalArgs
+    dotargs <- list(...)           # ellipsis args
+    nms_ellipsis <- names(dotargs) # names of the ellipsis args
+    f <- formals(fun)              # formals(fun)
+    fa <- names(f)                 # formalArgs(fun)
 
-    cond1 <- all(must_have_args %in% fa) # all required arguments are there
-    cond2 <- all(names)                           # dotargs must be in formalArgs
+    # Get all of the additional args of fun (those that are not must-haves)
+    add_args <- setdiff(fa, must_have_args)
+
+    # Check whether all of the necessary arguments are there
+    cond1 <- all(must_have_args %in% fa)
+    # dotargs must be in formalArgs
+    cond2 <- all(nms_ellipsis %in% fa)
 
 
     invisible(NULL)

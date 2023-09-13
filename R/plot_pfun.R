@@ -1,8 +1,8 @@
 #' Plot the p-value function(s) for a given set of studies
 #'
-#' @template thetahat
-#' @template se
-#' @template level
+#' @template estimates
+#' @template SEs
+#' @template conf_level
 #' @param distr Character vector of length 1 or 2. Valid options are
 #' either \code{"f"} or \code{"chisq"} or both. Denotes the distribution
 #' used in cases where \code{pValueFUN = "hMean"} but ignored otherwise.
@@ -36,26 +36,25 @@
 # functions specified by the input arguments.
 #'
 #' @examples
-#' thetahat <- c(-0.49, -0.17, -0.52, -0.48, -0.26, -0.36, -0.47, -0.3, -0.15,
-#'               -0.28)
-#' se <- c(0.346945150708765, 0.214289651908355, 0.239800324754587,
-#'         0.372455823554997, 0.25000459389308, 0.295923805016299,
-#'         0.219391786477601, 0.14796190250815, 0.270413132170067,
-#'         0.500009187786161)
+#' estimates <- c(-0.49, -0.17, -0.52, -0.48, -0.26, -0.36, -0.47, -0.3, -0.15,
+#'                -0.28)
+#' SEs <- c(0.346945150708765, 0.214289651908355, 0.239800324754587,
+#'          0.372455823554997, 0.25000459389308, 0.295923805016299,
+#'          0.219391786477601, 0.14796190250815, 0.270413132170067,
+#'          0.500009187786161)
 #' pValueFUN <- c("hMean", "k-Trials", "Pearson", "Edgington")
 #' distr <- c("chisq")
 #' heterogeneity <- "none"
-#' ggPvalueFunction(thetahat = thetahat,
-#'                  se = se,
+#' ggPvalueFunction(estimates = estimates,
+#'                  SEs = SEs,
 #'                  xlim = c(-0.8, 0.1),
 #'                  distr = distr,
 #'                  heterogeneity = heterogeneity,
 #'                  pValueFUN = pValueFUN)
-#' @export
 ggPvalueFunction <- function(
-    thetahat,
-    se,
-    level = 0.95,
+    estimates,
+    SEs,
+    conf_level = 0.95,
     distr = c("chisq", "f"),
     heterogeneity = c("none", "additive", "multiplicative"),
     pValueFUN = c("hMean", "k-Trials", "Pearson", "Edgington", "Fisher"),
@@ -75,12 +74,12 @@ ggPvalueFunction <- function(
 
     # Check the other inputs
     stopifnot(
-        is.numeric(level),
-        level > 0 && level < 1,
-        is.numeric(thetahat),
-        length(thetahat) > 0L,
-        is.numeric(se),
-        length(se) == length(thetahat) || length(se) == 1L,
+        is.numeric(conf_level),
+        conf_level > 0 && conf_level < 1,
+        is.numeric(estimates),
+        length(estimates) > 0L,
+        is.numeric(SEs),
+        length(SEs) == length(estimates) || length(SEs) == 1L,
         is.numeric(xlim),
         length(xlim) == 2L,
         xlim[1] < xlim[2]
@@ -95,13 +94,13 @@ ggPvalueFunction <- function(
 
     # Set some constants that are equal for all grid rows
     const <- list(
-        thetahat = thetahat,
-        se = se,
-        alpha = 1 - level,
-        phi = estimatePhi(thetahat = thetahat, se = se),
-        tau2 = estimateTau2(
-            thetahat = thetahat,
-            se = se,
+        estimates = estimates,
+        SEs = SEs,
+        alpha = 1 - conf_level,
+        phi = estimate_phi(estimates = estimates, SEs = SEs),
+        tau2 = estimate_tau2(
+            estimates = estimates,
+            SEs = SEs,
             control = list(stepadj = 0.5, maxiter = 1000, threshold = 1e-6)
         ),
         eps = 0.0025, # for plotting error bars
@@ -113,7 +112,7 @@ ggPvalueFunction <- function(
     data <- lapply(seq_len(nrow(grid)), function(x) {
         grid_row <- grid[x, ]
         p_call <- make_p_call(grid_row = grid_row, const = const)
-        CI_call <- make_CI_call(p_call = p_call, level = level)
+        CI_call <- make_CI_call(p_call = p_call, conf_level = conf_level)
         pval <- eval(p_call)
         CIs <- eval(CI_call)
 
@@ -159,7 +158,7 @@ ggPvalueFunction <- function(
             heterogeneity = grid_row$heterogeneity,
             p_val_fun = grid_row$fun_name,
             distr = grid_row$distr,
-            y = rep(1 - level, nrow(CIs$CI)) + factor * const$eps,
+            y = rep(1 - conf_level, nrow(CIs$CI)) + factor * const$eps,
             group = factor(grid_row$name, levels = grid$name),
             stringsAsFactors = FALSE,
             row.names = NULL
@@ -181,8 +180,8 @@ ggPvalueFunction <- function(
     # Calculate the drapery lines
     if (drapery) {
         dp <- get_drapery_df(
-            thetahat = const$thetahat,
-            se = const$se,
+            estimates = const$estimates,
+            SEs = const$SEs,
             mu = const$muSeq
         )
     }
@@ -191,7 +190,7 @@ ggPvalueFunction <- function(
     # breaks for secondary y-axis
     trans <- function(x) abs(x - 1) * 100
     # Define breaks for the primary y-axis
-    b_points <- c(1 - level, pretty(c(lines$y, 1)))
+    b_points <- c(1 - conf_level, pretty(c(lines$y, 1)))
     o <- order(b_points, decreasing = FALSE)
     breaks_y1 <- b_points[o]
     # Compute breaks for the secondary y-axis
@@ -203,9 +202,12 @@ ggPvalueFunction <- function(
         data = lines,
         ggplot2::aes(x = x, y = y, color = group)
     ) +
-    ggplot2::geom_hline(yintercept = 1 - level, linetype = "dashed")
+    ggplot2::geom_hline(yintercept = 1 - conf_level, linetype = "dashed")
     if (!drapery) {
-        p <- p + ggplot2::geom_vline(xintercept = thetahat, linetype = "dashed")
+        p <- p + ggplot2::geom_vline(
+            xintercept = estimates,
+            linetype = "dashed"
+        )
     } else {
         p <- p + ggplot2::geom_line(
             data = dp,
@@ -274,9 +276,9 @@ ggPvalueFunction <- function(
 }
 
 # Calculate the drapery lines
-get_drapery_df <- function(thetahat, se, mu) {
+get_drapery_df <- function(estimates, SEs, mu) {
     # get lenghts
-    l_t <- length(thetahat)
+    l_t <- length(estimates)
     l_m <- length(mu)
     l_tot <- l_t * l_m
     # Initialize vectors
@@ -284,9 +286,9 @@ get_drapery_df <- function(thetahat, se, mu) {
     y_dp <- study <- numeric(l_tot)
     # Indices to loop over
     idx <- seq_len(l_m)
-    for (i in seq_along(thetahat)) {
+    for (i in seq_along(estimates)) {
         y_dp[idx] <- 2 *
-        (1 - stats::pnorm(abs(thetahat[i] - mu) / se[i]))
+        (1 - stats::pnorm(abs(estimates[i] - mu) / SEs[i]))
         study[idx] <- rep(i, l_m)
         idx <- idx + l_m
     }
@@ -317,8 +319,8 @@ make_p_call <- function(grid_row, const) {
     # Construct the call to the p-value function
     currentFUN <- get(grid_row$fun_name, pos = "package:confMeta")
     args <- list(
-        thetahat = const$thetahat,
-        se = const$se,
+        estimates = const$estimates,
+        SEs = const$SEs,
         heterogeneity = grid_row$heterogeneity,
         phi = if (grid_row$heterogeneity == "multiplicative")
             const$phi
@@ -345,13 +347,13 @@ make_p_call <- function(grid_row, const) {
     as.call(append(list(currentFUN), args))
 }
 
-make_CI_call <- function(p_call, level) {
+make_CI_call <- function(p_call, conf_level) {
 
     # convert p_call into list
     p_call_list <- as.list(p_call)
 
     # remove function, thetahat, se, mu as they are passed anyway
-    remove <- names(p_call_list) %in% c("", "thetahat", "se", "mu")
+    remove <- names(p_call_list) %in% c("", "estimates", "SEs", "mu")
     pValueFUN_args <- p_call_list[!remove]
 
     # add the function as pValueFUN
@@ -361,9 +363,9 @@ make_CI_call <- function(p_call, level) {
     as.call(
       list(
         hMeanChiSqCI,
-        thetahat = p_call_list$thetahat,
-        se = p_call_list$se,
-        level = level,
+        estimates = p_call_list$estimates,
+        SEs = p_call_list$SEs,
+        conf_level = conf_level,
         pValueFUN = pValueFUN,
         pValueFUN_args = pValueFUN_args
       )

@@ -1,7 +1,6 @@
+#' @title \emph{p}-value functions
 #' @rdname p_value_functions
 #' @order 1
-#'
-#' Methods for combining p-values
 #'
 #' @template estimates
 #' @template SEs
@@ -17,9 +16,23 @@
 #'     can lead to overflow of the double precision floating point numbers R
 #'     uses for numeric vectors.
 #'
-#' @details All functions are vectorized over the \code{mu} argument.
+#' @description
+#'     These functions combine individual effect estimates and the corresponding
+#'     standard errors into a single \emph{p}-value. Under the hood, all of the
+#'     functions transform the estimates and standard errors into \emph{z}, and
+#'     subsequently into \emph{p}-values. The resulting \emph{p}-values are
+#'     combined into the chosen statistic and an appropriate distribution is
+#'     used to derive the combined \emph{p}-value.
 #'
-#' @return The corresponding p-values given mu under the null-hypothesis.
+#'
+#'
+#'
+#'
+#'     All functions are vectorized over the \code{mu} argument.
+#'
+#' @return The corresponding p-values given \eqn{mu} under the null-hypothesis.
+#'
+#' @note Add references to p-value statistics.
 #'
 #' @export
 #'
