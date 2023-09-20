@@ -40,7 +40,8 @@ lib(dplyr)
 #| label: cache
 #| include: false
 
-ci_file <- "../data/ci_viz.rds"
+data_file <- "data/IQWiG-data.csv"
+ci_file <- "data/ci_viz.rds"
 script_file <- "./iQWiG.qmd"
 do_ci_calc <- function(ci_file, script_file) {
     file.info(script_file)$mtime > file.info(ci_file)$mtime
@@ -65,7 +66,7 @@ We calculate the outcome measures as in the following way:
 #| context: data
 
 # Get the data
-t <- read.csv("../data/IQWiG-data.csv")
+t <- read.csv(data_file)
 
 # Store numerical data as matrix
 dat <- as.matrix(
