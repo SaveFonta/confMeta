@@ -112,6 +112,10 @@ confMeta <- function(
         study_names <- paste0("Study ", seq_along(estimates))
     }
 
+    # Catch the ... arguments
+    ell <- list(...)
+    ell <- remove_unused(fun = fun, ell = ell)
+
     # coerce inputs into correct format
     estimates <- as.double(estimates)
     SEs <- as.double(SEs)
@@ -124,13 +128,14 @@ confMeta <- function(
         SEs = SEs,
         study_names = study_names,
         conf_level = conf_level,
-        fun = fun
+        fun = fun,
+        ell = ell
     )
 
     # Make the p-value function
     p_fun <- make_p_fun(
         fun = fun,
-        ... = ...
+        ell = ell
     )
 
     new_confMeta(
@@ -179,13 +184,14 @@ new_confMeta <- function(
     )
 }
 
-# Validator function
+# Input checker
 validate_inputs <- function(
     estimates,
     SEs,
     study_names,
     conf_level,
-    fun
+    fun,
+    ell
 ) {
 
     # Check inputs
@@ -195,7 +201,7 @@ validate_inputs <- function(
     check_type(x = SEs, "double")
     check_type(x = study_names, "character")
     check_type(x = conf_level, "double")
-    check_type(x = fun, "closure")
+    check_is_function(x = fun)
 
     # Check lengths
     check_equal_length(                    # estimates, SEs, study_names should
@@ -210,47 +216,75 @@ validate_inputs <- function(
     check_all_finite(x = SEs)              # no NAs, NaNs etc in SEs
     check_all_finite(x = conf_level)       # no NAs, NaNs etc in conf_level
     check_prob(x = conf_level)             # conf_level must be between 0 & 1
-    check_fun_args(x = fun)                # function must have correct args
+    check_fun_args(x = fun, ell = ell)     # function must have correct args
 
-    # Check that p_fun has an argument named mu
-
-    # Return NULL if all checks passed
+    # Check the function and its arguments
     invisible(NULL)
 }
 
+# Validator function
 validate_confMeta <- function(confMeta) {
 
 }
 
+# ==============================================================================
+# Remove unnecessary arguments from ... ========================================
+# ==============================================================================
+
+remove_unused <- function(fun, ell) {
+    fa <- names(formals(fun))
+    ell_args <- names(ell)
+    # Check whether there are unused arguments and if so, give a message
+    unused_args <- !(ell_args %in% fa)
+    if (any(unused_args)) {
+        remove <- ell_args[unused_args]
+        message(
+            paste0(
+                "Ignoring unused argument(s) ",
+                format_elements(remove),
+                "."
+            )
+        )
+        ell <- ell[!unused_args]
+    }
+    ell
+}
 
 # ==============================================================================
 # Make the p-value function  ===================================================
 # ==============================================================================
 
-make_p_fun <- function(fun, ...) {
-    fa <- methods::formalArgs(fun)
-    if (length(fa) > 4L && "mu" %in% fa) {
-        # if the function is already only a function with exactly one argument
-        # `mu`, return it as is
-        fun
-    } else {
-        # otherwise construct a function that calls `fun` with the ellipsis
-        # arguments fixed
-        function(estimates, SEs, level, mu) {
-            arglist <- append(list(...), alist(mu))
-            do.call("fun", arglist)
-        }
+make_p_fun <- function(fun, ell) {
+
+    f <- formals(fun)                           # get the arguments of fun
+
+    if (length(ell) > 0L) {                     # in case of non-empty dotargs
+        f <- f[!(names(f) %in% names(ell))]     # remove args passed via ...
+        f <- append(f, ell)                     # add these args from ...
+    }
+
+    out <- function(estimates, SEs, mu) {
+        do.call("fun", f)
     }
 }
-
-################################################################################
-# Checking the type of a variable                                              #
-################################################################################
 
 
 # ==============================================================================
 # Argument checks ==============================================================
 # ==============================================================================
+
+################################################################################
+# Checking whether x is a function                                             #
+################################################################################
+
+check_is_function <- function(x) {
+    if (!is.function(x)) {
+        obj <- deparse1(substitute(x))
+        msg <- paste0("Argument `", obj, "` must be a function.")
+        stop(msg, call. = FALSE)
+    }
+    invisible(NULL)
+}
 
 ################################################################################
 # Checking the type of a variable                                              #
@@ -300,7 +334,7 @@ check_type <- function(x, type) {
 }
 
 ################################################################################
-# Checking the type of a variable                                              #
+# Checking the class of a variable                                             #
 ################################################################################
 
 check_class <- function(x, class) {
@@ -316,7 +350,7 @@ check_class <- function(x, class) {
 # Check that the function has correct arguments                                #
 ################################################################################
 
-check_fun_args <- function(fun, ...) {
+check_fun_args <- function(fun, ell) {
 
     # fun must have the following arguments
     must_have_args <- c(
@@ -330,62 +364,46 @@ check_fun_args <- function(fun, ...) {
     fa <- names(f)                 # formalArgs(fun)
 
     # Get the additional arguments
-    # dotargs <- list(...)           # ellipsis args
-    # return(dotargs)
-    # nms_ellipsis <- names(dotargs) # names of the ellipsis args
+    ell_args <- names(ell)     # names of the ellipsis args
 
     # Check whether the function has all the required
     ok_required <- has_all(
         x = must_have_args,
         superset = fa
     )
+    if (!ok_required) {
+        msg <- paste0("Function in argument `fun` must have arguments ",
+            "named 'estimates', 'SEs', and 'mu'."
+        )
+        stop(msg, call. = FALSE)
+    }
 
     # Check the non-required arguments whether they have a default
     # or are passed via ...
-    non_standard <- fa[!(fa %in% must_have_args)]
-    no_default <- vapply(
-        f[non_standard],
+    add_args <- fa[!(fa %in% must_have_args)]  # Get additional args
+    not_ok <- vapply(                          # Check whether they have default
+        f[add_args],
         is_missing,
         logical(1L),
         USE.NAMES = TRUE
     )
-    if (any(no_default)) {
-        ell <- list(...)
-        ell_args <- names(ell)
-
-    }
-
-
-
-    # Throw messages if there are unused arguments passed
-    ok_unused <- has_unused(
-        fun_args = fa,
-        passed = c(must_have_args, nms_ellipsis)
-    )
-
-    if (length(dotargs) == 0) {
-        # if there are no ellipsis args, check whether the function has
-        # appropriate arguments
-        ok <- all(fa %in% must_have_args) && all(must_have_args %in% fa)
-        if (!ok) {
+    if (any(not_ok)) {                         # If any w/o default, check ...
+        args_check <- names(not_ok)[not_ok]
+        args_ok <- args_check %in% ell_args
+        names(args_ok) <- args_check
+        not_ok <- !args_ok
+        if (any(not_ok)) {
             msg <- paste0(
-                "Argument `fun` must have arguments named ",
-                paste0(
-                    "'",
-                    paste0(must_have_args, collapse = "', '"),
-                    "'"
-                ),
-                "."
+                "Invalid argument `fun`. The argument(s) ",
+                format_elements(names(not_ok)[not_ok]),
+                " must either have a default or be passed via `...`."
             )
-            stop(msg)
+            stop(msg, call. = FALSE)
         }
-
     }
 
     invisible(NULL)
 }
-
-dotargs <- check_fun_args(fun)
 
 is_missing <- function(x) {
     if (!nzchar(x) && is.name(x)) {
