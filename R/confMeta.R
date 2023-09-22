@@ -153,8 +153,7 @@ new_confMeta <- function(
     SEs = double(),
     study_names = character(),
     conf_level = double(1L),
-    p_fun,
-    ...
+    p_fun
 ) {
 
     # Calculate individual CIs
@@ -165,10 +164,17 @@ new_confMeta <- function(
             estimates - se_term,
             estimates + se_term
         ),
-        ncol = 2L
+        ncol = 2L,
+        dimnames = list(study_names, c("lower", "upper"))
     )
 
     # Calculate the joint CIs
+    joint_cis <- get_ci(
+        estimates = estimates,
+        SEs = SEs,
+        conf_level = conf_level,
+        p_fun = p_fun
+    )
 
     # Return object
     structure(
@@ -216,7 +222,7 @@ validate_inputs <- function(
     check_all_finite(x = SEs)              # no NAs, NaNs etc in SEs
     check_all_finite(x = conf_level)       # no NAs, NaNs etc in conf_level
     check_prob(x = conf_level)             # conf_level must be between 0 & 1
-    check_fun_args(x = fun, ell = ell)     # function must have correct args
+    check_fun_args(fun = fun, ell = ell)   # function must have correct args
 
     # Check the function and its arguments
     invisible(NULL)
@@ -459,7 +465,7 @@ format_elements <- function(x) {
 ################################################################################
 
 check_length_1 <- function(x) {
-    if (length(x != 1L)) {
+    if (length(x) != 1L) {
         obj <- deparse1(substitute(x))
         msg <- paste0("Argument `", obj, "` must be of length 1.")
         stop(msg, call. = FALSE)
@@ -472,8 +478,8 @@ check_length_1 <- function(x) {
 ################################################################################
 
 check_prob <- function(x) {
-    ok <- x > 0 & x < 1
-    if (all(ok)) {
+    is_ok <- x > 0 & x < 1
+    if (any(!is_ok)) {
         obj <- deparse1(substitute(x))
         msg <- paste0("All elements of argument `", obj, "` must be in (0, 1).")
         stop(msg, call. = FALSE)

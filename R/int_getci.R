@@ -1,32 +1,8 @@
-#' @title Calculate confidence intervals based on the harmonic mean
-#'     chi-squared test
-#'
-#' @template estimates
-#' @template SEs
-#' @template conf_level
-#' @template alternative
-#' @param pValueFUN A function that calculates the p-value. Must have arguments
-#'     \code{thetahat} and \code{se} as these are passed by this function.
-#'     Must further have an argument \code{mu} that specifies the
-#'     null-hypothesis. Defaults to \code{\link[confMeta]{p_hmean}}.
-#' @template check_inputs
-#' @template pValueFUN_args
-#' @return Returns a list containing confidence interval(s)
-#'     obtained by inverting the harmonic mean chi-squared test based on
-#'     study-specific estimates and standard errors. The list contains:
-#'     \item{CI}{Confidence interval(s).}\cr\cr
-#'     If the \code{alternative} is "none", the list also contains:
-#'     \item{gamma}{Local minima of the p-value function between the thetahats.}
-#'     \item{gammaMean}{Mean of all gammas.}
-#'     \item{gammaHMean}{Harmonic mean of all gammas.}
 get_ci <- function(
   estimates,
   SEs,
-  conf_level = 0.95,
-  alternative = "none",
-  check_inputs = TRUE,
-  pValueFUN = p_hmean,
-  pValueFUN_args
+  conf_level,
+  p_fun
 ) {
 
     # Get the function we need to optimise

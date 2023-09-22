@@ -24,8 +24,10 @@ pValueFUN_args <- list(check_inputs = FALSE)
 drapery <- TRUE
 
 set.seed(rng_seed)
-thetahat <- rnorm(n, mean = mean, sd = sd)
-se <- rgamma(n, shape = shape, rate = rate)
+estimates <- rnorm(n, mean = mean, sd = sd)
+SEs <- rgamma(n, shape = shape, rate = rate)
+p_fun <- p_edgington
+study_names <- NULL
 
 pars <- list(
     thetahat = thetahat,
