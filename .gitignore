@@ -21,6 +21,9 @@ biostat_*.pdf
 # User-specific files
 .Ruserdata
 
+# zip archives
+*\.zip
+
 # Example code in package build process
 *-Ex.R
 
