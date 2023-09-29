@@ -6,26 +6,6 @@ autoplot.confMeta <- function(
     drapery = TRUE
 ) {
 
-    # Check the other inputs
-    stopifnot(
-        is.numeric(conf_level),
-        conf_level > 0 && conf_level < 1,
-        is.numeric(estimates),
-        length(estimates) > 0L,
-        is.numeric(SEs),
-        length(SEs) == length(estimates) || length(SEs) == 1L,
-        is.numeric(xlim),
-        length(xlim) == 2L,
-        xlim[1] < xlim[2]
-    )
-
-    # Construct the grid to loop over
-    grid <- make_grid(
-        pValueFUN = pValueFUN,
-        heterogeneity = heterogeneity,
-        distr = distr
-    )
-
     # Set some constants that are equal for all grid rows
     const <- list(
         estimates = estimates,
