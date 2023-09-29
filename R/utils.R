@@ -207,61 +207,61 @@ check_phiTau2_arg <- function(heterogeneity, phi, tau2) {
     }
 }
 
-## Checks the alternative argument
-# check_alternative_arg_hmean <- function(alternative) {
-#     if (
-#         length(alternative) != 1L ||
-#         !(alternative %in% c("none", "less", "greater", "two.sided"))
-#     )
-#         stop(
-#             paste0(
-#                 "Argument 'alternative' must be one of ",
-#                 "c('none', 'less', 'greater', 'two.sided')."
-#             )
-#         )
-# }
+# Checks the alternative argument
+check_alternative_arg_hmean <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none", "less", "greater", "two.sided"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none', 'less', 'greater', 'two.sided')."
+            )
+        )
+}
 
-## Checks the alternative argument
-# check_alternative_arg_edg <- function(alternative) {
-#     if (
-#         length(alternative) != 1L ||
-#         !(alternative %in% c("one.sided", "two.sided"))
-#     )
-#         stop(
-#             paste0(
-#                 "Argument 'alternative' must be one of ",
-#                 "c('one.sided', 'two.sided')."
-#             )
-#         )
-# }
+# Checks the alternative argument
+check_alternative_arg_edg <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("one.sided", "two.sided"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('one.sided', 'two.sided')."
+            )
+        )
+}
 
-## Checks the alternative argument
-# check_alternative_arg_pearson <- function(alternative) {
-#     if (
-#         length(alternative) != 1L ||
-#         !(alternative %in% c("none"))
-#     )
-#         stop(
-#             paste0(
-#                 "Argument 'alternative' must be one of ",
-#                 "c('none')."
-#             )
-#         )
-# }
+# Checks the alternative argument
+check_alternative_arg_pearson <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none')."
+            )
+        )
+}
 
-## Checks the alternative argument
-# check_alternative_arg_ktr <- function(alternative) {
-#     if (
-#         length(alternative) != 1L ||
-#         !(alternative %in% c("none"))
-#     )
-#         stop(
-#             paste0(
-#                 "Argument 'alternative' must be one of ",
-#                 "c('none')."
-#             )
-#         )
-# }
+# Checks the alternative argument
+check_alternative_arg_ktr <- function(alternative) {
+    if (
+        length(alternative) != 1L ||
+        !(alternative %in% c("none"))
+    )
+        stop(
+            paste0(
+                "Argument 'alternative' must be one of ",
+                "c('none')."
+            )
+        )
+}
 
 ## Check the distribution argument used in hMeanChiSqMu()
 ## - hMeanChiSqMu

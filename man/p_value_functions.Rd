@@ -113,13 +113,22 @@ uses for numeric vectors.}
 \code{"f"} (F-distribution) and \code{"chisq"} (Chi-squared distribution). Defaults to \code{"chisq"}.}
 }
 \value{
-The corresponding p-values given mu under the null-hypothesis.
+The corresponding p-values given \eqn{mu} under the null-hypothesis.
 }
 \description{
-\emph{p}-value functions
+\if{html}{\out{<div class="sourceCode">}}\preformatted{These functions combine individual effect estimates and the corresponding
+standard errors into a single \\emph\{p\}-value. Under the hood, all of the
+functions transform the estimates and standard errors into \\emph\{z\}, and
+subsequently into \\emph\{p\}-values. The resulting \\emph\{p\}-values are
+combined into the chosen statistic and an appropriate distribution is
+used to derive the combined \\emph\{p\}-value.
+
+All of the \\emph\{p\}-value functions are vectorized over the \code{mu}
+argument.
+}\if{html}{\out{</div>}}
 }
-\details{
-All functions are vectorized over the \code{mu} argument.
+\note{
+Add references to p-value statistics.
 }
 \examples{
     # Simulating estimates and standard errors

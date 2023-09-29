@@ -8,12 +8,13 @@ sd <- 2.5
 shape <- 8
 rate <- 5
 heterogeneity <- c("none", "additive")
-pValueFUN <- c("hMean", "Fisher")
+p_fun <- p_edgington
+# pValueFUN <- c("hMean", "Fisher")
 distr <- "chisq"
-level <- 0.95
+conf_level <- 0.95
 diamond_height <- 0.5
 v_space <- 1.5
-studyNames <- NULL
+study_names <- NULL
 xlim <- c(-6, 7)
 scale_diamonds <- TRUE
 v_space <- 1.5
@@ -26,7 +27,8 @@ drapery <- TRUE
 set.seed(rng_seed)
 estimates <- rnorm(n, mean = mean, sd = sd)
 SEs <- rgamma(n, shape = shape, rate = rate)
-p_fun <- p_edgington
+fun <- p_edgington
+ell <- list(approx = FALSE, rando = "hi")
 study_names <- NULL
 
 pars <- list(

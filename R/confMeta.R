@@ -1,15 +1,14 @@
 #' @title \emph{confMeta} objects
-#' @description \code{confMeta} allows the user to create S3 objects of class
-#'     \code{confMeta}.
+#' @description Main function to create objects of class `confMeta`.
 #' @param estimates A vector containing the normalized individual effect
-#'     estimates. Must be of the same length as \code{SEs} and coercible to
+#'     estimates. Must be of the same length as `SEs` and coercible to
 #'     type 'double'.
 #' @param SEs The standard errors of the normalized individual effect estimates.
-#'     Must be of the same length as \code{estimates} and coercible to
+#'     Must be of the same length as `estimates` and coercible to
 #'     type 'double'.
-#' @param study_names Either \code{NULL} (the default) or a vector that can
+#' @param study_names Either `NULL` (the default) or a vector that can
 #'     be coerced to type 'character'. Must be of the same length as
-#'     arguments \code{estimates} and \code{SEs}. The vector is used to
+#'     arguments `estimates` and `SEs`. The vector is used to
 #'     differentiate the individual studies. For more information, check out the
 #'     Details section.
 #' @param conf_level The confidence level. Must be a numeric vector of length
@@ -18,13 +17,13 @@
 #'     corresponding standard errors into a combined p-value. The function must
 #'     have arguments named 'estimates', 'SEs', and 'mu'.
 #'     Additional arguments are also allowed, but these must either have a
-#'     default value or be passed via the \code{...} argument.
+#'     default value or be passed via the `...` argument.
 #'     For more information, see the Details section.
-#' @param ... Additional arguments passed to \code{fun}. See the Details
+#' @param ... Additional arguments passed to `fun`. See the Details
 #'     section.
-#' @return An S3 object of class \code{confMeta}. The object contains the
+#' @return An S3 object of class `confMeta`. The object contains the
 #'     following elements:
-#'     \description{
+#'     \itemize{
 #'         \item{estimates}{The normalized individual effect estimates.}
 #'         \item{SEs}{The standard errors of the normalized individual effect
 #'             estimates.}
@@ -41,54 +40,56 @@
 #'             section.}
 #'     }
 #' @details
-#'     \section{Function arguments}{
-#'     The argument \code{study_names} is used to differentiate between the
-#'     different individual estimates. If the argument is set to \code{NULL},
+#'     # Function arguments
+#'     The argument `study_names` is used to differentiate between the
+#'     different individual estimates. If the argument is set to `NULL`,
 #'     the element 'study_names' in the return object will just be the a
 #'     character vector with elements "Study n" where n is a number from 1
-#'     to \code{length(elements)}. These names are only used in some of the
-#'     \code{autoplot} methods.
+#'     to `length(elements)`. These names are only used in some of the
+#'     `autoplot` methods.
 #'
-#'     The argument \code{fun} must have arguments 'estimates', 'SEs',
+#'     The argument `fun` must have arguments 'estimates', 'SEs',
 #'     and 'mu' but it can also have further arguments.
 #'     However, these must either have a default value or
-#'     need to be passed via the \code{...} argument. If there
-#'     are additional arguments passed via \code{...},
-#'     \code{confMeta} will internally create a new
-#'     function that calls \code{fun} with the additional arguments fixed.
+#'     need to be passed via the `...` argument. If there
+#'     are additional arguments passed via `...`,
+#'     `confMeta` will internally create a new
+#'     function that calls `fun` with the additional arguments fixed.
+#'     Thus, any any argument passed via `...` overwrites existing
+#'     defaults.
 #'     Since this is the p-value function that is used to calculate the
 #'     combined confidence interval(s), it should return a vector of class
 #'     'numeric' with value(s) in the interval [0, 1].
-#'     }
 #'
-#'     \section{Confidence intervals}{
-#'     The confidence intervals returned by \code{confMeta} are calculated as
+#'     # Confidence intervals
+#'     The confidence intervals returned by `confMeta` are calculated as
 #'     follows:
 #'
-#'     The \code{individual_cis} are calculated as
+#'     The `individual_cis` are calculated as
 #'     \deqn{x_{i} \pm \Phi^{-1}{\text{conf_level}} \cdot \sigma_{i}}
 #'     where \eqn{x_{i}} corresponds to the elements of vector
-#'     \code{estimates}, \eqn{\Phi^{-1}} is the quantile function of
+#'     `estimates}, \eqn{\Phi^{-1}} is the quantile function of
 #'     the standard normal distribution, conf_level is the confidence
-#'     level passed as argument \code{conf_level}, and
+#'     level passed as argument `conf_level`, and
 #'     \eqn{\sigma_{i}}, are the standard errors passed in argument
-#'     \code{SEs}.
+#'     `SEs`.
 #'
-#'     The \code{joint_cis} are found by searching where the function returned
-#'     in element 'p_fun' is equal to 1-\code{conf_level}.
-#'     }
+#'     The `joint_cis` are found by searching where the function returned
+#'     in element 'p_fun' is equal to 1-`conf_level`.
 #'
 #' @examples
 #'     # Simulate effect estimates and standard errors
 #'     n <- 5
 #'     estimates <- rnorm(n)
 #'     SEs <- rgamma(n, 5, 5)
+#'     conf_level <- 0.95
 #'
 #'     # Construct a simple confMeta object using p_edgington as
 #'     # the p-value function
 #'     cm <- confMeta(
 #'         estimates = estimates,
 #'         SEs = SEs,
+#'         conf_level = conf_level,
 #'         fun = p_edgington
 #'     )
 #'
@@ -117,9 +118,9 @@ confMeta <- function(
     ell <- remove_unused(fun = fun, ell = ell)
 
     # coerce inputs into correct format
-    estimates <- as.double(estimates)
-    SEs <- as.double(SEs)
-    conf_level <- as.double(conf_level)
+    if (inherits(estimates, "numeric")) estimates <- as.double(estimates)
+    if (inherits(SEs, "numeric")) SEs <- as.double(SEs)
+    if (inherits(conf_level, "numeric")) conf_level <- as.double(conf_level)
     study_names <- as.character(study_names)
 
     # run input checks
@@ -181,10 +182,14 @@ new_confMeta <- function(
         list(
             estimates = estimates,
             SEs = SEs,
+            study_names = study_names,
             conf_level = conf_level,
             p_fun = p_fun,
             individual_cis = individual_cis,
-            joint_cis = joint_cis
+            joint_cis = joint_cis$CI,
+            gamma = joint_cis$gamma,
+            p_max = joint_cis$p_max,
+            p_0 = joint_cis$p_0
         ),
         class = "confMeta"
     )
@@ -231,6 +236,77 @@ validate_inputs <- function(
 # Validator function
 validate_confMeta <- function(confMeta) {
 
+    # All valid names
+    cm_elements <- c(
+        "estimates",
+        "SEs",
+        "study_names",
+        "conf_level",
+        "p_fun",
+        "individual_cis",
+        "joint_cis",
+        "gamma",
+        "p_max",
+        "p_0"
+    )
+
+    ok <- cm_elements %in% names(confMeta)
+    if (!all(ok)) {
+        miss <- cm_elements[!ok]
+        msg <- paste0(
+            "The confMeta object is missing components: ",
+            format_elements(miss)
+        )
+        stop(msg)
+    }
+
+    # type checks
+    with(
+        confMeta,
+        {
+            # Check types
+            check_type(x = estimates, "double", val = TRUE)
+            check_type(x = SEs, "double", val = TRUE)
+            check_type(x = study_names, "character", val = TRUE)
+            check_type(x = conf_level, "double", val = TRUE)
+            check_type(x = individual_cis, "double", val = TRUE)
+            check_type(x = joint_cis, "double", val = TRUE)
+            check_type(x = gamma, "double", val = TRUE)
+            check_type(x = p_max, "double", val = TRUE)
+            check_type(x = p_0, "double", val = TRUE)
+            check_is_function(x = p_fun)
+
+            # Check classes
+            check_class(x = individual_cis, class = "matrix", val = TRUE)
+            check_class(x = joint_cis, class = "matrix", val = TRUE)
+            check_class(x = gamma, class = "matrix", val = TRUE)
+            check_class(x = p_max, class = "matrix", val = TRUE)
+            check_class(x = p_0, class = "matrix", val = TRUE)
+
+            # Check validity of values
+            check_all_finite(x = estimates, val = TRUE)
+            check_all_finite(x = SEs, val = TRUE)
+            check_all_finite(x = conf_level, val = TRUE)
+            check_prob(x = conf_level, val = TRUE)
+            check_fun_args(
+                fun = p_fun,
+                ell = list(),
+                val = TRUE
+            )
+
+            # Check lengths
+            check_equal_length(
+                estimates = estimates,
+                SEs = SEs,
+                study_names = study_names
+            )
+            check_length_1(x = conf_level)
+
+            invisible(NULL)
+        }
+    )
+
+    invisible(NULL)
 }
 
 # ==============================================================================
@@ -269,9 +345,10 @@ make_p_fun <- function(fun, ell) {
         f <- append(f, ell)                     # add these args from ...
     }
 
-    out <- function(estimates, SEs, mu) {
-        do.call("fun", f)
-    }
+    out <- fun
+    formals(out) <- f
+
+    out
 }
 
 
@@ -296,30 +373,20 @@ check_is_function <- function(x) {
 # Checking the type of a variable                                              #
 ################################################################################
 
-check_type <- function(x, type) {
-    if (!(typeof(x) == type)) {
-        obj <- deparse1(substitute(x))
-        msg <- paste0("Argument `", obj, "` must be of type '", type, "'.")
-        stop(msg, call. = FALSE)
-    }
-    invisible(NULL)
-}
-
-################################################################################
-# Checking the type of a variable                                              #
-################################################################################
-
-check_all_finite <- function(x) {
+check_all_finite <- function(x, val = FALSE) {
     if (!all(is.finite(x))) {
         obj <- deparse1(substitute(x))
         msg <- paste0(
             if (length(x) > 1L) {
-                "All elements of argument `"
+                paste0(
+                    "All entries of ",
+                    if (val) "element `" else "argument `"
+                )
             } else {
-                "Argument `"
+                if (val) "Element `" else "Argument `"
             },
             obj,
-            "` must be finite.",
+            "` must be finite."
         )
         stop(msg, call. = FALSE)
     }
@@ -330,10 +397,16 @@ check_all_finite <- function(x) {
 # Checking the type of a variable                                              #
 ################################################################################
 
-check_type <- function(x, type) {
+check_type <- function(x, type, val = FALSE) {
     if (!(typeof(x) == type)) {
         obj <- deparse1(substitute(x))
-        msg <- paste0("Argument `", obj, "` must be of type '", type, "'.")
+        msg <- paste0(
+            if (val) "Element `" else "Argument `",
+            obj,
+            "` must be of type '",
+            type,
+            "'."
+        )
         stop(msg, call. = FALSE)
     }
     invisible(NULL)
@@ -343,10 +416,16 @@ check_type <- function(x, type) {
 # Checking the class of a variable                                             #
 ################################################################################
 
-check_class <- function(x, class) {
-    if (!(class(x) == class)) {
+check_class <- function(x, class, val = FALSE) {
+    if (!inherits(x, class)) {
         obj <- deparse1(substitute(x))
-        msg <- paste0("Argument `", obj, "` must be of class '", class, "'.")
+        msg <- paste0(
+            if (val) "Element `" else "Argument `",
+            obj,
+            "` must be of class '",
+            class,
+            "'."
+        )
         stop(msg, call. = FALSE)
     }
     invisible(NULL)
@@ -356,7 +435,7 @@ check_class <- function(x, class) {
 # Check that the function has correct arguments                                #
 ################################################################################
 
-check_fun_args <- function(fun, ell) {
+check_fun_args <- function(fun, ell = NULL, val = FALSE) {
 
     # fun must have the following arguments
     must_have_args <- c(
@@ -370,7 +449,9 @@ check_fun_args <- function(fun, ell) {
     fa <- names(f)                 # formalArgs(fun)
 
     # Get the additional arguments
-    ell_args <- names(ell)     # names of the ellipsis args
+    if (!is.null(ell)) {
+        ell_args <- names(ell)     # names of the ellipsis args
+    }
 
     # Check whether the function has all the required
     ok_required <- has_all(
@@ -378,7 +459,10 @@ check_fun_args <- function(fun, ell) {
         superset = fa
     )
     if (!ok_required) {
-        msg <- paste0("Function in argument `fun` must have arguments ",
+        msg <- paste0(
+            "Function in ",
+            if (val) "element `p_fun` " else "argument `fun` ",
+            "must have arguments ",
             "named 'estimates', 'SEs', and 'mu'."
         )
         stop(msg, call. = FALSE)
@@ -394,15 +478,24 @@ check_fun_args <- function(fun, ell) {
         USE.NAMES = TRUE
     )
     if (any(not_ok)) {                         # If any w/o default, check ...
-        args_check <- names(not_ok)[not_ok]
-        args_ok <- args_check %in% ell_args
-        names(args_ok) <- args_check
-        not_ok <- !args_ok
+        if (!val) {
+            args_check <- names(not_ok)[not_ok]
+            args_ok <- args_check %in% ell_args
+            names(args_ok) <- args_check
+            not_ok <- !args_ok
+        }
         if (any(not_ok)) {
             msg <- paste0(
-                "Invalid argument `fun`. The argument(s) ",
+                "Invalid ",
+                if (val) "element `p_fun`" else "argument `fun`",
+                ". The function argument(s) ",
                 format_elements(names(not_ok)[not_ok]),
-                " must either have a default or be passed via `...`."
+                " must ",
+                if (val) {
+                    "have a default."
+                } else {
+                    "either have a default or be passed via `...`."
+                }
             )
             stop(msg, call. = FALSE)
         }
@@ -427,17 +520,15 @@ has_all <- function(x, superset) {
 # Checking for equal lengths of variables                                      #
 ################################################################################
 
-check_equal_length <- function(...) {
+check_equal_length <- function(..., val = FALSE) {
     arguments <- list(...)
     l <- vapply(arguments, length, integer(1L), USE.NAMES = TRUE)
     ind <- l == l[1L]
     ok <- all(ind)
-    if (ok) {
-        invisible(NULL)
-    } else {
+    if (!ok) {
         nms <- names(l)
         msg <- paste0(
-            "Arguments ",
+            if (val) "Elements " else "Arguments ",
             format_elements(nms),
             " must have the same length."
         )
@@ -464,10 +555,14 @@ format_elements <- function(x) {
 # Check for length equals 1                                                    #
 ################################################################################
 
-check_length_1 <- function(x) {
+check_length_1 <- function(x, val = FALSE) {
     if (length(x) != 1L) {
         obj <- deparse1(substitute(x))
-        msg <- paste0("Argument `", obj, "` must be of length 1.")
+        msg <- paste0(
+            if (val) "Element `" else "Argument `",
+            obj,
+            "` must be of length 1."
+        )
         stop(msg, call. = FALSE)
     }
     invisible(NULL)
@@ -477,11 +572,16 @@ check_length_1 <- function(x) {
 # Check for value between 0 and 1                                              #
 ################################################################################
 
-check_prob <- function(x) {
+check_prob <- function(x, val = FALSE) {
     is_ok <- x > 0 & x < 1
     if (any(!is_ok)) {
         obj <- deparse1(substitute(x))
-        msg <- paste0("All elements of argument `", obj, "` must be in (0, 1).")
+        msg <- paste0(
+            "All elements of ",
+            if (val) "element `" else "argument `",
+            obj,
+            "` must be in (0, 1)."
+        )
         stop(msg, call. = FALSE)
     }
     invisible(NULL)

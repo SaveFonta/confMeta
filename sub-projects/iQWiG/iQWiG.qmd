@@ -40,6 +40,7 @@ lib(dplyr)
 #| label: cache
 #| include: false
 
+meta_file <- "data/IQWiG-metadata.csv"
 data_file <- "data/IQWiG-data.csv"
 ci_file <- "data/ci_viz.rds"
 script_file <- "./iQWiG.qmd"
@@ -67,10 +68,20 @@ We calculate the outcome measures as in the following way:
 
 # Get the data
 t <- read.csv(data_file)
+m <- read.csv(meta_file)
+t <- merge(
+    t,
+    m[c("no", "effect.measure")],
+    by = "no",
+    all.x = TRUE,
+    all.y = FALSE,
+    sort = FALSE
+)
+t$effect.measure <- ifelse(t$effect.measure == "OR", 0L, 1L)
 
 # Store numerical data as matrix
 dat <- as.matrix(
-    t[c("treat.events", "treat.total", "control.events", "control.total")]
+    t[c("treat.events", "treat.total", "control.events", "control.total", "effect.measure")]
 )
 
 # Calculate estimates and SEs
@@ -82,25 +93,26 @@ get_est <- function(x) {
     treat.total <- x[2L]
     control.events <- x[3L]
     control.total <- x[4L]
+    measure <- x[5L]
 
     treat.noevents <- treat.total - treat.events
     control.noevents <- control.total - control.events
 
-    or <- (treat.events / treat.noevents) / (control.events / control.noevents)
-    rr <- (treat.events / treat.total) / (control.events / control.total)
+    if (measure == 0L) {
+        est <- (treat.events / treat.noevents) / (control.events / control.noevents)
+        selogEst <- sqrt(sum(1 / c(treat.events, treat.noevents, control.events, control.noevents)))
+    } else if (measure == 1L) {
+        est <- (treat.events / treat.total) / (control.events / control.total)
+        selogEst <- sqrt(1 / treat.events + 1 / control.events - 1 / treat.total - 1 / control.total)
+    }
 
-    logOR <- log(or)
-    logRR <- log(rr)
+    nm <- c("logEst", "selogEst")
+    logEst <- log(est)
 
-    selogOR <- sqrt(sum(1 / c(treat.events, treat.noevents, control.events, control.noevents)))
-    selogRR <- sqrt(1 / treat.events + 1 / control.events - 1 / treat.total - 1 / control.total)
+    out <- c(logEst, selogEst)
+    names(out) <- nm
 
-    c(
-        "logOR" = logOR,
-        "selogOR" = selogOR,
-        "logRR" = logRR,
-        "selogRR" = selogRR
-    )
+    out
 }
 
 out <- t(apply(dat, 1L, get_est))
@@ -109,6 +121,8 @@ out <- t(apply(dat, 1L, get_est))
 t <- cbind(t, as.data.frame(out))
 # Sort by meta-analysis
 t <- t[order(t$identifier, decreasing = FALSE), ]
+# Rewrite "OR", "RR"
+t$effect.measure <- ifelse(t$effect.measure == 0L, "OR", "RR")
 ```
 
 # Calculating confidence intervals
@@ -173,8 +187,8 @@ make_plots <- function(data, level){
 get_ci <- function(measure, t, level) {
 
     # Which variable
-    est_name <- measure
-    se_name <- paste0("se", measure)
+    est_name <- "logEst"
+    se_name <- "selogEst"
 
     # get the MA names
     nms <- unique(t$identifier)

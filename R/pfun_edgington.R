@@ -24,11 +24,8 @@
 #'     combined into the chosen statistic and an appropriate distribution is
 #'     used to derive the combined \emph{p}-value.
 #'
-#'
-#'
-#'
-#'
-#'     All functions are vectorized over the \code{mu} argument.
+#'     All of the \emph{p}-value functions are vectorized over the \code{mu}
+#'     argument.
 #'
 #' @return The corresponding p-values given \eqn{mu} under the null-hypothesis.
 #'

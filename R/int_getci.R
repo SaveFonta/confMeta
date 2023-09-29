@@ -13,8 +13,7 @@ get_ci <- function(
         estimates = estimates,
         SEs = SEs,
         alpha = alpha,
-        pValueFUN = pValueFUN,
-        pValueFUN_args = pValueFUN_args
+        p_fun = p_fun
     )
 
     # remove duplicates and sort thetahat and se
@@ -67,13 +66,21 @@ get_ci <- function(
         out <- list(
             CI = matrix(rep(NA_real_, 2L), ncol = 2L),
             gamma = matrix(rep(NA_real_, 2L), ncol = 2L),
-            gammaMean = NA_real_,
-            gammaHMean = NA_real_,
-            forest_plot_estimates = estimates[idx],
-            forest_plot_f_estimates = f_estimates[idx] + alpha
+            p_max = matrix(
+                c(x = estimates[idx], y = f_estimates[idx] + alpha),
+                ncol = 2L,
+                dimnames = list(NULL, c("x", "y"))
+            ),
+            p_0 = matrix(
+                c(0, f(0)),
+                ncol = 2L,
+                dimnames = list(NULL, c("x", "y"))
+            )
+            # forest_plot_thetahat = thetahat[idx],
+            # forest_plot_f_thetahat = f_thetahat[idx] + alpha
         )
         colnames(out$CI) <- c("lower", "upper")
-        colnames(out$gamma) <- c("minimum", "pvalue_fun/gamma")
+        colnames(out$gamma) <- c("x", "y")
     } else {
         # If the CI does exist:
         # 1. Determine the smallest and largest thetahat where f(thetahat) > 0
@@ -107,12 +114,6 @@ get_ci <- function(
         ## between thetahat_min and thetahat_max.
         estimates <- estimates[idx_min:idx_max]
         f_estimates <- f_estimates[idx_min:idx_max]
-        ## Also, in order to avoid errors due to two thetahats being equal,
-        ## we need to make sure that we only search between unique
-        ## thetahats
-        uniq_idx <- !duplicated(estimates)
-        estimates <- estimates[uniq_idx]
-        f_estimates <- f_estimates[uniq_idx]
 
         ## Get the number of intervals between these thetahats
         n_intervals <- length(estimates) - 1L
@@ -137,7 +138,7 @@ get_ci <- function(
                 )
             )
         }
-        colnames(gam) <- c("minimum", "pvalue_fun/gamma")
+        colnames(gam) <- c("x", "y")
 
         # Whereever the p-value function is negative at the minimum,
         # search for the two roots. Also add the lower and upper bound
@@ -192,18 +193,33 @@ get_ci <- function(
         colnames(CI) <- c("lower", "upper")
 
         # Increase the y-coordinate of the minima by alpha
+        # -> the if clause is only there because the object `gam`
+        # does not exist if the p-value function is positive for
+        # only one estimate/maximum
         if (!one_pos_theta_only) {
             gam[, 2L] <- gam[, 2L] + alpha
         }
 
         # return
+        # Calculate p_max
+        idx <- f_estimates == max(f_estimates)
         out <- list(
             CI = CI,
             gamma = gam,
-            gammaMean = mean(gam[, 2L]),
-            gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L]),
-            forest_plot_estimates = estimates,
-            forest_plot_f_estimates = f_estimates + alpha
+            p_max = matrix(
+                c(x = estimates[idx], y = f_estimates[idx] + alpha),
+                ncol = 2L,
+                dimnames = list(NULL, c("x", "y"))
+            ),
+            p_0 = matrix(
+                c(0, f(0)),
+                ncol = 2L,
+                dimnames = list(NULL, c("x", "y"))
+            )
+            # gammaMean = mean(gam[, 2L]),
+            # gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L]),
+            # forest_plot_estimates = estimates,
+            # forest_plot_f_estimates = f_estimates + alpha
         )
     }
     out
@@ -327,35 +343,17 @@ make_function <- function(
     estimates,
     SEs,
     alpha,
-    pValueFUN,
-    pValueFUN_args
+    p_fun
 ) {
-    # Add/Overwrite thetahat and se args
-    pValueFUN_args$estimates <- estimates
-    pValueFUN_args$SEs <- SEs
-    # Add mu argument
-    if ("mu" %in% names(pValueFUN_args)) pValueFUN_args$mu <- NULL
-    pValueFUN_args <- append(pValueFUN_args, alist(mu = limit))
-    ## For the remaining arguments, use the defaults
-    forms <- formals(pValueFUN)
-    nforms <- names(formals)
-    pValueFUN_args <- append(
-        pValueFUN_args,
-        forms[!nforms %in% names(pValueFUN_args)]
-    )
-    ## Check whether all arguments are there
-    available_args <- nforms %in% names(pValueFUN_args)
-    if (!all(available_args)) {
-        stop(
-            paste0(
-                "List pValueFUN_args is missing argument(s) '",
-                paste0(nforms[!available_args], collapse = "', '"),
-                "'."
-            )
-        )
-    }
 
+    # Add/Overwrite thetahat and se args
     function(limit) {
-        do.call("pValueFUN", pValueFUN_args) - alpha
+        do.call(
+            "p_fun",
+            append(
+                list(estimates = estimates, SEs = SEs),
+                alist(mu = limit)
+            )
+        ) - alpha
     }
 }
