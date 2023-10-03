@@ -1,119 +1,28 @@
-#' Calculate confidence intervals based on the harmonic mean chi-squared test
-#'
-#' @template thetahat
-#' @template se
-#' @param level Numeric vector of length 1 specifying the level of the
-#' confidence interval. Defaults to 0.95.
-#' @template alternative
-#' @param pValueFUN A function that calculates the p-value. Must have arguments
-#' \code{thetahat} and \code{se} as these are passed by this function.
-#' Must further have an argument \code{mu} that specifies the null-hypothesis.
-#' Defaults to \code{\link[confMeta]{hMeanChiSqMu}}.
-#' @template check_inputs
-#' @template pValueFUN_args
-#' @return Returns a list containing confidence interval(s)
-#' obtained by inverting the harmonic mean chi-squared test based on
-#' study-specific estimates and standard errors. The list contains:
-#' \item{CI}{Confidence interval(s).}\cr\cr
-#' If the \code{alternative} is "none", the list also contains:
-#' \item{gamma}{Local minima of the p-value function between the thetahats.}
-#' \item{gammaMean}{Mean of all gammas.}
-#' \item{gammaHMean}{Harmonic mean of all gammas.}
-#' @examples
-#' ## Simulate thetahat and se
-#' n <- 15
-#' mean <- 0
-#' sd <- 1.1
-#' shape <- 5
-#' rate <- 5
-#' thetahat <- rnorm(n, mean = mean, sd = sd)
-#' se <- rgamma(n, shape = shape, rate = rate)
-#'
-#' ## Set heterogeneity
-#' heterogeneity <- "none"
-#' phi <- if (heterogeneity == "multiplicative") {
-#'     estimatePhi(thetahat = thetahat, se = se)
-#' } else {
-#'     NULL
-#' }
-#' tau2 <- if (heterogeneity == "additive") {
-#'     estimateTau2(thetahat = thetahat, se = se)
-#' } else {
-#'     NULL
-#' }
-#'
-#' ## Set confidence level
-#' conf.level <- 0.95
-#'
-#' ## Determine the p-value functions
-#' funs <- list(
-#'     "pearson" = confMeta::pPearsonMu,
-#'     "hMean" = confMeta::hMeanChiSqMu,
-#'     "k-Trials" = confMeta::kTRMu,
-#'     "edgington" = confMeta::pEdgingtonMu,
-#'     "fisher" = confMeta::pFisherMu
-#' )
-#'
-#' ## Calculate the CIs
-#' cis <- lapply(
-#'     funs,
-#'     function(f) {
-#'         hMeanChiSqCI(
-#'             thetahat = thetahat,
-#'             se = se,
-#'             level = conf.level,
-#'             alternative = "none",
-#'             pValueFUN = f,
-#'             pValueFUN_args = list(
-#'                 check_inputs = FALSE,
-#'                 heterogeneity = heterogeneity,
-#'                 phi = phi,
-#'                 tau2 = tau2
-#'             )
-#'         )
-#'     }
-#' )
-#' @export
-hMeanChiSqCI <- function(
-  thetahat,
-  se,
-  level = 0.95,
-  alternative = "none",
-  check_inputs = TRUE,
-  pValueFUN = hMeanChiSqMu,
-  pValueFUN_args
+get_ci <- function(
+  estimates,
+  SEs,
+  conf_level,
+  p_fun
 ) {
-
-    if (check_inputs) {
-        check_inputs_CI(
-            thetahat = thetahat,
-            se = se,
-            level = level,
-            alternative = alternative,
-            pValueFUN = pValueFUN,
-            pValueFUN_args = pValueFUN_args
-        )
-    }
 
     # Get the function we need to optimise
     # This is calls the p-value function with specified
     # args and subtracts alpha
-    alpha <- 1 - level
+    alpha <- 1 - conf_level
     f <- make_function(
-        thetahat = thetahat,
-        se = se,
+        estimates = estimates,
+        SEs = SEs,
         alpha = alpha,
-        pValueFUN = pValueFUN,
-        pValueFUN_args = pValueFUN_args
+        p_fun = p_fun
     )
 
     # remove duplicates and sort thetahat and se
-    keep <- !duplicated(thetahat)
-    thetahat <- thetahat[keep]
-    se <- se[keep]
-    o <- order(thetahat, decreasing = FALSE)
-    thetahat <- thetahat[o]
-    se <- se[o]
+    keep <- !duplicated(estimates)
+    estimates <- estimates[keep]
+    SEs <- SEs[keep]
+    o <- order(estimates, decreasing = FALSE)
+    estimates <- estimates[o]
+    SEs <- SEs[o]
 
     # Check if CI exists: This is the case if
     # the function f(thetahat) returns at least one
@@ -123,17 +32,17 @@ hMeanChiSqCI <- function(
     # - 0 = estimate
     # - 1 = maximum
     # - 2 = minimum
-    thetahat <- matrix(
-        c(thetahat, f(thetahat), rep(0, length(thetahat))),
+    estimates <- matrix(
+        c(estimates, f(estimates), rep(0, length(estimates))),
         ncol = 3L,
         dimnames = list(NULL, c("x", "y", "status"))
     )
     ## search for local maxima in between thetahats
-    maxima <- find_optima(thetahat = thetahat[, 1L], f = f, maximum = TRUE)
+    maxima <- find_optima(estimates = estimates[, 1L], f = f, maximum = TRUE)
     ## Find out which of these maxima is relevant, i.e. it has a higher p-value
     ## than both, the next smaller and the next larger thetahat
     isRelevant_max <- is_relevant(
-        f_thetahat = thetahat[, 2L],
+        f_estimates = estimates[, 2L],
         f_extremum = maxima[, 2L],
         maximum = TRUE
     )
@@ -142,28 +51,36 @@ hMeanChiSqCI <- function(
     ## Here, we only care about the maxima since they might be > 0
     ## even though none of the thetahats are
     if (any(isRelevant_max)) {
-        thetahat <- rbind(thetahat, maxima[isRelevant_max, ])
+        estimates <- rbind(estimates, maxima[isRelevant_max, ])
         ## Sort this by the x-coordinate
-        o <- order(thetahat[, 1L], decreasing = FALSE)
-        thetahat <- thetahat[o, ]
+        o <- order(estimates[, 1L], decreasing = FALSE)
+        estimates <- estimates[o, ]
     }
-    f_thetahat <- thetahat[, 2L]
-    thetahat <- thetahat[, 1L]
+    f_estimates <- estimates[, 2L]
+    estimates <- estimates[, 1L]
 
-    if (all(f_thetahat <= 0)) {
+    if (all(f_estimates <= 0)) {
         # Calculate p_max
-        idx <- f_thetahat == max(f_thetahat)
+        idx <- f_estimates == max(f_estimates)
         # If it does not exist, return same format
         out <- list(
             CI = matrix(rep(NA_real_, 2L), ncol = 2L),
             gamma = matrix(rep(NA_real_, 2L), ncol = 2L),
-            gammaMean = NA_real_,
-            gammaHMean = NA_real_,
-            forest_plot_thetahat = thetahat[idx],
-            forest_plot_f_thetahat = f_thetahat[idx] + alpha
+            p_max = matrix(
+                c(x = estimates[idx], y = f_estimates[idx] + alpha),
+                ncol = 2L,
+                dimnames = list(NULL, c("x", "y"))
+            ),
+            p_0 = matrix(
+                c(0, f(0)),
+                ncol = 2L,
+                dimnames = list(NULL, c("x", "y"))
+            )
+            # forest_plot_thetahat = thetahat[idx],
+            # forest_plot_f_thetahat = f_thetahat[idx] + alpha
         )
         colnames(out$CI) <- c("lower", "upper")
-        colnames(out$gamma) <- c("minimum", "pvalue_fun/gamma")
+        colnames(out$gamma) <- c("x", "y")
     } else {
         # If the CI does exist:
         # 1. Determine the smallest and largest thetahat where f(thetahat) > 0
@@ -174,38 +91,32 @@ hMeanChiSqCI <- function(
         #    the function get_CI
 
         # 1.
-        thetahat_pos <- which(f_thetahat > 0)
-        idx_min <- min(thetahat_pos)
-        idx_max <- max(thetahat_pos)
-        thetahat_min <- thetahat[idx_min]
-        thetahat_max <- thetahat[idx_max]
-        step <- max(se)
+        estimates_pos <- which(f_estimates > 0)
+        idx_min <- min(estimates_pos)
+        idx_max <- max(estimates_pos)
+        estimates_min <- estimates[idx_min]
+        estimates_max <- estimates[idx_max]
+        step <- max(SEs)
 
         # 2.
         lower <- find_lower(
             f = f,
-            thetahat_min = thetahat_min,
-            se_min = step
+            estimates_min = estimates_min,
+            SEs_min = step
         )
         upper <- find_upper(
             f = f,
-            thetahat_max = thetahat_max,
-            se_max = step
+            estimates_max = estimates_max,
+            SEs_max = step
         )
         # 3.
         ## Get the thetahats we need to examine. These are all in
         ## between thetahat_min and thetahat_max.
-        thetahat <- thetahat[idx_min:idx_max]
-        f_thetahat <- f_thetahat[idx_min:idx_max]
-        ## Also, in order to avoid errors due to two thetahats being equal,
-        ## we need to make sure that we only search between unique
-        ## thetahats
-        uniq_idx <- !duplicated(thetahat)
-        thetahat <- thetahat[uniq_idx]
-        f_thetahat <- f_thetahat[uniq_idx]
+        estimates <- estimates[idx_min:idx_max]
+        f_estimates <- f_estimates[idx_min:idx_max]
 
         ## Get the number of intervals between these thetahats
-        n_intervals <- length(thetahat) - 1L
+        n_intervals <- length(estimates) - 1L
 
         ## For the intervals in the middle, compute the minimum and the
         ## corresponding p-value
@@ -218,8 +129,8 @@ hMeanChiSqCI <- function(
                     function(i) {
                         opt <- stats::optimize(
                             f = f,
-                            lower = thetahat[i],
-                            upper = thetahat[i + 1L]
+                            lower = estimates[i],
+                            upper = estimates[i + 1L]
                         )
                         c(opt$minimum, opt$objective)
                     },
@@ -227,7 +138,7 @@ hMeanChiSqCI <- function(
                 )
             )
         }
-        colnames(gam) <- c("minimum", "pvalue_fun/gamma")
+        colnames(gam) <- c("x", "y")
 
         # Whereever the p-value function is negative at the minimum,
         # search for the two roots. Also add the lower and upper bound
@@ -253,8 +164,8 @@ hMeanChiSqCI <- function(
             # is implemented in the functions get_search_interval and
             # find_closest_thetas
             intervals <- get_search_interval(
-                x_max = thetahat,
-                y_max = f_thetahat,
+                x_max = estimates,
+                y_max = f_estimates,
                 x_min = gam[, 1L],
                 y_min = gam[, 2L]
             )
@@ -282,18 +193,33 @@ hMeanChiSqCI <- function(
         colnames(CI) <- c("lower", "upper")
 
         # Increase the y-coordinate of the minima by alpha
+        # -> the if clause is only there because the object `gam`
+        # does not exist if the p-value function is positive for
+        # only one estimate/maximum
         if (!one_pos_theta_only) {
             gam[, 2L] <- gam[, 2L] + alpha
         }
 
         # return
+        # Calculate p_max
+        idx <- f_estimates == max(f_estimates)
         out <- list(
             CI = CI,
             gamma = gam,
-            gammaMean = mean(gam[, 2L]),
-            gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L]),
-            forest_plot_thetahat = thetahat,
-            forest_plot_f_thetahat = f_thetahat + alpha
+            p_max = matrix(
+                c(x = estimates[idx], y = f_estimates[idx] + alpha),
+                ncol = 2L,
+                dimnames = list(NULL, c("x", "y"))
+            ),
+            p_0 = matrix(
+                c(0, f(0) + alpha),
+                ncol = 2L,
+                dimnames = list(NULL, c("x", "y"))
+            )
+            # gammaMean = mean(gam[, 2L]),
+            # gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L]),
+            # forest_plot_estimates = estimates,
+            # forest_plot_f_estimates = f_estimates + alpha
         )
     }
     out
@@ -305,9 +231,9 @@ hMeanChiSqCI <- function(
 # the next larger effect estimate                                              #
 ################################################################################
 
-is_relevant <- function(f_thetahat, f_extremum, maximum) {
-    lower <- f_thetahat[-length(f_thetahat)]
-    upper <- f_thetahat[-1L]
+is_relevant <- function(f_estimates, f_extremum, maximum) {
+    lower <- f_estimates[-length(f_estimates)]
+    upper <- f_estimates[-1L]
     if (maximum) {
         f_extremum > lower & f_extremum > upper
     } else {
@@ -319,9 +245,9 @@ is_relevant <- function(f_thetahat, f_extremum, maximum) {
 # Helper function to find local maxima/minima between thetahats                #
 ################################################################################
 
-find_optima <- function(f, thetahat, maximum, ...) {
+find_optima <- function(f, estimates, maximum, ...) {
 
-    n_intervals <- length(thetahat) - 1L
+    n_intervals <- length(estimates) - 1L
     status <- if (maximum) 1 else 2
     out <- t(
         vapply(
@@ -329,8 +255,8 @@ find_optima <- function(f, thetahat, maximum, ...) {
             function(i) {
                 opt <- stats::optimize(
                     f = f,
-                    lower = thetahat[i],
-                    upper = thetahat[i + 1L],
+                    lower = estimates[i],
+                    upper = estimates[i + 1L],
                     maximum = maximum,
                     ...
                 )
@@ -385,26 +311,26 @@ find_closest_thetas <- function(minimum, x_max, y_max) {
 # confidence set                                                               #
 ################################################################################
 
-find_lower <- function(thetahat_min, se_min, f) {
-    lower <- thetahat_min - se_min
+find_lower <- function(estimates_min, SEs_min, f) {
+    lower <- estimates_min - SEs_min
     while (f(lower) > 0) {
-        lower <- lower - se_min
+        lower <- lower - SEs_min
     }
     stats::uniroot(
         f = f,
         lower = lower,
-        upper = thetahat_min
+        upper = estimates_min
     )$root
 }
 
-find_upper <- function(thetahat_max, se_max, f) {
-    upper <- thetahat_max + se_max
+find_upper <- function(estimates_max, SEs_max, f) {
+    upper <- estimates_max + SEs_max
     while (f(upper) > 0) {
-        upper <- upper + se_max
+        upper <- upper + SEs_max
     }
     stats::uniroot(
         f = f,
-        lower = thetahat_max,
+        lower = estimates_max,
         upper = upper
     )$root
 }
@@ -414,38 +340,20 @@ find_upper <- function(thetahat_max, se_max, f) {
 ################################################################################
 
 make_function <- function(
-    thetahat,
-    se,
+    estimates,
+    SEs,
     alpha,
-    pValueFUN,
-    pValueFUN_args
+    p_fun
 ) {
-    # Add/Overwrite thetahat and se args
-    pValueFUN_args$thetahat <- thetahat
-    pValueFUN_args$se <- se
-    # Add mu argument
-    if ("mu" %in% names(pValueFUN_args)) pValueFUN_args$mu <- NULL
-    pValueFUN_args <- append(pValueFUN_args, alist(mu = limit))
-    ## For the remaining arguments, use the defaults
-    forms <- formals(pValueFUN)
-    nforms <- names(formals)
-    pValueFUN_args <- append(
-        pValueFUN_args,
-        forms[!nforms %in% names(pValueFUN_args)]
-    )
-    ## Check whether all arguments are there
-    available_args <- nforms %in% names(pValueFUN_args)
-    if (!all(available_args)) {
-        stop(
-            paste0(
-                "List pValueFUN_args is missing argument(s) '",
-                paste0(nforms[!available_args], collapse = "', '"),
-                "'."
-            )
-        )
-    }
 
+    # Add/Overwrite thetahat and se args
     function(limit) {
-        do.call("pValueFUN", pValueFUN_args) - alpha
+        do.call(
+            "p_fun",
+            append(
+                list(estimates = estimates, SEs = SEs),
+                alist(mu = limit)
+            )
+        ) - alpha
     }
 }

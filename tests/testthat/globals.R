@@ -1,6 +1,3 @@
-path <- "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/kTRMu.R"
-fun_name <- "kTRMu"
-
 # get the old function
 get_old_FUN <- function(
     path,
@@ -20,8 +17,9 @@ get_old_FUN <- function(
         collapse = "\n"
     )
     e <- new.env()
-    eval(code_utils, envir = e)
-    eval(code_function, envir = e)
+    eval(parse(text = code_utils), envir = e)
+    eval(parse(text = code_function), envir = e)
+    ls(envir = e)
 
     get(fun_name, envir = e)
 }

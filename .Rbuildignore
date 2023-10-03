@@ -1,4 +1,5 @@
 lib/*
+sub-projects/*
 scratch/*
 scratch/[.].*$
 Makefile

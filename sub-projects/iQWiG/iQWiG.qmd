@@ -1,0 +1,475 @@
+---
+title: 'IQWiG data'
+author: 'Felix Hofmann'
+date: today
+format:
+    html:
+        toc: true
+        number-sections: true
+        code-fold: true
+        embed-resources: true
+server: shiny
+execute:
+    echo: !expr "knitr::is_html_output()"
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| context: setup
+
+lib <- function(lib) {
+    l <- deparse(substitute(lib))
+    library(
+        package = l,
+        character.only = TRUE,
+        quietly = TRUE,
+        warn.conflicts = FALSE
+    )
+}
+
+remotes::install_github("felix-hof/confMeta", quiet = TRUE)
+lib(confMeta)
+lib(patchwork)
+lib(shiny)
+lib(gt)
+lib(dplyr)
+```
+
+```{r}
+#| label: cache
+#| include: false
+
+meta_file <- "data/IQWiG-metadata.csv"
+data_file <- "data/IQWiG-data.csv"
+ci_file <- "data/ci_viz.rds"
+script_file <- "./iQWiG.qmd"
+do_ci_calc <- function(ci_file, script_file) {
+    file.info(script_file)$mtime > file.info(ci_file)$mtime
+}
+# redo_ci_calc <- do_ci_calc(ci_file = ci_file, script_file = script_file)  
+redo_ci_calc <- TRUE
+```
+
+
+# IQWiG data
+
+This data set can be downloaded from
+[here](https://data.goettingen-research-online.de/dataset.xhtml?persistentId=doi:10.25625/BWYBNK).
+
+
+# Calculating outcome measures for each study
+
+We calculate the outcome measures as in the following way:
+
+```{r}
+#| label: get-data
+#| context: data
+
+# Get the data
+t <- read.csv(data_file)
+m <- read.csv(meta_file)
+t <- merge(
+    t,
+    m[c("no", "effect.measure")],
+    by = "no",
+    all.x = TRUE,
+    all.y = FALSE,
+    sort = FALSE
+)
+t$effect.measure <- ifelse(t$effect.measure == "OR", 0L, 1L)
+
+# Store numerical data as matrix
+dat <- as.matrix(
+    t[c("treat.events", "treat.total", "control.events", "control.total", "effect.measure")]
+)
+
+# Calculate estimates and SEs
+get_est <- function(x) {
+
+    x <- unname(x)
+
+    treat.events <- x[1L]
+    treat.total <- x[2L]
+    control.events <- x[3L]
+    control.total <- x[4L]
+    measure <- x[5L]
+
+    treat.noevents <- treat.total - treat.events
+    control.noevents <- control.total - control.events
+
+    if (measure == 0L) {
+        est <- (treat.events / treat.noevents) / (control.events / control.noevents)
+        selogEst <- sqrt(sum(1 / c(treat.events, treat.noevents, control.events, control.noevents)))
+    } else if (measure == 1L) {
+        est <- (treat.events / treat.total) / (control.events / control.total)
+        selogEst <- sqrt(1 / treat.events + 1 / control.events - 1 / treat.total - 1 / control.total)
+    }
+
+    nm <- c("logEst", "selogEst")
+    logEst <- log(est)
+
+    out <- c(logEst, selogEst)
+    names(out) <- nm
+
+    out
+}
+
+out <- t(apply(dat, 1L, get_est))
+
+# Add estimates to original data
+t <- cbind(t, as.data.frame(out))
+# Sort by meta-analysis
+t <- t[order(t$identifier, decreasing = FALSE), ]
+# Rewrite "OR", "RR"
+t$effect.measure <- ifelse(t$effect.measure == 0L, "OR", "RR")
+```
+
+# Calculating confidence intervals
+
+The following code makes creates a list `cis` that contains one element per
+measure (i.e. OR, RR). Each of these elements is again a list with 40 elements,
+one for each meta-analysis. These elements are again lists with two elements,
+a plot and the CIs.
+
+```{r}
+#| label: make_ci
+#| context: data
+
+# given thetahat and se, get CIs and make plot
+make_plots <- function(data, level){
+
+    # estimate and se
+    thetahat <- data[[1L]]
+    se <- data[[2L]]
+
+    forest2oldCI <- function(forest) {
+        data <- forest[["plot"]][["plot_env"]]$old_methods_cis$CIs
+        s <- split(data, f = data$name)
+        lapply(s, confMeta:::get_lower_upper)
+    }
+
+    fplot <- ForestPlot(
+        thetahat = thetahat,
+        se = se,
+        level = level,
+        pValueFUN = c("Edgington", "Fisher"),
+        heterogeneity = "additive",
+        diamond_height = 0.5,
+        v_space = 1.5,
+        studyNames = NULL,
+        show_studies = TRUE,
+        scale_diamonds = TRUE
+    )
+
+    xlim <- ggplot2::ggplot_build(fplot$plot)$layout$panel_params[[1]]$x.range
+    fplot$plot <- fplot$plot + ggplot2::xlim(xlim)
+
+    pplot <- ggPvalueFunction(
+        thetahat = thetahat,
+        se = se,
+        level = level,
+        heterogeneity = "additive",
+        pValueFUN = c("Edgington", "Fisher"),
+        pValueFUN_args = list(check_inputs = FALSE),
+        drapery = TRUE,
+        xlim = xlim
+    )
+
+    list(
+        plot = pplot$plot / fplot$plot,
+        ci = append(forest2CI(fplot), forest2oldCI(fplot))
+    )
+}
+
+
+# Calculate the CIs & make plots for each measure
+get_ci <- function(measure, t, level) {
+
+    # Which variable
+    est_name <- "logEst"
+    se_name <- "selogEst"
+
+    # get the MA names
+    nms <- unique(t$identifier)
+    
+    # subset df
+    df <- t[c("no", est_name, se_name)]
+
+    # Get the MA ids
+    ids <- unique(df$no)
+
+    # For each MA -> Make the plot and get the CIs
+    out <- lapply(
+        ids,
+        function(id, df, level) {
+            s <- subset(df, no == id)
+            make_plots(data = s[2:3], level = level)
+        },
+        df = df,
+        level = level
+    )
+    names(out) <- nms
+    out
+}
+
+
+# Set level
+level <- 0.95
+# Set measures
+measures <- c("logOR" = "logOR","logRR" = "logRR")
+
+# Run code
+if (redo_ci_calc) {
+    cis <- lapply(measures, get_ci, t = t, level = level)
+    saveRDS(cis, file = ci_file)
+} else {
+    cis <- readRDS(ci_file)
+}
+```
+
+In order to visualize this, we use the following functions:
+
+```{r}
+#| label: helpers
+#| include: false
+#| context: setup
+
+## helper functions
+list2df <- function(n, d_list) {
+    d <- d_list[[n]]
+    nms <- names(d)
+    do.call(
+        "rbind",
+        lapply(
+            seq_along(nms),
+            function(x) {
+                data.frame(
+                    method = nms[x],
+                    lower = d[[x]][, 1L],
+                    upper = d[[x]][, 2L],
+                    studyID = n,
+                    row.names = NULL
+                )
+            }
+        )
+    )
+}
+
+
+# pad rows
+pad_rows <- function(l) {
+
+    if(length(l) != 1) {
+
+        # how many rows should each method have
+        methods <- unique(do.call("c", lapply(l, "[[", i = "method")))
+        nrows <- integer(length(methods))
+        names(nrows) <- methods
+        for (meth in methods) {
+            nrows[meth] <- max(
+                sapply(
+                    l,
+                    function(z, meth) sum(z$method == meth),
+                    meth = meth
+                )
+            )
+        }
+
+        # add the missing rows
+        pad <- lapply(
+            l,
+            function(x, nrows) {
+                meth <- x$method
+                ret <- list()
+                counter <- 1L
+                for (i in seq_along(nrows)) {
+                    should <- nrows[i]
+                    cur_meth <- names(should)
+                    has <- sum(meth == cur_meth)
+                    add <- should - has
+                    if (add > 0) {
+                        ret[[counter]] <- data.frame(
+                            method = rep(cur_meth, add),
+                            lower = rep(NA_real_, add),
+                            upper = rep(NA_real_, add),
+                            studyID = rep(NA_integer_, add)
+                        )
+                        counter <- counter + 1L
+                    }
+                }
+                do.call("rbind", ret)
+            },
+            nrows = nrows
+        )
+
+        # add if needed
+        idx <- sapply(pad, is.null)
+        l <- if (all(idx)) {
+            l
+        } else {
+            join <- which(!idx)
+            for (i in join) {
+                new <- rbind(l[[i]], pad[[i]])
+                l[[i]] <- new[order(new$method, decreasing = FALSE), ]
+            }
+        }
+    }
+
+    # Add id to colnames
+    res <- lapply(
+        l,
+        function(x) {
+            sid <- x$studyID
+            n <- unique(sid[!is.na(sid)])
+            colnames(x)[2:3] <- paste0(colnames(x)[2:3], "_", n)
+            x[-4]
+        }
+    )
+
+    first <- res[[1]][-4]
+    add <- do.call("cbind", lapply(res[-1], "[", i = c(-1, -4)))
+
+    if (is.null(add)) first else cbind(first, add)
+}
+```
+
+
+```{r}
+#| label: viz
+#| context: setup
+
+# Function to make a data frame for the table
+make_tab <- function(panels) {
+
+    d_list <- lapply(panels, "[[", i = "ci")
+
+    # convert CIs to df (one for each MA)
+    l <- lapply(seq_along(d_list), list2df, d_list = d_list)
+    l <- pad_rows(l)
+
+    l
+}
+
+# Function to make plot and table
+viz <- function(meas, ma, dat) {
+
+    panels <- lapply(
+        seq_along(meas),
+        function(x, meas, ma, dat) {
+            meas <- meas[x]
+            ma <- ma[x]
+            dat[[meas]][[ma]]
+        },
+        dat = dat,
+        ma = ma,
+        meas = meas
+    )
+
+    # get the plots
+    p <- wrap_plots(lapply(panels, "[[", i = "plot"))
+
+    # make the tables
+    tab <- make_tab(panels)
+    
+    # Add superscripts
+    tab |>
+        group_by(method) |>
+        gt()
+
+    list(plot = p, table = tab)
+}
+
+# # first panel
+# meas <- c("OR", "RR")               # Which measure
+# ma <- c("N15-06", "A11-30")         # Which meta-analysis
+#
+# meas <- "OR"
+# ma <- "N15-06"
+# dat <- cis
+#
+# viz(meas = meas, ma = ma, dat = cis)
+```
+
+
+In order to compare two scenarios, choose your configuration for both of them:
+
+```{r}
+#| label: shiny-ui
+#| echo: false
+
+# Inputs
+fluidRow(
+    column(
+        6,
+        selectInput(
+            "meas1",
+            "Choose a measure:",
+            choices = measures,
+            multiple = FALSE
+        ),
+        selectInput(
+            "ma1",
+            "Choose a meta-analysis:",
+            choices = t$identifier,
+            multiple = FALSE
+        )
+    ),
+    column(
+        6,
+        selectInput(
+            "meas2",
+            "Choose a measure:",
+            choices = c("NULL", measures),
+            multiple = FALSE
+        ),
+        selectInput(
+            "ma2",
+            "Choose a meta-analysis:",
+            choices = c("NULL", t$identifier),
+            multiple = FALSE
+        )
+    )
+)
+
+# Action Button
+br()
+actionButton("go", "Make the plots!")
+br()
+br()
+br()
+
+# Show outputs
+fluidRow(
+    column(
+        12,
+        plotOutput("plot")
+    ),
+    column(
+        12,
+        tableOutput("table")
+    )
+)
+```
+
+```{r}
+#| label: shiny-server
+#| context: server
+#| include: false
+
+res <- eventReactive(
+    input$go,
+    {
+        meas <- if (input$meas2 == "NULL") input$meas1 else c(input$meas1, input$meas2)
+        ma <- if (input$ma2 == "NULL") input$ma1 else c(input$ma1, input$ma2)
+        viz(
+            meas = meas,
+            ma = ma,
+            dat = cis
+        )
+    }
+)
+
+output$plot <- renderPlot({res()$plot})
+output$table <- renderTable({res()$table})
+```
