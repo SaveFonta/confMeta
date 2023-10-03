@@ -2,9 +2,17 @@
 % Please edit documentation in R/confMeta.R
 \name{confMeta}
 \alias{confMeta}
-\title{\emph{confMeta} objects}
+\title{Creating \emph{confMeta} objects}
 \usage{
-confMeta(estimates, SEs, study_names = NULL, conf_level = 0.95, fun, ...)
+confMeta(
+  estimates,
+  SEs,
+  study_names = NULL,
+  conf_level = 0.95,
+  fun,
+  fun_name = NULL,
+  ...
+)
 }
 \arguments{
 \item{estimates}{A vector containing the normalized individual effect
@@ -31,6 +39,11 @@ Additional arguments are also allowed, but these must either have a
 default value or be passed via the \code{...} argument.
 For more information, see the Details section.}
 
+\item{fun_name}{A character vector of length 1. The vector serves as an
+identifier for the function \code{fun} and is only used as a label in
+plots. The default is just the literal that the function \code{fun} is
+bound to.}
+
 \item{...}{Additional arguments passed to \code{fun}. See the Details
 section.}
 }
@@ -49,16 +62,28 @@ can be found in the Details section.}
 \item{p_fun}{A function with arguments named 'estimates', 'SEs',
 'conf_level', and 'mu'. This is the p-value function that is
 used to find the combined confidence intervals.}
+\item{fun_name}{The name of the function. It is only used in plots
+as a legend entry.}
 \item{joint_cis}{The combined confidence intervals. The exact
 calculation of these intervals can be found in the Details
 section.}
+\item{gamma}{The local minima within the range of the individual
+effect estimates. Column 'x' refers to the mean \code{mu} and
+column 'y' contains the corresponding $p$-value.}
+\item{p_max}{The local maxima of the $p$-value function. The
+column 'x' refers to the mean \code{mu} and the column 'y' contains
+the corresponding $p$-value.}
+\item{p_0}{The $p$-value at \code{mu} = 0}
 }
 }
 \description{
-Main function to create objects of class \code{confMeta}.
+Function to create objects of class \code{confMeta}. This is the
+main class within the package. For an overview of available methods
+run \code{methods(confMeta)}.
 }
 \details{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{# Function arguments
+
 The argument `study_names` is used to differentiate between the
 different individual estimates. If the argument is set to `NULL`,
 the element 'study_names' in the return object will just be the a
@@ -80,6 +105,7 @@ combined confidence interval(s), it should return a vector of class
 'numeric' with value(s) in the interval [0, 1].
 
 # Confidence intervals
+
 The confidence intervals returned by `confMeta` are calculated as
 follows:
 
@@ -109,7 +135,8 @@ in element 'p_fun' is equal to 1-`conf_level`.
         estimates = estimates,
         SEs = SEs,
         conf_level = conf_level,
-        fun = p_edgington
+        fun = p_edgington,
+        fun_name = "Edgington"
     )
 
     # Plot the object

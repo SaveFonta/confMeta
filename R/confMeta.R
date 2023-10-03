@@ -1,5 +1,7 @@
-#' @title \emph{confMeta} objects
-#' @description Main function to create objects of class `confMeta`.
+#' @title Creating *confMeta* objects
+#' @description Function to create objects of class `confMeta`. This is the
+#'     main class within the package. For an overview of available methods
+#'     run `methods(confMeta)`.
 #' @param estimates A vector containing the normalized individual effect
 #'     estimates. Must be of the same length as `SEs` and coercible to
 #'     type 'double'.
@@ -19,6 +21,10 @@
 #'     Additional arguments are also allowed, but these must either have a
 #'     default value or be passed via the `...` argument.
 #'     For more information, see the Details section.
+#' @param fun_name A character vector of length 1. The vector serves as an
+#'     identifier for the function `fun` and is only used as a label in
+#'     plots. The default is just the literal that the function `fun` is
+#'     bound to.
 #' @param ... Additional arguments passed to `fun`. See the Details
 #'     section.
 #' @return An S3 object of class `confMeta`. The object contains the
@@ -35,12 +41,22 @@
 #'         \item{p_fun}{A function with arguments named 'estimates', 'SEs',
 #'             'conf_level', and 'mu'. This is the p-value function that is
 #'             used to find the combined confidence intervals.}
+#'         \item{fun_name}{The name of the function. It is only used in plots
+#'             as a legend entry.}
 #'         \item{joint_cis}{The combined confidence intervals. The exact
 #'             calculation of these intervals can be found in the Details
 #'             section.}
+#'         \item{gamma}{The local minima within the range of the individual
+#'             effect estimates. Column 'x' refers to the mean `mu` and
+#'             column 'y' contains the corresponding $p$-value.}
+#'         \item{p_max}{The local maxima of the $p$-value function. The
+#'             column 'x' refers to the mean `mu` and the column 'y' contains
+#'             the corresponding $p$-value.}
+#'         \item{p_0}{The $p$-value at `mu` = 0}
 #'     }
 #' @details
 #'     # Function arguments
+#'
 #'     The argument `study_names` is used to differentiate between the
 #'     different individual estimates. If the argument is set to `NULL`,
 #'     the element 'study_names' in the return object will just be the a
@@ -62,6 +78,7 @@
 #'     'numeric' with value(s) in the interval [0, 1].
 #'
 #'     # Confidence intervals
+#'
 #'     The confidence intervals returned by `confMeta` are calculated as
 #'     follows:
 #'
@@ -90,7 +107,8 @@
 #'         estimates = estimates,
 #'         SEs = SEs,
 #'         conf_level = conf_level,
-#'         fun = p_edgington
+#'         fun = p_edgington,
+#'         fun_name = "Edgington"
 #'     )
 #'
 #'     # Plot the object
@@ -105,12 +123,17 @@ confMeta <- function(
     study_names = NULL,
     conf_level = 0.95,
     fun,
+    fun_name = NULL,
     ...
 ) {
 
     # If study names is NULL, construct default names
     if (is.null(study_names)) {
         study_names <- paste0("Study ", seq_along(estimates))
+    }
+    # If the function name is not given, add a default one
+    if (is.null(fun_name)) {
+        fun_name <- deparse1(substitute(fun))
     }
 
     # Catch the ... arguments
@@ -130,6 +153,7 @@ confMeta <- function(
         study_names = study_names,
         conf_level = conf_level,
         fun = fun,
+        fun_name = fun_name,
         ell = ell
     )
 
@@ -144,7 +168,8 @@ confMeta <- function(
         SEs = SEs,
         study_names = study_names,
         conf_level = conf_level,
-        p_fun = p_fun
+        p_fun = p_fun,
+        fun_name = fun_name
     )
 }
 
@@ -154,7 +179,8 @@ new_confMeta <- function(
     SEs = double(),
     study_names = character(),
     conf_level = double(1L),
-    p_fun
+    p_fun,
+    fun_name
 ) {
 
     # Calculate individual CIs
@@ -185,6 +211,7 @@ new_confMeta <- function(
             study_names = study_names,
             conf_level = conf_level,
             p_fun = p_fun,
+            fun_name = fun_name,
             individual_cis = individual_cis,
             joint_cis = joint_cis$CI,
             gamma = joint_cis$gamma,
@@ -202,6 +229,7 @@ validate_inputs <- function(
     study_names,
     conf_level,
     fun,
+    fun_name,
     ell
 ) {
 
@@ -211,6 +239,7 @@ validate_inputs <- function(
     check_type(x = estimates, "double")
     check_type(x = SEs, "double")
     check_type(x = study_names, "character")
+    check_type(x = fun_name, "character")
     check_type(x = conf_level, "double")
     check_is_function(x = fun)
 
@@ -221,6 +250,7 @@ validate_inputs <- function(
         study_names = study_names
     )
     check_length_1(x = conf_level)         # conf_level must be of length 1
+    check_length_1(x = fun_name)           # fun_name must be of length 1
 
     # Check validity of values
     check_all_finite(x = estimates)        # no NAs, NaNs etc in estimates
@@ -243,6 +273,7 @@ validate_confMeta <- function(confMeta) {
         "study_names",
         "conf_level",
         "p_fun",
+        "fun_name",
         "individual_cis",
         "joint_cis",
         "gamma",
@@ -268,6 +299,7 @@ validate_confMeta <- function(confMeta) {
             check_type(x = estimates, "double", val = TRUE)
             check_type(x = SEs, "double", val = TRUE)
             check_type(x = study_names, "character", val = TRUE)
+            check_type(x = fun_name, "character", val = TRUE)
             check_type(x = conf_level, "double", val = TRUE)
             check_type(x = individual_cis, "double", val = TRUE)
             check_type(x = joint_cis, "double", val = TRUE)
@@ -301,6 +333,7 @@ validate_confMeta <- function(confMeta) {
                 study_names = study_names
             )
             check_length_1(x = conf_level)
+            check_length_1(x = fun_name)
 
             invisible(NULL)
         }
@@ -505,7 +538,7 @@ check_fun_args <- function(fun, ell = NULL, val = FALSE) {
 }
 
 is_missing <- function(x) {
-    if (!nzchar(x) && is.name(x)) {
+    if (!all(nzchar(x)) && is.name(x)) {
         TRUE
     } else {
         FALSE

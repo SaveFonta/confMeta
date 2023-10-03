@@ -212,7 +212,7 @@ get_ci <- function(
                 dimnames = list(NULL, c("x", "y"))
             ),
             p_0 = matrix(
-                c(0, f(0)),
+                c(0, f(0) + alpha),
                 ncol = 2L,
                 dimnames = list(NULL, c("x", "y"))
             )

@@ -14,6 +14,7 @@ Imports:
     ggplot2,
     meta,
     metafor,
+    patchwork,
     ReplicationSuccess,
     scales,
     stats

@@ -4,7 +4,7 @@ load_all()
 
 n <- 9
 mean <- 0
-sd <- 2.5
+sd <- 1.5
 shape <- 8
 rate <- 5
 heterogeneity <- c("none", "additive")
@@ -17,8 +17,6 @@ v_space <- 1.5
 study_names <- NULL
 xlim <- c(-6, 7)
 scale_diamonds <- TRUE
-v_space <- 1.5
-diamond_height <- 0.5
 show_studies <- TRUE
 rng_seed <- 42L
 pValueFUN_args <- list(check_inputs = FALSE)
@@ -26,10 +24,43 @@ drapery <- TRUE
 
 set.seed(rng_seed)
 estimates <- rnorm(n, mean = mean, sd = sd)
+estimates1 <- rnorm(n, mean = mean, sd = sd)
+estimates2 <- rnorm(n, mean = mean, sd = sd)
 SEs <- rgamma(n, shape = shape, rate = rate)
-fun <- p_edgington
+SEs1 <- rgamma(n, shape = shape, rate = rate)
+SEs2 <- rgamma(n, shape = shape, rate = rate)
+fun <- p_hmean
+fun1 <- p_edgington
+fun2 <- p_fisher
 ell <- list(approx = FALSE, rando = "hi")
 study_names <- NULL
+
+type <- c("p", "forest")
+
+cm <- confMeta(
+    estimates = estimates,
+    SEs = SEs,
+    conf_level = conf_level,
+    fun = p_hmean
+)
+
+cm1 <- confMeta(
+    estimates = estimates,
+    SEs = SEs,
+    conf_level = conf_level,
+    fun = p_edgington
+)
+
+cm2 <- confMeta(
+    estimates = estimates,
+    SEs = SEs,
+    conf_level = conf_level,
+    fun = p_fisher
+)
+
+cms <- list(cm, cm1, cm2)
+
+ggplot2::autoplot(cm)
 
 pars <- list(
     thetahat = thetahat,
