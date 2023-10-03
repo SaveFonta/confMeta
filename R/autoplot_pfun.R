@@ -19,7 +19,7 @@
 #'     be ignored otherwise.
 #' @param scale_diamonds Logical vector of lenght 1. Accepted values are either
 #'     `TRUE` (default) or `FALSE`. If `TRUE`, the diamond is rescaled to the
-#'      interval [0, 1] in cases where the maximum of the p-value
+#'      interval \[0, 1\] in cases where the maximum of the p-value
 #'     function is not equal to 1. This argument is only relevant if `type`
 #'     contains `"forest"` and will be ignored otherwise.
 #' @param show_studies Logical vector of lenght 1. Accepted values are either

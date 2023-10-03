@@ -34,7 +34,7 @@ be ignored otherwise.}
 
 \item{scale_diamonds}{Logical vector of lenght 1. Accepted values are either
 \code{TRUE} (default) or \code{FALSE}. If \code{TRUE}, the diamond is rescaled to the
-interval \link{0, 1} in cases where the maximum of the p-value
+interval [0, 1] in cases where the maximum of the p-value
 function is not equal to 1. This argument is only relevant if \code{type}
 contains \code{"forest"} and will be ignored otherwise.}
 

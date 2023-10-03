@@ -40,7 +40,7 @@ p_tippett <- function(
 
     # adjust se based on heterogeneity model
     se <- adjust_se(
-      se = se,
+      SEs = SEs,
       heterogeneity = heterogeneity,
       phi = phi,
       tau2 = tau2

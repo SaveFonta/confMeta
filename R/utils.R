@@ -441,10 +441,9 @@ get_z <- function(estimates, SEs, mu) {
 
 utils::globalVariables(
     c(
-        # ggPvalueFunction
+        # autoplot.confMeta
         "x", "y", "group", "x_gamma", "y_gamma", "xmin", "xmax", "ymin", "ymax",
-        "study",
-        # ForestPlot
-        "lower", "upper", "estimate", "id", "color", "name", "y0"
+        "study", "xlim", "lower", "upper", "estimate", "id", "color", "name",
+        "y0", "conf_level", "estimates"
     )
 )
