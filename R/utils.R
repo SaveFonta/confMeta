@@ -442,7 +442,7 @@ get_z <- function(estimates, SEs, mu) {
 utils::globalVariables(
     c(
         # autoplot.confMeta
-        "x", "y", "group", "x_gamma", "y_gamma", "xmin", "xmax", "ymin", "ymax",
+        "x", "y", "group", "xmin", "xmax", "ymin", "ymax",
         "study", "xlim", "lower", "upper", "estimate", "id", "color", "name",
         "y0", "conf_level", "estimates"
     )
