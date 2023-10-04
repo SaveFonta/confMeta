@@ -185,7 +185,7 @@ new_confMeta <- function(
 
     # Calculate individual CIs
     alpha <- 1 - conf_level
-    se_term <- alpha / 2 * SEs # Note: At some point include a one-sided option?
+    se_term <- stats::qnorm(1 - alpha / 2) * SEs # Note: one-sided option?
     individual_cis <- matrix(
         c(
             estimates - se_term,
