@@ -85,18 +85,19 @@ autoplot.confMeta <- function(
     check_class(x = v_space, "numeric")
 
     # determine the xlim
-    if (is.null(xlim)) {
+    if (!is.null(xlim)) {
+        check_xlim(x = xlim)
+    } else {
         candidates <- c(
             sapply(cms, "[[", i = "individual_cis"),
-            sapply(cms, "[[", i = "joint_cis")
+            sapply(cms, "[[", i = "joint_cis"),
+            sapply(cms, "[[", i = "comparison_cis")
         )
         ext_perc <- 5
         lower <- min(candidates)
         upper <- max(candidates)
         margin <- (upper - lower) * ext_perc / 100
         xlim <- c(lower - margin, upper + margin)
-    } else {
-        check_xlim(x = xlim)
     }
 
     # generate plots
@@ -123,24 +124,45 @@ autoplot.confMeta <- function(
 
     # put all the graphics parameters in a list
     pars <- list(
-    type = type,
-    diamond_height = diamond_height,
-    v_space = v_space,
-    scale_diamonds = scale_diamonds,
-    show_studies = show_studies,
-    drapery = drapery,
-    xlim = xlim
+        type = type,
+        diamond_height = diamond_height,
+        v_space = v_space,
+        scale_diamonds = scale_diamonds,
+        show_studies = show_studies,
+        drapery = drapery,
+        xlim = xlim
     )
 
-    # do the p_value function plot
+    # make the p_value function plot
     plots <- lapply(
         expr,
-        function(x, cms, pars) {
-            eval(x)
-        },
+        function(x, cms, pars) eval(x),
         cms = cms,
         pars = pars
     )
+
+    # if xlim is NULL, calculate a sensible value and add it
+    if (is.null(xlim)) {
+        # What is always there
+        candidates <- c(
+            sapply(cms, "[[", i = "individual_cis"),
+            sapply(cms, "[[", i = "joint_cis")
+        )
+        # if forestplot, check also the other methods like REML
+        if ("forest" %in% type) {
+            other_cis <- get("old_methods_cis", plots$forest$plot_env)$CIs$x
+            candidates <- c(
+                candidates,
+                other_cis
+            )
+        }
+        ext_perc <- 5
+        lower <- min(candidates)
+        upper <- max(candidates)
+        margin <- (upper - lower) * ext_perc / 100
+        xlim <- c(lower - margin, upper + margin)
+        plots <- lapply(plots, function(x) x + ggplot2::xlim(xlim))
+    }
 
     if (length(plots) < 2L) {
         plots[[1L]]
@@ -691,91 +713,6 @@ get_CI_old_methods <- function(
     diamond_height
 ) {
 
-    # Get the object
-    get_obj_reml <- function(estimates, SEs, conf_level) {
-        meta::metagen(
-            TE = estimates, seTE = SEs, sm = "MD",
-            level = conf_level, method.tau = "REML"
-        )
-    }
-    get_obj_hk <- function(estimates, SEs, conf_level) {
-        meta::metagen(
-            TE = estimates, seTE = SEs, sm = "MD",
-            level = conf_level, method.tau = "REML", hakn = TRUE
-        )
-    }
-    get_obj_hc <- function(estimates, SEs, conf_level) {
-        metafor::hc(
-            object = metafor::rma(yi = estimates, sei = SEs, level = conf_level)
-        )
-    }
-    get_obj <- function(method, estimates, SEs, conf_level) {
-        switch(
-            method,
-            "Random Effects, REML" = get_obj_reml(
-                estimates = estimates,
-                SEs = SEs,
-                conf_level = conf_level
-            ),
-            "Hartung & Knapp" = get_obj_hk(
-                estimates = estimates,
-                SEs = SEs,
-                conf_level = conf_level
-            ),
-            "Henmi & Copas" = get_obj_hc(
-                estimates = estimates,
-                SEs = SEs,
-                conf_level = conf_level
-            )
-        )
-    }
-    # Get the CI
-    get_ci_reml <- function(reml) {
-        m <- matrix(c(reml$lower.random, reml$upper.random), ncol = 2L)
-        colnames(m) <- c("lower", "upper")
-        m
-    }
-    get_ci_hk <- function(hk) {
-        m <- matrix(c(hk$lower.random, hk$upper.random), ncol = 2L)
-        colnames(m) <- c("lower", "upper")
-        m
-    }
-    get_ci_hc <- function(hc) {
-        m <- matrix(c(hc$ci.lb, hc$ci.ub), ncol = 2L)
-        colnames(m) <- c("lower", "upper")
-        m
-    }
-    get_ci <- function(method, obj) {
-        switch(
-            method,
-            "Random Effects, REML" = get_ci_reml(reml = obj),
-            "Hartung & Knapp" = get_ci_hk(hk = obj),
-            "Henmi & Copas" = get_ci_hc(hc = obj)
-        )
-    }
-
-    # Get the p-value for the null-effect
-    get_pval_reml <- get_pval_hk <- function(obj) {
-        obj$pval.random
-    }
-    get_pval_hc <- function(obj, conf_level) {
-        ci <- get_ci_hc(obj)
-        ReplicationSuccess::ci2p(
-            lower = ci[, "lower"],
-            upper = ci[, "upper"],
-            conf.level = conf_level,
-            ratio = FALSE,
-            alternative = "two.sided"
-        )
-    }
-    get_pval <- function(method, obj, conf_level) {
-        switch(
-            method,
-            "Random Effects, REML" = get_pval_reml(obj = obj),
-            "Hartung & Knapp" = get_pval_hk(obj = obj),
-            "Henmi & Copas" = get_pval_hc(obj = obj, conf_level = conf_level)
-        )
-    }
 
     # Make a table with the classic methods
     other_methods <- c(
@@ -846,6 +783,8 @@ get_CI_old_methods <- function(
     )
 
 }
+
+
 
 # Make a df that contains the data for the diamonds
 calculate_polygon_2 <- function(

@@ -43,16 +43,24 @@
 #'             used to find the combined confidence intervals.}
 #'         \item{fun_name}{The name of the function. It is only used in plots
 #'             as a legend entry.}
-#'         \item{joint_cis}{The combined confidence intervals. The exact
-#'             calculation of these intervals can be found in the Details
-#'             section.}
+#'         \item{joint_cis}{The combined confidence interval(s). These are
+#'             calculated by finding the mean values where the $p$-value
+#'             function is larger than the confidence level in element
+#'             `conf_level`.
 #'         \item{gamma}{The local minima within the range of the individual
 #'             effect estimates. Column 'x' refers to the mean `mu` and
 #'             column 'y' contains the corresponding $p$-value.}
 #'         \item{p_max}{The local maxima of the $p$-value function. The
 #'             column 'x' refers to the mean `mu` and the column 'y' contains
 #'             the corresponding $p$-value.}
-#'         \item{p_0}{The $p$-value at `mu` = 0}
+#'         \item{p_0}{The value of the $p$-value at `mu` = 0}
+#'         \item{comparison_cis}{Combined confindence intervals calculated
+#'             with other methods. These can be used to for comparison
+#'             purposes. Currently, these other methods are random effects
+#'             (REML), Hartung & Knapp, and Henmi & Copas.}
+#'         \item{comparison_p_0}{The same as in element 'p_0' but for the
+#'             comparison methods (Random effects, Hartung & Knapp,
+#'             Henmi & Copas).}
 #'     }
 #' @details
 #'     # Function arguments
@@ -203,6 +211,16 @@ new_confMeta <- function(
         p_fun = p_fun
     )
 
+    # Calculate joint CIs with the comparison methods
+    method <- c("reml", "hk", "hc")
+    comparison <- get_stats_others(
+        method = method,
+        estimates = estimates,
+        SEs = SEs,
+        conf_level = conf_level
+    )
+
+
     # Return object
     structure(
         list(
@@ -216,7 +234,9 @@ new_confMeta <- function(
             joint_cis = joint_cis$CI,
             gamma = joint_cis$gamma,
             p_max = joint_cis$p_max,
-            p_0 = joint_cis$p_0
+            p_0 = joint_cis$p_0,
+            comparison_cis = comparison$CI,
+            comparison_p_0 = comparison$p_0
         ),
         class = "confMeta"
     )
@@ -278,7 +298,9 @@ validate_confMeta <- function(confMeta) {
         "joint_cis",
         "gamma",
         "p_max",
-        "p_0"
+        "p_0",
+        "comparison_cis",
+        "comparison_p_0"
     )
 
     ok <- cm_elements %in% names(confMeta)
@@ -306,6 +328,8 @@ validate_confMeta <- function(confMeta) {
             check_type(x = gamma, "double", val = TRUE)
             check_type(x = p_max, "double", val = TRUE)
             check_type(x = p_0, "double", val = TRUE)
+            check_type(x = comparison_cis, "double", val = TRUE)
+            check_type(x = comparison_p_0, "double", val = TRUE)
             check_is_function(x = p_fun)
 
             # Check classes
@@ -314,6 +338,8 @@ validate_confMeta <- function(confMeta) {
             check_class(x = gamma, class = "matrix", val = TRUE)
             check_class(x = p_max, class = "matrix", val = TRUE)
             check_class(x = p_0, class = "matrix", val = TRUE)
+            check_class(x = comparison_cis, "matrix", val = TRUE)
+            check_class(x = comparison_p_0, "matrix", val = TRUE)
 
             # Check validity of values
             check_all_finite(x = estimates, val = TRUE)
@@ -340,6 +366,149 @@ validate_confMeta <- function(confMeta) {
     )
 
     invisible(NULL)
+}
+
+# ==============================================================================
+# Calculate the CIs using the other methods ====================================
+# ==============================================================================
+
+# Get the object
+get_obj_reml <- function(estimates, SEs, conf_level) {
+    meta::metagen(
+        TE = estimates, seTE = SEs, sm = "MD",
+        level = conf_level, method.tau = "REML"
+    )
+}
+
+get_obj_hk <- function(estimates, SEs, conf_level) {
+    meta::metagen(
+        TE = estimates, seTE = SEs, sm = "MD",
+        level = conf_level, method.tau = "REML", hakn = TRUE
+    )
+}
+
+get_obj_hc <- function(estimates, SEs, conf_level) {
+    metafor::hc(
+        object = metafor::rma(yi = estimates, sei = SEs, level = conf_level)
+    )
+}
+
+# Get the CI
+get_ci_reml <- function(reml) {
+    matrix(
+        c(reml$lower.random, reml$upper.random),
+        ncol = 2L,
+        dimnames = list("Random effects (REML)", c("lower", "upper"))
+    )
+}
+
+get_ci_hk <- function(hk) {
+    matrix(
+        c(hk$lower.random, hk$upper.random),
+        ncol = 2L,
+        dimnames = list("Hartung & Knapp", c("lower", "upper"))
+    )
+}
+
+get_ci_hc <- function(hc) {
+    matrix(
+        c(hc$ci.lb, hc$ci.ub),
+        ncol = 2L,
+        dimnames = list("Henmi & Copas", c("lower", "upper"))
+    )
+}
+
+# Get the p-value for the null-effect
+get_pval_reml <- function(obj) {
+    matrix(
+        c(0, obj$pval.random),
+        ncol = 2L,
+        dimnames = list("Random effects (REML)", c("x", "y"))
+    )
+}
+
+get_pval_hk <- function(obj) {
+    matrix(
+        c(0, obj$pval.random),
+        ncol = 2L,
+        dimnames = list("Hartung & Knapp", c("x", "y"))
+    )
+}
+
+
+get_pval_hc <- function(obj, conf_level) {
+    ci <- get_ci_hc(obj)
+    p <- ReplicationSuccess::ci2p(
+        lower = ci[, "lower"],
+        upper = ci[, "upper"],
+        conf.level = conf_level,
+        ratio = FALSE,
+        alternative = "two.sided"
+    )
+    matrix(
+        c(0, p),
+        ncol = 2L,
+        dimnames = list("Henmi & Copas", c("x", "y"))
+    )
+}
+
+# Calculate everything
+get_stats_others <- function(method, estimates, SEs, conf_level) {
+    stopifnot(all(method %in% c("reml", "hk", "hc")))
+    names(method) <- method
+    nms <- c(
+        "reml" = "Random effects (REML)",
+        "hk" = "Hartung & Knapp",
+        "hc" = "Henmi & Copas"
+    )
+    res <- lapply(
+        method,
+        function(x, estimates, SEs, conf_level, nms) {
+            obj <- switch(
+                x,
+                "reml" = get_obj_reml(
+                    estimates = estimates,
+                    SEs = SEs,
+                    conf_level = conf_level
+                ),
+                "hk" = get_obj_hk(
+                    estimates = estimates,
+                    SEs = SEs,
+                    conf_level = conf_level
+                ),
+                "hc" = get_obj_hc(
+                    estimates = estimates,
+                    SEs = SEs,
+                    conf_level = conf_level
+                )
+            )
+            ci <- switch(
+                x,
+                "reml" = get_ci_reml(reml = obj),
+                "hk" = get_ci_hk(hk = obj),
+                "hc" = get_ci_hc(hc = obj)
+            )
+            pval <- switch(
+                x,
+                "reml" = get_pval_reml(obj = obj),
+                "hk" = get_pval_hk(obj = obj),
+                "hc" = get_pval_hc(obj = obj, conf_level = conf_level)
+            )
+            list(
+                ci = ci,
+                p_0 = pval
+            )
+        },
+        estimates = estimates,
+        SEs = SEs,
+        conf_level = conf_level,
+        nms = nms
+    )
+
+    cis <- do.call("rbind", lapply(res, "[[", i = "ci"))
+    p <- do.call("rbind", lapply(res, "[[", i = "p_0"))
+
+    list("CI" = cis, "p_0" = p)
 }
 
 # ==============================================================================
