@@ -5,11 +5,11 @@ test_that("Results of hMeanChiSqMu are consistent.", {
     # Set inputs
     set.seed(42)
     n <- 15
-    estimates <- thetahat <- rnorm(n)
-    SEs <- se <- rgamma(n, 5, 5)
+    estimates <- rnorm(n)
+    SEs <- rgamma(n, 5, 5)
     mu <- seq(
-        min(thetahat) - 0.5 * max(se),
-        max(thetahat) + 0.5 * max(se),
+        min(estimates) - 0.5 * max(SEs),
+        max(estimates) + 0.5 * max(SEs),
         length.out = 100
     )
     phi <- estimate_phi(estimates = estimates, SEs = SEs)
@@ -46,8 +46,8 @@ test_that("Results of hMeanChiSqMu are consistent.", {
     # Get the old function, vectorise it, and run the same inputs
     old_fun <- get_old_FUN(
         path =
-        "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/hMeanChiSqMu.R",
-        fun_name = "hMeanChiSqMu"
+        "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/pfun_hmean.R",
+        fun_name = "p_hmean"
     )
 
     old_res <- lapply(
@@ -59,8 +59,8 @@ test_that("Results of hMeanChiSqMu are consistent.", {
             distr <- grid$distr[x]
             alternative <- grid$alternative[x]
             old_fun(
-                thetahat = thetahat,
-                se = se,
+                estimates = estimates,
+                SEs = SEs,
                 mu = mu,
                 phi = phi,
                 tau2 = tau2,

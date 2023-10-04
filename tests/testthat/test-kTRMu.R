@@ -41,8 +41,8 @@ test_that("Results of kTRMu are consistent", {
     # Get the old function, vectorise it, and run the same inputs
     old_fun <- get_old_FUN(
         path =
-        "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/kTRMu.R",
-        fun_name = "kTRMu"
+        "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/pfun_ktrials.R",
+        fun_name = "p_ktrials"
     )
 
     old_res <- lapply(
@@ -52,8 +52,8 @@ test_that("Results of kTRMu are consistent", {
             phi <- if (het == "multiplicative") phi else NULL
             tau2 <- if (het == "additive") tau2 else NULL
             old_fun(
-                thetahat = estimates,
-                se = SEs,
+                estimates = estimates,
+                SEs = SEs,
                 mu = mu,
                 phi = phi,
                 tau2 = tau2,
