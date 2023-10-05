@@ -46,7 +46,7 @@
 #'         \item{joint_cis}{The combined confidence interval(s). These are
 #'             calculated by finding the mean values where the $p$-value
 #'             function is larger than the confidence level in element
-#'             `conf_level`.
+#'             `conf_level`.}
 #'         \item{gamma}{The local minima within the range of the individual
 #'             effect estimates. Column 'x' refers to the mean `mu` and
 #'             column 'y' contains the corresponding $p$-value.}
@@ -99,7 +99,8 @@
 #'     \eqn{\sigma_{i}}, are the standard errors passed in argument
 #'     `SEs`.
 #'
-#'     The `joint_cis` are found by searching where the function returned
+#'     The boundaries of the confidence intervals returned in element
+#'     `joint_cis` are found by searching where the function returned
 #'     in element 'p_fun' is equal to 1-`conf_level`.
 #'
 #' @examples
@@ -398,7 +399,7 @@ get_ci_reml <- function(reml) {
     matrix(
         c(reml$lower.random, reml$upper.random),
         ncol = 2L,
-        dimnames = list("Random effects (REML)", c("lower", "upper"))
+        dimnames = list(get_method_names()["reml"], c("lower", "upper"))
     )
 }
 
@@ -406,7 +407,7 @@ get_ci_hk <- function(hk) {
     matrix(
         c(hk$lower.random, hk$upper.random),
         ncol = 2L,
-        dimnames = list("Hartung & Knapp", c("lower", "upper"))
+        dimnames = list(get_method_names()["hk"], c("lower", "upper"))
     )
 }
 
@@ -414,7 +415,7 @@ get_ci_hc <- function(hc) {
     matrix(
         c(hc$ci.lb, hc$ci.ub),
         ncol = 2L,
-        dimnames = list("Henmi & Copas", c("lower", "upper"))
+        dimnames = list(get_method_names()["hc"], c("lower", "upper"))
     )
 }
 
@@ -423,7 +424,7 @@ get_pval_reml <- function(obj) {
     matrix(
         c(0, obj$pval.random),
         ncol = 2L,
-        dimnames = list("Random effects (REML)", c("x", "y"))
+        dimnames = list(get_method_names()["reml"], c("x", "y"))
     )
 }
 
@@ -431,7 +432,7 @@ get_pval_hk <- function(obj) {
     matrix(
         c(0, obj$pval.random),
         ncol = 2L,
-        dimnames = list("Hartung & Knapp", c("x", "y"))
+        dimnames = list(get_method_names()["hk"], c("x", "y"))
     )
 }
 
@@ -448,19 +449,23 @@ get_pval_hc <- function(obj, conf_level) {
     matrix(
         c(0, p),
         ncol = 2L,
-        dimnames = list("Henmi & Copas", c("x", "y"))
+        dimnames = list(get_method_names()["hc"], c("x", "y"))
+    )
+}
+
+get_method_names <- function() {
+    c(
+        "reml" = "Random effects (REML)",
+        "hk" = "Hartung & Knapp",
+        "hc" = "Henmi & Copas"
     )
 }
 
 # Calculate everything
 get_stats_others <- function(method, estimates, SEs, conf_level) {
-    stopifnot(all(method %in% c("reml", "hk", "hc")))
+    nms <- get_method_names()
+    stopifnot(all(method %in% names(nms)))
     names(method) <- method
-    nms <- c(
-        "reml" = "Random effects (REML)",
-        "hk" = "Hartung & Knapp",
-        "hc" = "Henmi & Copas"
-    )
     res <- lapply(
         method,
         function(x, estimates, SEs, conf_level, nms) {

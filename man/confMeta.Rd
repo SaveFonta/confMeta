@@ -64,16 +64,24 @@ can be found in the Details section.}
 used to find the combined confidence intervals.}
 \item{fun_name}{The name of the function. It is only used in plots
 as a legend entry.}
-\item{joint_cis}{The combined confidence intervals. The exact
-calculation of these intervals can be found in the Details
-section.}
+\item{joint_cis}{The combined confidence interval(s). These are
+calculated by finding the mean values where the $p$-value
+function is larger than the confidence level in element
+\code{conf_level}.}
 \item{gamma}{The local minima within the range of the individual
 effect estimates. Column 'x' refers to the mean \code{mu} and
 column 'y' contains the corresponding $p$-value.}
 \item{p_max}{The local maxima of the $p$-value function. The
 column 'x' refers to the mean \code{mu} and the column 'y' contains
 the corresponding $p$-value.}
-\item{p_0}{The $p$-value at \code{mu} = 0}
+\item{p_0}{The value of the $p$-value at \code{mu} = 0}
+\item{comparison_cis}{Combined confindence intervals calculated
+with other methods. These can be used to for comparison
+purposes. Currently, these other methods are random effects
+(REML), Hartung & Knapp, and Henmi & Copas.}
+\item{comparison_p_0}{The same as in element 'p_0' but for the
+comparison methods (Random effects, Hartung & Knapp,
+Henmi & Copas).}
 }
 }
 \description{
@@ -118,7 +126,8 @@ level passed as argument `conf_level`, and
 \eqn{\sigma_{i}}, are the standard errors passed in argument
 `SEs`.
 
-The `joint_cis` are found by searching where the function returned
+The boundaries of the confidence intervals returned in element
+`joint_cis` are found by searching where the function returned
 in element 'p_fun' is equal to 1-`conf_level`.
 }\if{html}{\out{</div>}}
 }

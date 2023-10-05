@@ -141,29 +141,6 @@ autoplot.confMeta <- function(
         pars = pars
     )
 
-    # if xlim is NULL, calculate a sensible value and add it
-    if (is.null(xlim)) {
-        # What is always there
-        candidates <- c(
-            sapply(cms, "[[", i = "individual_cis"),
-            sapply(cms, "[[", i = "joint_cis")
-        )
-        # if forestplot, check also the other methods like REML
-        if ("forest" %in% type) {
-            other_cis <- get("old_methods_cis", plots$forest$plot_env)$CIs$x
-            candidates <- c(
-                candidates,
-                other_cis
-            )
-        }
-        ext_perc <- 5
-        lower <- min(candidates)
-        upper <- max(candidates)
-        margin <- (upper - lower) * ext_perc / 100
-        xlim <- c(lower - margin, upper + margin)
-        plots <- lapply(plots, function(x) x + ggplot2::xlim(xlim))
-    }
-
     if (length(plots) < 2L) {
         plots[[1L]]
     } else {
@@ -473,16 +450,12 @@ get_drapery_df <- function(estimates, SEs, mu) {
 
 ForestPlot <- function(
     cms,
-    diamond_height = 0.5,
-    v_space = 1.5,
-    study_names = NULL,
-    xlim = NULL,
-    show_studies = TRUE,
-    scale_diamonds = FALSE
+    diamond_height,
+    v_space,
+    show_studies,
+    scale_diamonds,
+    xlim
 ) {
-
-    # make a table with the study intervals
-    study_names  <- cms[[1L]]$study_names
 
     # Make a data frame for the single studies
     cm <- cms[[1L]]
@@ -633,32 +606,19 @@ get_CI_new_methods <- function(
     scale_diamonds
 ) {
 
-
-
     out <- lapply(seq_along(cms), function(r) {
 
+        # Get one of the cms
         cm <- cms[[r]]
 
-        # Calculate the CIs and the minima
-        res <- list(
-            CI = cm$joint_ci,
-            p_0 = cm$p_0,
-            gamma = cm$gamma
-        )
-
         # Calculate polygons
-        ci_exists <- if (all(is.na(res$CI))) FALSE else TRUE
+        ci_exists <- if (all(is.na(cm$joint_ci))) FALSE else TRUE
+
         if (ci_exists) {
-            CI  <- res$CI
-            gamma  <- res$gamma
             # Calculate the polygons for the diamond
-            polygons <- calculate_polygon_2(
-                CIs = CI,
-                estimates = res$forest_plot_estimates,
-                f_estimates = res$forest_plot_f_estimates,
-                gammas = gamma,
+            polygons <- calculate_polygon(
+                cm = cm,
                 diamond_height = diamond_height,
-                conf_level = conf_level,
                 scale_diamonds = scale_diamonds
             )
             polygons$name <- cm$fun_name
@@ -678,14 +638,16 @@ get_CI_new_methods <- function(
         p_0 <- data.frame(
             name = cm$fun_name,
             p_0 = cm$p_0[, 2L],
-            stringsAsFactors = FALSE
+            stringsAsFactors = FALSE,
+            row.names = NULL
         )
 
         p_max <- data.frame(
             name = cm$fun_name,
             mu = cm$p_max[, 1L],
             p_max = cm$p_max[, 2L],
-            stringsAsFactors = FALSE
+            stringsAsFactors = FALSE,
+            row.names = NULL
         )
 
         # Return
@@ -714,148 +676,115 @@ get_CI_old_methods <- function(
 ) {
 
 
-    # Make a table with the classic methods
-    other_methods <- c(
-        "Random Effects, REML", "Hartung & Knapp", "Henmi & Copas"
+    # calculate CIs, p_0 for other methods
+    methods <- get_method_names()
+    cis <- get_stats_others(
+        method = names(methods),
+        estimates = estimates,
+        SEs = SEs,
+        conf_level = conf_level
+    )
+    # get the estimates
+    ests <- with(cis, rowMeans(CI))
+
+    # Create df
+    t_ci <- t(cis$CI)
+    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L], ests)
+    x <- c(t_ci)
+    y <- rep(
+        c(0, -diamond_height / 2, 0, diamond_height / 2),
+        times = length(ests)
     )
 
-    # Calculate all the measures we want
-    ## CIs
-    l <- length(other_methods) # The number of methods
-    n_pts <- 4L                # The number of points for each CI
-    l_tot <- l * n_pts         # The total number of rows
-    # Data frame columns for list element CIs
-    cis_x <- numeric(l_tot)    # The x coordinates
-    cis_y <- numeric(l_tot)    # The y coordinates
-    cis_id <- rep(1, l_tot)    # The polygon id
-    cis_name <- character(l_tot) # The method name
-    cis_color <- rep(0, l_tot) # The polygon color
-    # Data frame columns for p_0
-    p_0_name <- character(l) # The name column
-    p_0_p_0 <- numeric(l) # The p_0 column
+    CIs <- data.frame(
+        x = x,
+        y = y,
+        id = 1L,
+        name = rep(rownames(cis$CI), each = 4L),
+        color = 0L,
+        row.names = NULL,
+        stringsAsFactors = FALSE
+    )
 
-    # Calculate stuff for all methodsk
-    cis_cnt <- 1L:n_pts
-    p_0_cnt <- 1L
-    for (meth in other_methods) {
-        # Fit the model
-        obj <- get_obj(
-            method = meth,
-            estimates = estimates,
-            SEs = SEs,
-            conf_level = conf_level
-        )
-        # Get the CI and estimate
-        ci <- get_ci(method = meth, obj = obj)
-        est <- mean(ci)
-        # Calculate the p-value from the CI
-        p_0_p_0[p_0_cnt] <- get_pval(
-            method = meth,
-            obj = obj,
-            conf_level = conf_level
-        )
-        p_0_name[p_0_cnt] <- meth
-        # Convert CI to polygon and store in vectors above
-        cis_x[cis_cnt] <- c(ci[, "lower"], est, ci[, "upper"], est)
-        cis_y[cis_cnt] <- c(0, -diamond_height / 2, 0, diamond_height / 2)
-        cis_name[cis_cnt] <- meth
-        # Get indices for next iteration
-        cis_cnt <- cis_cnt + n_pts
-        p_0_cnt <- p_0_cnt + 1L
-    }
+    p_0 <- data.frame(
+        name = rownames(cis$CI),
+        p_0 = cis$p_0[, 2L],
+        row.names = NULL,
+        stringsAsFactors = FALSE
+    )
 
     list(
-        CIs = data.frame(
-            x = cis_x,
-            y = cis_y,
-            id = cis_id,
-            name = cis_name,
-            color = cis_color,
-            stringsAsFactors = FALSE,
-            row.names = NULL
-        ),
-        p_0 = data.frame(
-            name = p_0_name,
-            p_0 = p_0_p_0,
-            stringsAsFactors = FALSE,
-            row.names = NULL
-        )
+        CIs = CIs,
+        p_0 = p_0
     )
-
 }
 
-
-
 # Make a df that contains the data for the diamonds
-calculate_polygon_2 <- function(
-    CIs,
-    estimates,
-    f_estimates,
-    gammas,
+calculate_polygon <- function(
+    cm,
     diamond_height,
-    conf_level,
     scale_diamonds
 ) {
 
     # If gamma == NA, there is either one or no CI
-    no_ci <- if (all(is.na(CIs))) TRUE else FALSE
-    no_gamma <- if (all(is.na(gammas))) TRUE else FALSE
+    no_ci <- if (all(is.na(cm$joint_ci))) TRUE else FALSE
+    no_gamma <- if (all(is.na(cm$gamma))) TRUE else FALSE
+
+    # Which points to evaluate for the diamonds (all maxima, minima, estimates)
+    # type of point
+    # 0 = lower ci
+    # 1 = minimum
+    # 2 = maximum
+    # 3 = upper ci
+    pt_eval <- with(
+        cm,
+        {
+            f_estimates <- p_fun(
+                estimates = estimates,
+                SEs = SEs,
+                mu = estimates
+            )
+            m <- rbind(
+                cbind(p_max, 2),
+                matrix(
+                    c(estimates, f_estimates, rep(2, length(estimates))),
+                    ncol = 3L
+                ),
+                matrix(c(joint_cis[, 1L], 0, 0), ncol = 3L),
+                matrix(c(joint_cis[, 2L], 0, 3), ncol = 3L)
+            )
+            if (!no_gamma) m <- rbind(m, cbind(gamma, 1))
+            m
+        }
+    )
+
+    # Remove duplicates
+    pt_eval <- pt_eval[!duplicated(pt_eval), ]
+
+    # Remove those not in CI
+    idx <- vapply(
+        pt_eval[, 1L],
+        function(x, cis) all(x >= cis[, 1L] && x <= cis[, 2L]),
+        logical(1L),
+        cis = cm$joint_cis
+    )
+    pt_eval <- pt_eval[idx, ]
+
+    # Sort these by x-values
+    o <- order(pt_eval[, 1L], decreasing = FALSE)
+    pt_eval <- pt_eval[o, ]
 
     if (no_ci) {
         return(NULL)
     } else {
-        # remove f_thetahat where f_thetahat > alpha
-        # because those below alpha are not in CI
-        keep <- f_estimates > 1 - conf_level
-        f_estimates <- f_estimates[keep]
-        estimates <- estimates[keep]
-        # get lengths
-        l_estimates <- length(f_estimates)
-        l_ci <- nrow(CIs)
-        if (!no_gamma) {
-            # remove gammas where gammas > alpha
-            # because those below alpha are not in CI
-            gammas <- gammas[gammas[, 2L] > 1 - conf_level, , drop = FALSE]
-            l_gamma <- nrow(gammas)
-            # set up x coordinates
-            x <- c(CIs[, 1L], gammas[, 1L], estimates, CIs[, 2L])
-            # Get the y-coordinates
-            y <- vector("numeric", length(x))
-            # type of point
-            # 0 = lower ci
-            # 1 = minimum
-            # 2 = maximum
-            # 3 = upper ci
-            type <- c(
-                rep(0L, l_ci),
-                rep(1L, l_gamma),
-                rep(2L, l_estimates),
-                rep(3L, l_ci)
-            )
-            y[type == 1L] <- gammas[, 2L]
-        } else {
-            # set up x coordinates
-            x <- c(CIs[, 1L], estimates, CIs[, 2L])
-            # Get the y-coordinates
-            y <- vector("numeric", length(x))
-            type <- c(
-                rep(0L, l_ci),
-                rep(2L, l_estimates),
-                rep(3L, l_ci)
-            )
-        }
-        y[type == 0L | type == 3L] <- 0 # 0 if lower/upper
-        y[type == 2L] <- f_estimates
+        x <- pt_eval[, 1L]
+        y <- pt_eval[, 2L]
+        type <- pt_eval[, 3L]
         # rescale the diamonds if needed (such that the max height is always 1)
         if (scale_diamonds) {
             scale_factor <- 1 / max(y)
             y <- y * scale_factor
         }
-        # Order the x & y coordinates
-        o <- order(x, decreasing = FALSE)
-        x <- x[o]
-        y <- y[o]
-        type <- type[o]
         # Assign polygon id
         is_upper <- which(type == 3L)
         is_lower <- which(type == 0L)

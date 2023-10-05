@@ -15,7 +15,7 @@ conf_level <- 0.95
 diamond_height <- 0.5
 v_space <- 1.5
 study_names <- NULL
-xlim <- c(-6, 7)
+xlim <- NULL
 scale_diamonds <- TRUE
 show_studies <- TRUE
 rng_seed <- 42L
@@ -60,7 +60,7 @@ cm2 <- confMeta(
 
 cms <- list(cm, cm1, cm2)
 
-ggplot2::autoplot(cm)
+ggplot2::autoplot(cm, cm1, cm2)
 
 pars <- list(
     thetahat = thetahat,
