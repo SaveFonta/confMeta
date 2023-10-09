@@ -88,10 +88,17 @@ autoplot.confMeta <- function(
     if (!is.null(xlim)) {
         check_xlim(x = xlim)
     } else {
-        candidates <- c(
-            sapply(cms, "[[", i = "individual_cis"),
-            sapply(cms, "[[", i = "joint_cis"),
-            sapply(cms, "[[", i = "comparison_cis")
+
+        candidates <- unname(
+            do.call(
+                "c",
+                lapply(
+                    cms,
+                    function(x) {
+                        with(x, c(individual_cis, joint_cis, comparison_cis))
+                    }
+                )
+            )
         )
         ext_perc <- 5
         lower <- min(candidates)
@@ -354,7 +361,7 @@ ggPvalueFunction <- function(
         data = lines,
         ggplot2::aes(x = x, y = y, color = group)
     ) +
-    ggplot2::geom_hline(yintercept = 1 - conf_level, linetype = "dashed")
+    ggplot2::geom_hline(yintercept = 1 - const$conf_level, linetype = "dashed")
     if (!drapery) {
         p <- p + ggplot2::geom_vline(
             xintercept = estimates,
@@ -744,14 +751,18 @@ calculate_polygon <- function(
                 SEs = SEs,
                 mu = estimates
             )
+            nrep <- nrow(joint_cis)
             m <- rbind(
                 cbind(p_max, 2),
                 matrix(
-                    c(estimates, f_estimates, rep(2, length(estimates))),
+                    c(estimates, f_estimates, rep(2, length(cm$estimates))),
                     ncol = 3L
                 ),
-                matrix(c(joint_cis[, 1L], 0, 0), ncol = 3L),
-                matrix(c(joint_cis[, 2L], 0, 3), ncol = 3L)
+                matrix(c(joint_cis[, 1L], rep(0, 2 * nrep)), ncol = 3L),
+                matrix(
+                    c(joint_cis[, 2L], rep(0, nrep), rep(3, nrep)),
+                    ncol = 3L
+                )
             )
             if (!no_gamma) m <- rbind(m, cbind(gamma, 1))
             m
@@ -764,7 +775,7 @@ calculate_polygon <- function(
     # Remove those not in CI
     idx <- vapply(
         pt_eval[, 1L],
-        function(x, cis) all(x >= cis[, 1L] && x <= cis[, 2L]),
+        function(x, cis) any(x >= cis[, 1L] & x <= cis[, 2L]),
         logical(1L),
         cis = cm$joint_cis
     )
