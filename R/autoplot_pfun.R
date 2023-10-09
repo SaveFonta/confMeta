@@ -361,7 +361,7 @@ ggPvalueFunction <- function(
         data = lines,
         ggplot2::aes(x = x, y = y, color = group)
     ) +
-    ggplot2::geom_hline(yintercept = 1 - conf_level, linetype = "dashed")
+    ggplot2::geom_hline(yintercept = 1 - const$conf_level, linetype = "dashed")
     if (!drapery) {
         p <- p + ggplot2::geom_vline(
             xintercept = estimates,
