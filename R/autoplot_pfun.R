@@ -100,6 +100,7 @@ autoplot.confMeta <- function(
                 )
             )
         )
+        candidates <- candidates[is.finite(candidates)]
         ext_perc <- 5
         lower <- min(candidates)
         upper <- max(candidates)
@@ -361,6 +362,7 @@ ggPvalueFunction <- function(
         data = lines,
         ggplot2::aes(x = x, y = y, color = group)
     ) +
+    ggplot2::xlim(xlim) +
     ggplot2::geom_hline(yintercept = 1 - const$conf_level, linetype = "dashed")
     if (!drapery) {
         p <- p + ggplot2::geom_vline(
@@ -376,15 +378,19 @@ ggPvalueFunction <- function(
             show.legend = FALSE
         )
     }
+    if (0 > xlim[1L] && 0 < xlim[2L]) {
+        # Vertical line at 0
+        p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "solid") +
+        # Points at (x = 0, y = p_0)
+        ggplot2::geom_point(
+            data = lines[!is.na(lines$y0), ],
+            ggplot2::aes(x = 0, y = y0, color = group),
+            alpha = transparency
+        )
+    }
     p <- p +
-    ggplot2::geom_vline(xintercept = 0, linetype = "solid") +
     ggplot2::geom_hline(yintercept = 0, linetype = "solid") +
     ggplot2::geom_line(alpha = transparency) +
-    ggplot2::geom_point(
-        data = lines[!is.na(lines$y0), ],
-        ggplot2::aes(x = 0, y = y0, color = group),
-        alpha = transparency
-    ) +
     ggplot2::scale_y_continuous(
         name = "p-value",
         breaks = breaks_y1,
@@ -410,7 +416,6 @@ ggPvalueFunction <- function(
         ggplot2::aes(x = xmax, xend = xmax, y = ymin, yend = ymax)
     ) +
     # Set x-axis window, labels
-    ggplot2::xlim(xlim) +
     ggplot2::labs(
         x = bquote(mu),
         color = "Configuration"
@@ -538,6 +543,12 @@ ForestPlot <- function(
 
     # Make the plot
     p <- ggplot2::ggplot()
+    if (!is.null(xlim)) {
+        p <- p + ggplot2::xlim(xlim)
+        if (0 > xlim[1L] & 0 < xlim[2L]) {
+            p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "dashed")
+        }
+    }
     if (show_studies) {
         p <- p +
             ggplot2::geom_errorbarh(
@@ -566,7 +577,6 @@ ForestPlot <- function(
             ),
             show.legend = FALSE
         ) +
-        ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
         ggplot2::theme_minimal() +
         ggplot2::theme(
             axis.title.y = ggplot2::element_blank(),
@@ -596,11 +606,6 @@ ForestPlot <- function(
                 label = "CI does not exist"
             )
         }
-    }
-
-    if (!is.null(xlim)) {
-        p <- p + ggplot2::xlim(xlim)
-
     }
 
     p
