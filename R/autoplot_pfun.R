@@ -751,14 +751,18 @@ calculate_polygon <- function(
                 SEs = SEs,
                 mu = estimates
             )
+            nrep <- nrow(joint_cis)
             m <- rbind(
                 cbind(p_max, 2),
                 matrix(
-                    c(estimates, f_estimates, rep(2, length(estimates))),
+                    c(estimates, f_estimates, rep(2, length(cm$estimates))),
                     ncol = 3L
                 ),
-                matrix(c(joint_cis[, 1L], 0, 0), ncol = 3L),
-                matrix(c(joint_cis[, 2L], 0, 3), ncol = 3L)
+                matrix(c(joint_cis[, 1L], rep(0, 2 * nrep)), ncol = 3L),
+                matrix(
+                    c(joint_cis[, 2L], rep(0, nrep), rep(3, nrep)),
+                    ncol = 3L
+                )
             )
             if (!no_gamma) m <- rbind(m, cbind(gamma, 1))
             m
@@ -771,7 +775,7 @@ calculate_polygon <- function(
     # Remove those not in CI
     idx <- vapply(
         pt_eval[, 1L],
-        function(x, cis) all(x >= cis[, 1L] && x <= cis[, 2L]),
+        function(x, cis) any(x >= cis[, 1L] & x <= cis[, 2L]),
         logical(1L),
         cis = cm$joint_cis
     )
