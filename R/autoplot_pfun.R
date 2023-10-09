@@ -88,10 +88,17 @@ autoplot.confMeta <- function(
     if (!is.null(xlim)) {
         check_xlim(x = xlim)
     } else {
-        candidates <- c(
-            sapply(cms, "[[", i = "individual_cis"),
-            sapply(cms, "[[", i = "joint_cis"),
-            sapply(cms, "[[", i = "comparison_cis")
+
+        candidates <- unname(
+            do.call(
+                "c",
+                lapply(
+                    cms,
+                    function(x) {
+                        with(x, c(individual_cis, joint_cis, comparison_cis))
+                    }
+                )
+            )
         )
         ext_perc <- 5
         lower <- min(candidates)
