@@ -1,7 +1,7 @@
 include Makefile.defs
 
 PACKAGE = confMeta
-VERSION = 0.2.3
+VERSION = 0.2.4
 TAR = $(PACKAGE)_$(VERSION).tar.gz
 
 
