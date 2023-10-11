@@ -60,3 +60,5 @@ vignettes/*.html
 vignettes/*.R
 vignettes/*.pdf
 
+/doc/
+/Meta/

@@ -16,3 +16,4 @@ test_cases
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^Meta$
