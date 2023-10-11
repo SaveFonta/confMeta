@@ -10,11 +10,11 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  out.width = "100%",
+  fig.width = 9
 )
 ```
-
-# confMeta
 
 The `confMeta` package implements methods related to meta-analysis. The
 functions that `confMeta` provides, can be categorized roughly into three
@@ -124,10 +124,14 @@ specified using the `type` argument.
 ```{r}
 # show the p-value function
 autoplot(cm, type = "p")
+```
 
+```{r}
 # show the forest plot
 autoplot(cm, type = "forest")
+```
 
+```{r, fig.height = 6}
 # show both
 autoplot(cm, type = c("p", "forest"))
 ```
@@ -159,7 +163,7 @@ autoplot(cm, cm2, type = "p")
 autoplot(cm, cm2, type = "forest")
 ```
 
-```{r}
+```{r, fig.height = 6}
 # show both
 autoplot(cm, cm2, type = c("p", "forest"))
 ```
