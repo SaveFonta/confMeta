@@ -142,18 +142,28 @@ is_num_fin <- function(x) {
 check_estimates_arg <- function(estimates) {
     if (!is_num_fin(estimates))
         stop(
-            "Argument 'estimates' must be a numeric vector with finite elements."
+            "Argument 'estimates' must be a numeric vector with finite elements.",
+            call. = FALSE
         )
 }
 
 ## Checks SEs
 check_SEs_arg <- function(SEs, l_estimates) {
     if (!is_num_fin(SEs))
-        stop("Argument 'SEs' must be a numeric vector with finite elements.")
+        stop(
+            "Argument 'SEs' must be a numeric vector with finite elements.",
+            call. = FALSE
+        )
     if (min(SEs) <= 0)
-        stop("All entries of argument 'SEs' must be positive.")
+        stop(
+            "All entries of argument 'SEs' must be positive.",
+            call. = FALSE
+        )
     if (length(SEs) != l_estimates && length(SEs) != 1L)
-        stop("Argument 'SEs' must have length of either 1 or length(estimates).")
+        stop(
+            "Argument 'SEs' must have length of either 1 or length(estimates).",
+            call. = FALSE
+        )
 }
 
 ## Checks mu
@@ -163,7 +173,8 @@ check_mu_arg <- function(mu) {
             paste0(
                 "Argument 'mu' must be a numeric vector of positive length",
                 " with finite elements."
-            )
+            ),
+            call. = FALSE
         )
 }
 
@@ -177,7 +188,8 @@ check_heterogeneity_arg <- function(heterogeneity) {
             paste0(
                 "Argument 'heterogeneity' must be one of ",
                 "c('none', 'additive', 'multiplicative')."
-            )
+            ),
+            call. = FALSE
         )
 }
 
@@ -186,23 +198,40 @@ check_phiTau2_arg <- function(heterogeneity, phi, tau2) {
     if (heterogeneity == "none") {
         if (!is.null(phi) || !is.null(tau2))
             warning(
-                "Ignoring parameter(s) phi and tau2 as heterogeneity = 'none'."
+                "Ignoring parameter(s) phi and tau2 as heterogeneity = 'none'.",
+                call. = FALSE
             )
     } else if (heterogeneity == "additive") {
         if (is.null(tau2))
-            stop("If heterogeneity = 'additive', tau2 must be provided.")
+            stop(
+                "If heterogeneity = 'additive', tau2 must be provided.",
+                call. = FALSE
+            )
         if (length(tau2) != 1L || !is_num_fin(tau2))
-            stop("Argument 'tau2' must be numeric, finite, and of length 1.")
+            stop(
+                "Argument 'tau2' must be numeric, finite, and of length 1.",
+                call. = FALSE
+            )
         if (!is.null(phi))
-            warning("Ignoring argument 'phi' as heterogeneity = 'additive'.")
+            warning(
+                "Ignoring argument 'phi' as heterogeneity = 'additive'.",
+                call. = FALSE
+            )
     } else {
         if (is.null(phi))
-            stop("If heterogeneity = 'multiplicative', phi must be provided.")
+            stop(
+                "If heterogeneity = 'multiplicative', phi must be provided.",
+                call. = FALSE
+            )
         if (length(phi) != 1L || !is_num_fin(phi) || phi < 0)
-            stop("Argument 'phi' must be numeric, finite, and of length 1.")
+            stop(
+                "Argument 'phi' must be numeric, finite, and of length 1.",
+                call. = FALSE
+            )
         if (!is.null(tau2))
             warning(
-                "Ignoring argument 'tau2' as heterogeneity = 'multiplicative'."
+                "Ignoring argument 'tau2' as heterogeneity = 'multiplicative'.",
+                call. = FALSE
             )
     }
 }
@@ -217,7 +246,8 @@ check_alternative_arg_hmean <- function(alternative) {
             paste0(
                 "Argument 'alternative' must be one of ",
                 "c('none', 'less', 'greater', 'two.sided')."
-            )
+            ),
+            call. = FALSE
         )
 }
 
@@ -231,7 +261,8 @@ check_alternative_arg_edg <- function(alternative) {
             paste0(
                 "Argument 'alternative' must be one of ",
                 "c('one.sided', 'two.sided')."
-            )
+            ),
+            call. = FALSE
         )
 }
 
@@ -245,7 +276,8 @@ check_alternative_arg_pearson <- function(alternative) {
             paste0(
                 "Argument 'alternative' must be one of ",
                 "c('none')."
-            )
+            ),
+            call. = FALSE
         )
 }
 
@@ -259,7 +291,8 @@ check_alternative_arg_ktr <- function(alternative) {
             paste0(
                 "Argument 'alternative' must be one of ",
                 "c('none')."
-            )
+            ),
+            call. = FALSE
         )
 }
 
@@ -267,7 +300,7 @@ check_alternative_arg_ktr <- function(alternative) {
 ## - hMeanChiSqMu
 check_distr_arg <- function(distr) {
     if (length(distr) != 1L || !(distr %in% c("f", "chisq")))
-        stop("Argument 'distr' must be one of c('f', 'chisq').")
+        stop("Argument 'distr' must be one of c('f', 'chisq').", call. = FALSE)
 }
 
 ## Check the w argument used in hMeanChiSqMu()
@@ -279,7 +312,8 @@ check_w_arg <- function(w, estimates) {
                 "Argument 'w' must be a numeric vector of the ",
                 "same length as argument ",
                 "'estimates' with finite and positive elements."
-            )
+            ),
+            call. = FALSE
         )
 }
 
@@ -325,9 +359,15 @@ check_inputs_p_value <- function(
 # Check level
 check_level_arg <- function(level) {
     if (!is_num_fin(level) || length(level) != 1L)
-        stop("Argument 'level' must be numeric, finite and of length 1.")
+        stop(
+            "Argument 'level' must be numeric, finite and of length 1.",
+            call. = FALSE
+        )
     if (level <= 0 || level >= 1)
-        stop("Argument 'level' must be between 0 and 1.")
+        stop(
+            "Argument 'level' must be between 0 and 1.",
+            call. = FALSE
+        )
 }
 
 # Check wGamma
@@ -343,21 +383,21 @@ check_level_arg <- function(level) {
 # }
 
 # Check pValueFUN
-check_pValueFUN_arg <- function(pValueFUN) {
-    if (!is.function(pValueFUN))
-        stop("Argument 'pValueFUN' must be a function.")
-}
+# check_pValueFUN_arg <- function(pValueFUN) {
+#     if (!is.function(pValueFUN))
+#         stop("Argument 'pValueFUN' must be a function.")
+# }
 
-check_pValueFUNArgs_arg <- function(pValueFUN_args, pValueFUN) {
-    if (!is.list(pValueFUN_args))
-        stop("Argument 'pValueFUN_args' must be a list'.")
-    if ("" %in% names(pValueFUN_args))
-        stop("Arument 'pValueFUN_args' must be a named list.")
-    # Try to find out what pValueFUN is and check the formals such that the
-    # names of the list can be checked
-    # However, the above only works for our pValueFUNs since we know their
-    # arguments. Custom pValueFUNs might have entirely different Arguments.
-}
+# check_pValueFUNArgs_arg <- function(pValueFUN_args, pValueFUN) {
+#     if (!is.list(pValueFUN_args))
+#         stop("Argument 'pValueFUN_args' must be a list'.")
+#     if ("" %in% names(pValueFUN_args))
+#         stop("Arument 'pValueFUN_args' must be a named list.")
+#     # Try to find out what pValueFUN is and check the formals such that the
+#     # names of the list can be checked
+#     # However, the above only works for our pValueFUNs since we know their
+#     # arguments. Custom pValueFUNs might have entirely different Arguments.
+# }
 
 check_alternative_arg_CI <- function(alternative) {
     if (
@@ -368,27 +408,28 @@ check_alternative_arg_CI <- function(alternative) {
             paste0(
                 "Argument 'alternative' must be one of ",
                 "c('none', 'two.sided', 'one.sided', 'less', 'greater')."
-            )
+            ),
+            call. = FALSE
         )
 }
 
 # Summarise the above functions into one
-check_inputs_CI <- function(
-    estimates,
-    SEs,
-    level,
-    alternative,
-    check_inputs,
-    pValueFUN,
-    pValueFUN_args
-) {
-    check_estimates_arg(estimates)
-    check_SEs_arg(SEs = SEs, l_estimates = length(estimates))
-    check_level_arg(level = level)
-    check_alternative_arg_CI(alternative = alternative)
-    check_pValueFUN_arg(pValueFUN = pValueFUN)
-    check_pValueFUNArgs_arg(pValueFUN_args = pValueFUN_args)
-}
+# check_inputs_CI <- function(
+#     estimates,
+#     SEs,
+#     level,
+#     alternative,
+#     check_inputs,
+#     pValueFUN,
+#     pValueFUN_args
+# ) {
+#     check_estimates_arg(estimates)
+#     check_SEs_arg(SEs = SEs, l_estimates = length(estimates))
+#     check_level_arg(level = level)
+#     check_alternative_arg_CI(alternative = alternative)
+#     check_pValueFUN_arg(pValueFUN = pValueFUN)
+#     check_pValueFUNArgs_arg(pValueFUN_args = pValueFUN_args)
+# }
 
 ################################################################################
 # Adjustment of standard errors based on heterogeneity model                   #
