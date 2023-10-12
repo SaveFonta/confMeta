@@ -19,40 +19,34 @@ estimates.}
 }
 \value{
 For \code{estimate_tau2}: the estimated heterogeneity parameter
-\eqn{\tau^2}, a \code{numeric} vector of length 1.
+\eqn{\tau^2}{tau^2}, a \code{numeric} vector of length 1.
 
 For \code{estimate_phi}: the estimated heterogeneity parameter
-\eqn{\phi}, a \code{numeric} vector of length 1.
+\eqn{\phi}{phi}, a \code{numeric} vector of length 1.
 }
 \description{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{\code{estimate_tau2} estimates the between-study heterogeneity
-\eqn{\tau^2} using an additive model. The resulting parameter
-\eqn{\tau^2} is estimated through a call to
+\code{estimate_tau2} estimates the between-study heterogeneity
+\eqn{\tau^{2}}{tau^2} using an additive model. The resulting parameter
+\eqn{\tau^2}{tau^2} is estimated through a call to
 \code{\link[meta]{metagen}} with \code{TE = estimates} and
 \code{seTE = SEs}. Other arguments to \code{\link[meta]{metagen}} can be
 passed via the \code{...} argument. If no arguments are passed via
 \code{...}, the following defaults are applied.
-\\itemize\{
-  \\item\{\code{sm} = \code{"md"}\}
-  \\item\{\code{method.tau} = \code{"REML"}\}
-  \\item\{\code{control} = \code{list(maxiter = 1e5, stepadj = 0.25)}\}
-\}
+\itemize{
+\item{\code{sm} = \code{"md"}}
+\item{\code{method.tau} = \code{"REML"}}
+\item{\code{control} = \code{list(maxiter = 1e5, stepadj = 0.25)}}
+}
 However, each of these defaults can be overwritten via \code{...}.
-}\if{html}{\out{</div>}}
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{\code{estimate_phi} estimates the the between-study heterogeneity
-\eqn{\phi} using a multiplicative model. The function is a modified
-version of Page 3 of: \\cr \\cr
+\code{estimate_phi} estimates the the between-study heterogeneity
+\eqn{\phi}{phi} using a multiplicative model. The function is a
+modified version of Page 3 of: \cr
 Accounting for heterogeneity in meta-analysis using a
 multiplicative model - an empirical study,
-Mawdsley D. etal. 2016. DOI: 10.1002/jrsm.1216 \\cr \\cr
-
-However, in contrast to the paper, it does not truncate the MSE at 1.
-\\cr \\cr
-}\if{html}{\out{</div>}}
-}
-\note{
-In the paper the weights should be squared!?
+Mawdsley D. etal. 2016. DOI: 10.1002/jrsm.1216 \cr \cr
+The difference to the version in the paper is that the function,
+does not truncate the MSE at 1.
 }
 \examples{
     # Example estimates and std. errors
