@@ -15,8 +15,9 @@
 #'     whenever \code{length(estimates) >= 12}. This avoids issues that can lead
 #'     to overflow of the double precision floating point numbers R uses for
 #'     numeric vectors.
-#' @param input_p Specifies whether one-sided or two-sided p-values are used as
-#'     inputs for Edgington's combination method
+#' @param input_p Either \code{"two.sided"} (default) or \code{"one.sided"}.
+#'     Specifies whether one-sided or two-sided p-values are used as inputs for
+#'     Edgington's combination method.
 #'
 #' @description
 #'     These functions combine individual effect estimates and the corresponding
