@@ -10,11 +10,13 @@
 #' @template tau2
 #' @template alternative
 #' @template check_inputs
-#' @param approx Must be either TRUE (default) or FALSE. If TRUE, the p-value
-#'     is computed using the normal approximation of the Irwin-Hall distribution
-#'     whenever \code{length(estimates) >= 12}. This avoids issues that
-#'     can lead to overflow of the double precision floating point numbers R
-#'     uses for numeric vectors.
+#' @param approx Must be either TRUE (default) or FALSE. If TRUE, the p-value is
+#'     computed using the normal approximation of the Irwin-Hall distribution
+#'     whenever \code{length(estimates) >= 12}. This avoids issues that can lead
+#'     to overflow of the double precision floating point numbers R uses for
+#'     numeric vectors.
+#' @param input_p Specifies whether one-sided or two-sided p-values are used as
+#'     inputs for Edgington's combination method
 #'
 #' @description
 #'     These functions combine individual effect estimates and the corresponding
@@ -68,7 +70,8 @@ p_edgington <- function(
     tau2 = NULL,
     alternative = "two.sided",
     check_inputs = TRUE,
-    approx = TRUE
+    approx = TRUE,
+    input_p = "two.sided"
 ) {
 
     # check inputs
@@ -101,15 +104,32 @@ p_edgington <- function(
     # get the z-values
     z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
     # convert them to p-values
-    # p <- ReplicationSuccess::z2p(z, "two.sided")
-    p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
+    if (input_p == "two.sided") {
+        ## # p <- ReplicationSuccess::z2p(z, "two.sided")
+        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
+    } else {
+        p <- stats::pnorm(q = z, lower.tail = TRUE)
+    }
     # sum up the p-values and calculate the probability
     sp <- pirwinhall(q = colSums(p), n = n, approx = approx)
-    p <- switch(
-        alternative,
-        "one.sided" = 2 * apply(matrix(c(sp, 1 - sp), ncol = 2L), 1L, min),
-        "two.sided" = sp
-    )
+    if (input_p == "two.sided") {
+        if (alternative == "one.sided") {
+            p <- 2 * apply(matrix(c(sp, 1 - sp), ncol = 2L), 1L, min)
+        } else {
+            p <- sp
+        }
+    } else {
+        if (alternative == "one.sided") {
+            p <- sp
+        } else {
+            p <- 2*pmin(sp, 1 - sp)
+        }
+    }
+    ## p <- switch(
+    ##     alternative,
+    ##     "one.sided" = 2 * apply(matrix(c(sp, 1 - sp), ncol = 2L), 1L, min),
+    ##     "two.sided" = sp
+    ## )
     return(p)
 }
 

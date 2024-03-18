@@ -19,7 +19,8 @@ p_edgington(
   tau2 = NULL,
   alternative = "two.sided",
   check_inputs = TRUE,
-  approx = TRUE
+  approx = TRUE,
+  input_p = "two.sided"
 )
 
 p_fisher(
@@ -101,11 +102,14 @@ The idea of this argument is that if the function is called a large amount of ti
 in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument
 to \code{FALSE} might be dangerous.}
 
-\item{approx}{Must be either TRUE (default) or FALSE. If TRUE, the p-value
-is computed using the normal approximation of the Irwin-Hall distribution
-whenever \code{length(estimates) >= 12}. This avoids issues that
-can lead to overflow of the double precision floating point numbers R
-uses for numeric vectors.}
+\item{approx}{Must be either TRUE (default) or FALSE. If TRUE, the p-value is
+computed using the normal approximation of the Irwin-Hall distribution
+whenever \code{length(estimates) >= 12}. This avoids issues that can lead
+to overflow of the double precision floating point numbers R uses for
+numeric vectors.}
+
+\item{input_p}{Specifies whether one-sided or two-sided p-values are used as
+inputs for Edgington's combination method}
 
 \item{w}{Numeric vector of weights.}
 
