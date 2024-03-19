@@ -21,7 +21,8 @@ p_ktrials <- function(
     tau2 = NULL,
     heterogeneity = "none",
     alternative = "none",
-    check_inputs = TRUE
+    check_inputs = TRUE,
+    input_p = "two.sided"
 ) {
 
     if (check_inputs) {
@@ -52,9 +53,18 @@ p_ktrials <- function(
 
     if (alternative == "none") {
         z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-        # p <- ReplicationSuccess::z2p(z, "two.sided")
-        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
+        if (input_p == "two.sided") {
+            ## # p <- ReplicationSuccess::z2p(z, "two.sided")
+            p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
+        } else if (input_p == "greater") {
+            p <- stats::pnorm(q = z, lower.tail = TRUE)
+        } else {
+            p <- stats::pnorm(q = z, lower.tail = FALSE)
+        }
         res <- apply(p, 2L, max)^n
+        if (input_p != "two.sided") {
+            res <- 2*pmin(res, 1 - res)
+        }
     } else {
         stop("Invalid argument 'alternative'.")
     }

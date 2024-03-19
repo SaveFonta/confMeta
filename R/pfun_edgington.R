@@ -15,9 +15,9 @@
 #'     whenever \code{length(estimates) >= 12}. This avoids issues that can lead
 #'     to overflow of the double precision floating point numbers R uses for
 #'     numeric vectors.
-#' @param input_p Either \code{"two.sided"} (default) or \code{"one.sided"}.
-#'     Specifies whether one-sided or two-sided p-values are used as inputs for
-#'     Edgington's combination method.
+#' @param input_p Either \code{"two.sided"} (default), \code{"less"}, or
+#'     \code{"greater"}. Specifies whether two-sided or one-sided p-values are
+#'     used as inputs for a p-value combination method.
 #'
 #' @description
 #'     These functions combine individual effect estimates and the corresponding
@@ -108,30 +108,17 @@ p_edgington <- function(
     if (input_p == "two.sided") {
         ## # p <- ReplicationSuccess::z2p(z, "two.sided")
         p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
-    } else {
+    } else if (input_p == "greater") {
         p <- stats::pnorm(q = z, lower.tail = TRUE)
+    } else {
+        p <- stats::pnorm(q = z, lower.tail = FALSE)
     }
     # sum up the p-values and calculate the probability
     sp <- pirwinhall(q = colSums(p), n = n, approx = approx)
-    if (input_p == "two.sided") {
-        if (alternative == "one.sided") {
-            p <- 2 * apply(matrix(c(sp, 1 - sp), ncol = 2L), 1L, min)
-        } else {
-            p <- sp
-        }
-    } else {
-        if (alternative == "one.sided") {
-            p <- sp
-        } else {
-            p <- 2*pmin(sp, 1 - sp)
-        }
+    if (input_p != "two.sided") {
+        sp <- 2*pmin(sp, 1 - sp)
     }
-    ## p <- switch(
-    ##     alternative,
-    ##     "one.sided" = 2 * apply(matrix(c(sp, 1 - sp), ncol = 2L), 1L, min),
-    ##     "two.sided" = sp
-    ## )
-    return(p)
+    return(sp)
 }
 
 # # Note that at around n = 50, dirwinhall starts to overflow

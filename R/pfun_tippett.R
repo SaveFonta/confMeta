@@ -20,7 +20,8 @@ p_tippett <- function(
     phi = NULL,
     tau2 = NULL,
     heterogeneity = "none",
-    check_inputs = TRUE
+    check_inputs = TRUE,
+    input_p = "two.sided"
 ) {
 
     # check inputs
@@ -52,12 +53,22 @@ p_tippett <- function(
     # get the z-values
     z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
     # convert them to p-values
-    # p <- ReplicationSuccess::z2p(z, "two.sided")
-    p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
-    # Calculate the Tippett statistic
-    S_t <- apply(p, 2L, min)
-    # Calculate the p-value using the beta distribution
-    p <- stats::pbeta(q = S_t, shape1 = 1, shape2 = n, lower.tail = TRUE)
+    if (input_p == "two.sided") {
+        ## # p <- ReplicationSuccess::z2p(z, "two.sided")
+        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
+    } else if (input_p == "greater") {
+        p <- stats::pnorm(q = z, lower.tail = TRUE)
+    } else {
+        p <- stats::pnorm(q = z, lower.tail = FALSE)
+    }
+    ## # Calculate the Tippett statistic
+    ptippett <- 1 - (1 - apply(X = p, MARGIN = 2, FUN = min))^n
+    ## S_t <- apply(p, 2L, min)
+    ## # Calculate the p-value using the beta distribution
+    ## p <- stats::pbeta(q = S_t, shape1 = 1, shape2 = n, lower.tail = TRUE)
     # return
-    return(p)
+    if (input_p != "two.sided") {
+        ptippett <- 2*pmin(ptippett, 1 - ptippett)
+    }
+    return(ptippett)
 }

@@ -19,8 +19,9 @@ p_pearson <- function(
     mu = 0,
     phi = NULL,
     tau2 = NULL,
-    heterogeneity = c("none", "additive", "multiplicative"),
-    check_inputs = TRUE
+    heterogeneity = "none",
+    check_inputs = TRUE,
+    input_p = "two.sided"
 ) {
 
     # check inputs
@@ -51,9 +52,24 @@ p_pearson <- function(
 
     # implement alternatives
     z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-    # ReplicationSuccess::z2p
-    p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
-    tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
-    p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
-    return(p)
+    if (input_p == "two.sided") {
+        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
+    } else if (input_p == "greater") {
+        p <- stats::pnorm(q = z, lower.tail = TRUE)
+    } else {
+        p <- stats::pnorm(q = z, lower.tail = FALSE)
+    }
+    ## # ReplicationSuccess::z2p
+    ## p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
+    ## tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
+    ## p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
+    ppearson <- stats::pchisq(
+        q = -2 * colSums(log(1 - p)),
+        df = 2 * n,
+        lower.tail = TRUE
+        )
+    if (input_p != "two.sided") {
+        ppearson <-  2*pmin(ppearson, 1 - ppearson)
+    }
+    return(ppearson)
 }
