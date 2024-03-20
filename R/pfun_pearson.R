@@ -21,7 +21,7 @@ p_pearson <- function(
     tau2 = NULL,
     heterogeneity = "none",
     check_inputs = TRUE,
-    input_p = "two.sided"
+    input_p = "greater"
 ) {
 
     # check inputs

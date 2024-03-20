@@ -22,7 +22,7 @@ p_ktrials <- function(
     heterogeneity = "none",
     alternative = "none",
     check_inputs = TRUE,
-    input_p = "two.sided"
+    input_p = "greater"
 ) {
 
     if (check_inputs) {

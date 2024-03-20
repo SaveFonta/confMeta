@@ -20,7 +20,7 @@ p_edgington(
   alternative = "two.sided",
   check_inputs = TRUE,
   approx = TRUE,
-  input_p = "two.sided"
+  input_p = "greater"
 )
 
 p_fisher(
@@ -31,7 +31,7 @@ p_fisher(
   tau2 = NULL,
   heterogeneity = "none",
   check_inputs = TRUE,
-  input_p = "two.sided"
+  input_p = "greater"
 )
 
 p_hmean(
@@ -56,7 +56,7 @@ p_ktrials(
   heterogeneity = "none",
   alternative = "none",
   check_inputs = TRUE,
-  input_p = "two.sided"
+  input_p = "greater"
 )
 
 p_pearson(
@@ -67,7 +67,7 @@ p_pearson(
   tau2 = NULL,
   heterogeneity = "none",
   check_inputs = TRUE,
-  input_p = "two.sided"
+  input_p = "greater"
 )
 
 p_tippett(
@@ -78,7 +78,7 @@ p_tippett(
   tau2 = NULL,
   heterogeneity = "none",
   check_inputs = TRUE,
-  input_p = "two.sided"
+  input_p = "greater"
 )
 }
 \arguments{
@@ -112,9 +112,9 @@ whenever \code{length(estimates) >= 12}. This avoids issues that can lead
 to overflow of the double precision floating point numbers R uses for
 numeric vectors.}
 
-\item{input_p}{Either \code{"two.sided"} (default), \code{"less"}, or
-\code{"greater"}. Specifies whether two-sided or one-sided p-values are
-used as inputs for a p-value combination method.}
+\item{input_p}{Either \code{"two.sided"}, \code{"less"}, or \code{"greater"}
+(default). Specifies whether two-sided or one-sided p-values are used as
+inputs for a p-value combination method.}
 
 \item{w}{Numeric vector of weights.}
 
