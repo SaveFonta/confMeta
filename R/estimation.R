@@ -8,8 +8,6 @@
 #'     Accounting for heterogeneity in meta-analysis using a
 #'     multiplicative model - an empirical study,
 #'     Mawdsley D. etal. 2016. DOI: 10.1002/jrsm.1216 \cr \cr
-#'     The difference to the version in the paper is that the function,
-#'     does not truncate the MSE at 1.
 #'
 # @note In the paper the weights should be squared!?
 #'
@@ -29,8 +27,8 @@ estimate_phi <- function(estimates, SEs) {
     mse <- stats::anova(m)$`Mean Sq`[1]
     ## corresponds to:
     ## mse <- sum(summary(m)$residuals^2) / (length(thetahat) - 1)
-    ## max(1, mse) Ignore truncation at this point
-    return(mse)
+    phi <- max(c(1, mse)) ## truncate at 1
+    return(phi)
 }
 
 

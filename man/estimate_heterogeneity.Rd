@@ -45,8 +45,6 @@ modified version of Page 3 of: \cr
 Accounting for heterogeneity in meta-analysis using a
 multiplicative model - an empirical study,
 Mawdsley D. etal. 2016. DOI: 10.1002/jrsm.1216 \cr \cr
-The difference to the version in the paper is that the function,
-does not truncate the MSE at 1.
 }
 \examples{
     # Example estimates and std. errors
