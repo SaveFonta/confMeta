@@ -701,7 +701,7 @@ get_CI_old_methods <- function(
 
     # Create df
     t_ci <- t(cis$CI)
-    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L], ests)
+    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L,], ests)
     x <- c(t_ci)
     y <- rep(
         c(0, -diamond_height / 2, 0, diamond_height / 2),
