@@ -378,16 +378,18 @@ ggPvalueFunction <- function(
             linetype = "dashed"
         )
     } else {
-        p <- p + ggplot2::geom_line(
+        p <- p +
+            ggplot2::geom_line(
             data = dp,
             mapping = ggplot2::aes(x = x, y = y, group = study),
             linetype = "dashed",
             color = "lightgrey",
             show.legend = FALSE
-            ) + ggplot2::geom_line(
+            ) +
+            ggplot2::geom_line(
             data = rmadf,
             mapping = ggplot2::aes(x = x, y = y),
-            color = "lightgrey",
+            color = "#00000099",
             show.legend = FALSE
             )
 
