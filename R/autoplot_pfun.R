@@ -344,6 +344,14 @@ ggPvalueFunction <- function(
             SEs = const$SEs,
             mu = const$muSeq
         )
+        ## also compute the RMA p-value function
+        rmaestimate <- mean(cms[[1]]$comparison_cis[1,])
+        rmase <- diff(cms[[1]]$comparison_cis[1,])/(2*stats::qnorm(p = (1 + cms[[1]]$conf_level)/2))
+        rmadf <- get_drapery_df(
+            estimates = rmaestimate,
+            SEs = rmase,
+            mu = const$muSeq
+        )
     }
 
     # Define function to convert breaks from primary y-axis to
@@ -376,7 +384,14 @@ ggPvalueFunction <- function(
             linetype = "dashed",
             color = "lightgrey",
             show.legend = FALSE
-        )
+            ) + ggplot2::geom_line(
+            data = rmadf,
+            mapping = ggplot2::aes(x = x, y = y),
+            color = "lightgrey",
+            show.legend = FALSE
+            )
+
+
     }
     if (0 > xlim[1L] && 0 < xlim[2L]) {
         # Vertical line at 0
