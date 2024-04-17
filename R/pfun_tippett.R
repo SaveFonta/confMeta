@@ -40,7 +40,7 @@ p_tippett <- function(
     if (length(SEs) == 1L) SEs <- rep(SEs, length(estimates))
 
     # adjust se based on heterogeneity model
-    se <- adjust_se(
+    SEs <- adjust_se(
       SEs = SEs,
       heterogeneity = heterogeneity,
       phi = phi,
