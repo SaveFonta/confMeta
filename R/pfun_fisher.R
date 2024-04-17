@@ -57,9 +57,9 @@ p_fisher <- function(
     if (input_p == "two.sided") {
         p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
     } else if (input_p == "greater") {
-        p <- stats::pnorm(q = z, lower.tail = TRUE)
-    } else {
         p <- stats::pnorm(q = z, lower.tail = FALSE)
+    } else {
+        p <- stats::pnorm(q = z, lower.tail = TRUE)
     }
     # sum up the p-values and calculate the probability
     pfis <- stats::pchisq(

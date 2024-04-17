@@ -109,9 +109,9 @@ p_edgington <- function(
         ## # p <- ReplicationSuccess::z2p(z, "two.sided")
         p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
     } else if (input_p == "greater") {
-        p <- stats::pnorm(q = z, lower.tail = TRUE)
-    } else {
         p <- stats::pnorm(q = z, lower.tail = FALSE)
+    } else {
+        p <- stats::pnorm(q = z, lower.tail = TRUE)
     }
     # sum up the p-values and calculate the probability
     sp <- pirwinhall(q = colSums(p), n = n, approx = approx)

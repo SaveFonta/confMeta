@@ -57,9 +57,9 @@ p_tippett <- function(
         ## # p <- ReplicationSuccess::z2p(z, "two.sided")
         p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
     } else if (input_p == "greater") {
-        p <- stats::pnorm(q = z, lower.tail = TRUE)
-    } else {
         p <- stats::pnorm(q = z, lower.tail = FALSE)
+    } else {
+        p <- stats::pnorm(q = z, lower.tail = TRUE)
     }
     ## # Calculate the Tippett statistic
     ptippett <- 1 - (1 - apply(X = p, MARGIN = 2, FUN = min))^n
