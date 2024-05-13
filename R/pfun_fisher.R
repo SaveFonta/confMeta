@@ -21,7 +21,8 @@ p_fisher <- function(
     phi = NULL,
     tau2 = NULL,
     heterogeneity = "none",
-    check_inputs = TRUE
+    check_inputs = TRUE,
+    input_p = "greater"
 ) {
 
     # check inputs
@@ -53,13 +54,21 @@ p_fisher <- function(
     # get the z-values
     z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
     # convert them to p-values
-    # p <- ReplicationSuccess::z2p(z, "two.sided")
-    p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
+    if (input_p == "two.sided") {
+        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
+    } else if (input_p == "greater") {
+        p <- stats::pnorm(q = z, lower.tail = FALSE)
+    } else {
+        p <- stats::pnorm(q = z, lower.tail = TRUE)
+    }
     # sum up the p-values and calculate the probability
-    p <- stats::pchisq(
+    pfis <- stats::pchisq(
         q = -2 * colSums(log(p)),
         df = 2 * n,
         lower.tail = FALSE
-    )
-    return(p)
+        )
+    if (input_p != "two.sided") {
+        pfis <- 2*pmin(pfis, 1 - pfis)
+    }
+    return(pfis)
 }

@@ -1,27 +1,28 @@
 #' @rdname p_value_functions
-#' @order 5
+#' @order 7
 #'
 #' @export
 #'
 #' @examples
-#'     # Using Pearson's method to calculate the combined p-value
-#'     # for each of the means with multiplicative adjustement for SEs
-#'     p_pearson(
+#'     # Using weighted Stouffer's method to calculate the combined p-value for
+#'     # each of the means with multiplicative adjustement for SEs
+#'     p_stouffer(
 #'         estimates = estimates,
 #'         SEs = SEs,
 #'         mu = mu,
 #'         heterogeneity = "multiplicative",
 #'         phi = phi
 #'     )
-p_pearson <- function(
+p_stouffer <- function(
     estimates,
     SEs,
     mu = 0,
     phi = NULL,
     tau2 = NULL,
     heterogeneity = "none",
+    alternative = "two.sided",
     check_inputs = TRUE,
-    input_p = "greater"
+    w = NULL
 ) {
 
     # check inputs
@@ -47,29 +48,28 @@ p_pearson <- function(
         tau2 = tau2
     )
 
+    ## weights
+    if (is.null(w)) {
+        ## default set weights to 1/SEs so that Stouffer's method corresponds to
+        ## meta-analysis
+        w <- 1/SEs
+    } else {
+        ## custom weights, recycle if needed
+        if (length(w) == 1L) w <- rep(w, length(estimates))
+    }
+
     # Get lengths
     n <- length(estimates)
 
-    # implement alternatives
+    # compute weighted Stouffer's p-value
     z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-    if (input_p == "two.sided") {
-        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
-    } else if (input_p == "greater") {
-        p <- stats::pnorm(q = z, lower.tail = FALSE)
+    zs <- colSums(w*z)/sqrt(sum(w^2))
+    if (alternative == "two.sided") {
+        pstouffer <- 2*stats::pnorm(q = abs(zs), lower.tail = FALSE)
+    } else if (alternative == "less") {
+        pstouffer <- stats::pnorm(q = zs, lower.tail = TRUE)
     } else {
-        p <- stats::pnorm(q = z, lower.tail = TRUE)
+        pstouffer <- stats::pnorm(q = zs, lower.tail = FALSE)
     }
-    ## # ReplicationSuccess::z2p
-    ## p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
-    ## tp <- apply(p, 2L, function(x) -2 * sum(log(1 - x)))
-    ## p <- stats::pchisq(q = tp, df = 2 * n, lower.tail = TRUE)
-    ppearson <- stats::pchisq(
-        q = -2 * colSums(log(1 - p)),
-        df = 2 * n,
-        lower.tail = TRUE
-        )
-    if (input_p != "two.sided") {
-        ppearson <-  2*pmin(ppearson, 1 - ppearson)
-    }
-    return(ppearson)
+    return(pstouffer)
 }

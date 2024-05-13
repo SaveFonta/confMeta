@@ -133,6 +133,7 @@ in element 'p_fun' is equal to 1-`conf_level`.
 }
 \examples{
     # Simulate effect estimates and standard errors
+    set.seed(42)
     n <- 5
     estimates <- rnorm(n)
     SEs <- rgamma(n, 5, 5)
@@ -145,12 +146,21 @@ in element 'p_fun' is equal to 1-`conf_level`.
         SEs = SEs,
         conf_level = conf_level,
         fun = p_edgington,
-        fun_name = "Edgington"
+        fun_name = "Edgington  (one-sided input)",
+        input_p = "one.sided"
+    )
+    cm2 <- confMeta(
+        estimates = estimates,
+        SEs = SEs,
+        conf_level = conf_level,
+        fun = p_edgington,
+        fun_name = "Edgington (two-sided input)",
+        input_p = "two.sided"
     )
 
     # Plot the object
-    autoplot(cm, type = "p")                   # p-value function plot
-    autoplot(cm, type = "forest")              # forest plot
-    autoplot(cm, type = c("p", "forest"))      # both
+    autoplot(cm, cm2, type = "p")                   # p-value function plot
+    autoplot(cm, cm2, type = "forest")              # forest plot
+    autoplot(cm, cm2, type = c("p", "forest"))      # both
 
 }

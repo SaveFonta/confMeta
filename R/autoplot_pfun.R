@@ -344,6 +344,14 @@ ggPvalueFunction <- function(
             SEs = const$SEs,
             mu = const$muSeq
         )
+        ## also compute the RMA p-value function
+        rmaestimate <- mean(cms[[1]]$comparison_cis[1,])
+        rmase <- diff(cms[[1]]$comparison_cis[1,])/(2*stats::qnorm(p = (1 + cms[[1]]$conf_level)/2))
+        rmadf <- get_drapery_df(
+            estimates = rmaestimate,
+            SEs = rmase,
+            mu = const$muSeq
+        )
     }
 
     # Define function to convert breaks from primary y-axis to
@@ -370,13 +378,22 @@ ggPvalueFunction <- function(
             linetype = "dashed"
         )
     } else {
-        p <- p + ggplot2::geom_line(
+        p <- p +
+            ggplot2::geom_line(
             data = dp,
             mapping = ggplot2::aes(x = x, y = y, group = study),
             linetype = "dashed",
             color = "lightgrey",
             show.legend = FALSE
-        )
+            ) +
+            ggplot2::geom_line(
+            data = rmadf,
+            mapping = ggplot2::aes(x = x, y = y),
+            color = "#00000099",
+            show.legend = FALSE
+            )
+
+
     }
     if (0 > xlim[1L] && 0 < xlim[2L]) {
         # Vertical line at 0
@@ -701,7 +718,7 @@ get_CI_old_methods <- function(
 
     # Create df
     t_ci <- t(cis$CI)
-    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L], ests)
+    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L,], ests)
     x <- c(t_ci)
     y <- rep(
         c(0, -diamond_height / 2, 0, diamond_height / 2),
