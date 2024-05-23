@@ -61,7 +61,7 @@ The `confMeta` package provides implementations for the following *p*-value
 functions
 
 * Harmonic mean (Function: `p_hmean`)
-* k-Trials (Function: `p_ktrials`)
+* Wilkinson (Function: `p_wilkinson`)
 * Pearson (Function: `p_pearson`)
 * Edgington (Function: `p_edgington`)
 * Fisher (Function: `p_fisher`)

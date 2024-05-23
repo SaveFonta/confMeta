@@ -3,7 +3,7 @@ source("globals.R")
 
 ## SP comment out tests for now because we changed the function defaults
 ## for a new simulation study...
-## test_that("Results of kTRMu are consistent", {
+## test_that("Results of p_wilikinson are consistent", {
 ##     # Set inputs
 ##     set.seed(42)
 ##     n <- 15
@@ -27,7 +27,7 @@ source("globals.R")
 ##             het <- grid$heterogeneity[x]
 ##             phi <- if (het == "multiplicative") phi else NULL
 ##             tau2 <- if (het == "additive") tau2 else NULL
-##             p_ktrials(
+##             p_wilkinson(
 ##                 estimates = estimates,
 ##                 SEs = SEs,
 ##                 mu = mu,
@@ -43,8 +43,8 @@ source("globals.R")
 ##     # Get the old function, vectorise it, and run the same inputs
 ##     old_fun <- get_old_FUN(
 ##         path =
-##         "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/pfun_ktrials.R",
-##         fun_name = "p_ktrials"
+##         "https://raw.githubusercontent.com/felix-hof/confMeta/main/R/pfun_wilkinson.R",
+##         fun_name = "p_wilkinson"
 ##     )
 
 ##     old_res <- lapply(
