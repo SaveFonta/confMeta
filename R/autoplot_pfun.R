@@ -31,6 +31,8 @@
 #'     study effects are represented as drapery plots. If `FALSE`
 #' @param xlim Either NULL (default) or a numeric vector of length 2 which
 #'     indicates the extent of the x-axis that should be shown.
+#' @param xlab Either NULL (default) or a character vector of length 1 which
+#'     is used as the label for the x-axis.
 #'
 #' @return An object of class `ggplot` containing the specified plot(s).
 #'

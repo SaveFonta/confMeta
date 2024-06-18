@@ -130,7 +130,7 @@ cm2 <- confMeta(
 )
 ```
 
-Now, we can compare the two *p*-value functions to each other with in the
+Now, we can compare the two *p*-value functions to each other in the
 following way
 
 ```r
