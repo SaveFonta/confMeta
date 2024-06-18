@@ -29,7 +29,7 @@
 #'     section.
 #' @return An S3 object of class `confMeta`. The object contains the
 #'     following elements:
-#'     \itemize{
+#'     \describe{
 #'         \item{estimates}{The normalized individual effect estimates.}
 #'         \item{SEs}{The standard errors of the normalized individual effect
 #'             estimates.}

@@ -31,6 +31,8 @@
 #'     study effects are represented as drapery plots. If `FALSE`
 #' @param xlim Either NULL (default) or a numeric vector of length 2 which
 #'     indicates the extent of the x-axis that should be shown.
+#' @param xlab Either NULL (default) or a character vector of length 1 which
+#'     is used as the label for the x-axis.
 #'
 #' @return An object of class `ggplot` containing the specified plot(s).
 #'
@@ -43,7 +45,8 @@ autoplot.confMeta <- function(
     scale_diamonds = TRUE,
     show_studies = TRUE,
     drapery = TRUE,
-    xlim = NULL
+    xlim = NULL,
+    xlab = NULL
 ) {
 
     # get the type of plot
@@ -114,7 +117,8 @@ autoplot.confMeta <- function(
             pplot <- ggPvalueFunction(
                 cms = cms,
                 drapery = drapery,
-                xlim = xlim
+                xlim = xlim,
+                xlab = xlab
             )
         }),
         forest = quote({
@@ -124,7 +128,8 @@ autoplot.confMeta <- function(
                 v_space = v_space,
                 xlim = xlim,
                 show_studies = show_studies,
-                scale_diamonds = scale_diamonds
+                scale_diamonds = scale_diamonds,
+                xlab = xlab
             )
         })
     )
@@ -138,7 +143,8 @@ autoplot.confMeta <- function(
         scale_diamonds = scale_diamonds,
         show_studies = show_studies,
         drapery = drapery,
-        xlim = xlim
+        xlim = xlim,
+        xlab = xlab
     )
 
     # make the p_value function plot
@@ -272,7 +278,8 @@ check_xlim <- function(x) {
 ggPvalueFunction <- function(
     cms,
     xlim,
-    drapery
+    drapery,
+    xlab
 ) {
 
     # Set some constants that are equal for all grid rows
@@ -433,16 +440,30 @@ ggPvalueFunction <- function(
         ggplot2::aes(x = xmax, xend = xmax, y = ymin, yend = ymax)
     ) +
     # Set x-axis window, labels
-    ggplot2::labs(
-        x = bquote(mu),
-        color = "Configuration"
-    ) +
+    # ggplot2::labs(
+    #     x = bquote(mu),
+    #     color = "Configuration"
+    # ) +
     # Set theme
     ggplot2::theme_minimal() +
     ggplot2::theme(
         axis.title.y.right = ggplot2::element_text(angle = 90),
         legend.position = "bottom"
     )
+
+    if (is.null(xlab)) {
+        p <- p +
+        ggplot2::labs(
+            x = bquote(mu),
+            color = "Configuration"
+        )
+    } else {
+        p <- p +
+        ggplot2::labs(
+            x = xlab,
+            color = "Configuration"
+        )
+    }
 
     # return
     p
@@ -483,7 +504,8 @@ ForestPlot <- function(
     v_space,
     show_studies,
     scale_diamonds,
-    xlim
+    xlim,
+    xlab
 ) {
 
     # Make a data frame for the single studies
@@ -608,10 +630,22 @@ ForestPlot <- function(
             breaks = spacing,
             labels = c(studyCIs$name, "", unique(polygons$name))
         ) +
+        # ggplot2::labs(
+        #     x = bquote(mu)
+        # ) +
+        ggplot2::scale_fill_discrete(type = colors)
+
+    if (is.null(xlab)) {
+        p <- p +
         ggplot2::labs(
             x = bquote(mu)
-        ) +
-        ggplot2::scale_fill_discrete(type = colors)
+        )
+    } else {
+        p <- p +
+        ggplot2::labs(
+            x = xlab
+        )
+    }
 
     if (na_cis) {
         na_rows <- polygons[polygons$ci_exists == FALSE, ]

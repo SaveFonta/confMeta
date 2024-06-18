@@ -4,16 +4,16 @@
 #' @export
 #'
 #' @examples
-#'     # Using the k-trials method to calculate the combined p-value
+#'     # Using Wilkinson's method to calculate the combined p-value
 #'     # for each of the means with multiplicative adjustement for SEs
-#'     p_ktrials(
+#'     p_wilkinson(
 #'         estimates = estimates,
 #'         SEs = SEs,
 #'         mu = mu,
 #'         heterogeneity = "multiplicative",
 #'         phi = phi
 #'     )
-p_ktrials <- function(
+p_wilkinson <- function(
     estimates,
     SEs,
     mu,

@@ -12,7 +12,8 @@
   scale_diamonds = TRUE,
   show_studies = TRUE,
   drapery = TRUE,
-  xlim = NULL
+  xlim = NULL,
+  xlab = NULL
 )
 }
 \arguments{
@@ -49,6 +50,9 @@ study effects are represented as drapery plots. If \code{FALSE}}
 
 \item{xlim}{Either NULL (default) or a numeric vector of length 2 which
 indicates the extent of the x-axis that should be shown.}
+
+\item{xlab}{Either NULL (default) or a character vector of length 1 which
+is used as the label for the x-axis.}
 }
 \value{
 An object of class \code{ggplot} containing the specified plot(s).
