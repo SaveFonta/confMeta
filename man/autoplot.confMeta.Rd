@@ -12,6 +12,7 @@
   scale_diamonds = TRUE,
   show_studies = TRUE,
   drapery = TRUE,
+  reference_methods = c("re", "hk", "hc"),
   xlim = NULL,
   xlab = NULL
 )
@@ -46,7 +47,12 @@ the intervals are suppressed. This argument is only relevant if \code{type}
 contains \code{"forest"} and will be ignored otherwise.}
 
 \item{drapery}{Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE}, the individual
-study effects are represented as drapery plots. If \code{FALSE}}
+study effects are represented as drapery plots. If \code{FALSE} the studies
+are represented by a simple vertical line at their effect estimates.}
+
+\item{reference_methods}{A character vector of length 1, 2 or 3. Valid
+options are any combination of \code{c("re", "hk", "hc")}. Defaults to
+\code{c("re", "hk", "hc")}.}
 
 \item{xlim}{Either NULL (default) or a numeric vector of length 2 which
 indicates the extent of the x-axis that should be shown.}

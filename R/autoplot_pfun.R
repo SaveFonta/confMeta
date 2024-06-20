@@ -28,7 +28,11 @@
 #'     the intervals are suppressed. This argument is only relevant if `type`
 #'     contains `"forest"` and will be ignored otherwise.
 #' @param drapery Either `TRUE` (default) or `FALSE`. If `TRUE`, the individual
-#'     study effects are represented as drapery plots. If `FALSE`
+#'     study effects are represented as drapery plots. If `FALSE` the studies
+#'     are represented by a simple vertical line at their effect estimates.
+#' @param reference_methods A character vector of length 1, 2 or 3. Valid
+#'     options are any combination of `c("re", "hk", "hc")`. Defaults to
+#'     `c("re", "hk", "hc")`.
 #' @param xlim Either NULL (default) or a numeric vector of length 2 which
 #'     indicates the extent of the x-axis that should be shown.
 #' @param xlab Either NULL (default) or a character vector of length 1 which
@@ -45,12 +49,14 @@ autoplot.confMeta <- function(
     scale_diamonds = TRUE,
     show_studies = TRUE,
     drapery = TRUE,
+    reference_methods = c("re", "hk", "hc"),
     xlim = NULL,
     xlab = NULL
 ) {
 
     # get the type of plot
     type <- match.arg(type, several.ok = TRUE)
+    reference_methods <- match.arg(reference_methods, several.ok = TRUE)
 
     # Check all the confMeta objects
     cms <- list(...)
@@ -129,6 +135,7 @@ autoplot.confMeta <- function(
                 xlim = xlim,
                 show_studies = show_studies,
                 scale_diamonds = scale_diamonds,
+                reference_methods = reference_methods,
                 xlab = xlab
             )
         })
@@ -143,6 +150,7 @@ autoplot.confMeta <- function(
         scale_diamonds = scale_diamonds,
         show_studies = show_studies,
         drapery = drapery,
+        reference_methods = reference_methods,
         xlim = xlim,
         xlab = xlab
     )
@@ -504,6 +512,7 @@ ForestPlot <- function(
     v_space,
     show_studies,
     scale_diamonds,
+    reference_methods,
     xlim,
     xlab
 ) {
@@ -535,6 +544,50 @@ ForestPlot <- function(
         conf_level = cm$conf_level,
         diamond_height = diamond_height
     )
+
+    ###########################################################################
+    # Quick fix, remove this at some point                                    #
+    ###########################################################################
+
+    rename_methods <- function(old_methods){
+        rename_one <- function(old_method){
+            switch(
+                old_method,
+                "Random effects (REML)" = "Random effects",
+                "Hartung & Knapp" = "Hartung & Knapp",
+                "Henmi & Copas" = "Henmi & Copas"
+            )
+        }
+        vapply(old_methods, rename_one, character(1L), USE.NAMES = FALSE)
+    }
+
+    old_methods_cis <- lapply(old_methods_cis, function(x){
+        within(x, name <- rename_methods(name))
+    })
+
+    map_ref_methods <- function(old_methods){
+        map_one <- function(old_method){
+            switch(
+                old_method,
+                "re" = "Random effects",
+                "hk" = "Hartung & Knapp",
+                "hc" = "Henmi & Copas"
+            )
+        }
+        vapply(old_methods, map_one, character(1L), USE.NAMES = FALSE)
+    }
+
+    reference_methods <- map_ref_methods(old_methods = reference_methods)
+
+    keep_cis <- with(old_methods_cis, CIs$name %in% reference_methods)
+    keep_p0 <- with(old_methods_cis, p_0$name %in% reference_methods)
+
+    old_methods_cis$CIs <- old_methods_cis$CIs[keep_cis,]
+    old_methods_cis$p_0 <- old_methods_cis$p_0[keep_p0,]
+
+    ###########################################################################
+    # Quick fix, remove this at some point                                    #
+    ###########################################################################
 
     # Assemble p_0
     p_0 <- rbind(old_methods_cis$p_0, new_method_cis$p_0)
