@@ -21,6 +21,7 @@
 #' @examples
 #'     # Estimating heterogeneity using the multiplicative model
 #'     estimate_phi(estimates = estimates, SEs = SEs)
+#' @importFrom stats lm anova
 estimate_phi <- function(estimates, SEs) {
 
     m <- stats::lm(estimates ~ 1, weights = 1 / SEs^2)
@@ -65,6 +66,7 @@ estimate_phi <- function(estimates, SEs) {
 #'
 #'     # Estimating heterogeneity using the multiplicative model
 #'     estimate_tau2(estimates = estimates, SEs = SEs)
+#' @importFrom meta metagen
 estimate_tau2 <- function(estimates, SEs, ...) {
 
     # get names of ... arguments
