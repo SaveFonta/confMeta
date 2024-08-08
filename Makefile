@@ -70,4 +70,5 @@ clean:
 		vignettes/*.synctex.gz vignettes/*.bbl vignettes/*.blg \
 		vignettes/*.dvi vignettes/*.fdb_latexmk vignettes/*.fls \
 		vignettes/*.out \
-		manual
+		manual \
+		doc
