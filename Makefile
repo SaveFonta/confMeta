@@ -1,7 +1,7 @@
 include Makefile.defs
 
 PACKAGE = confMeta
-VERSION = 0.3.1
+VERSION = 0.3.2
 TAR = $(PACKAGE)_$(VERSION).tar.gz
 
 
@@ -70,4 +70,5 @@ clean:
 		vignettes/*.synctex.gz vignettes/*.bbl vignettes/*.blg \
 		vignettes/*.dvi vignettes/*.fdb_latexmk vignettes/*.fls \
 		vignettes/*.out \
-		manual
+		manual \
+		doc

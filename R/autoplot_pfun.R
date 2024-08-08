@@ -49,7 +49,7 @@ autoplot.confMeta <- function(
     scale_diamonds = TRUE,
     show_studies = TRUE,
     drapery = TRUE,
-    reference_methods = c("re", "hk", "hc"),
+    reference_methods = c("re", "hk", "hc", "fe"),
     xlim = NULL,
     xlab = NULL
 ) {
@@ -546,7 +546,7 @@ ForestPlot <- function(
     )
 
     ###########################################################################
-    # Quick fix, remove this at some point                                    #
+    # Quick fix, remove the below at some point                               #
     ###########################################################################
 
     rename_methods <- function(old_methods){
@@ -555,7 +555,8 @@ ForestPlot <- function(
                 old_method,
                 "Random effects (REML)" = "Random effects",
                 "Hartung & Knapp" = "Hartung & Knapp",
-                "Henmi & Copas" = "Henmi & Copas"
+                "Henmi & Copas" = "Henmi & Copas",
+                "Fixed effects" = "Fixed effects"
             )
         }
         vapply(old_methods, rename_one, character(1L), USE.NAMES = FALSE)
@@ -565,13 +566,18 @@ ForestPlot <- function(
         within(x, name <- rename_methods(name))
     })
 
+    ###########################################################################
+    # Quick fix, remove the above at some point                               #
+    ###########################################################################
+
     map_ref_methods <- function(old_methods){
         map_one <- function(old_method){
             switch(
                 old_method,
                 "re" = "Random effects",
                 "hk" = "Hartung & Knapp",
-                "hc" = "Henmi & Copas"
+                "hc" = "Henmi & Copas",
+                "fe" = "Fixed effects"
             )
         }
         vapply(old_methods, map_one, character(1L), USE.NAMES = FALSE)

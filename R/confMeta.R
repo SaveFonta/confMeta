@@ -204,7 +204,7 @@ new_confMeta <- function(
 
     # Calculate individual CIs
     alpha <- 1 - conf_level
-    se_term <- stats::qnorm(1 - alpha / 2) * SEs # Note: one-sided option?
+    se_term <- stats::qnorm(1 - alpha / 2) * SEs
     individual_cis <- matrix(
         c(
             estimates - se_term,
@@ -223,7 +223,7 @@ new_confMeta <- function(
     )
 
     # Calculate joint CIs with the comparison methods
-    method <- c("reml", "hk", "hc")
+    method <- c("reml", "hk", "hc", "fe")
     comparison <- get_stats_others(
         method = method,
         estimates = estimates,
@@ -387,17 +387,29 @@ validate_confMeta <- function(confMeta) {
 get_obj_reml <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "REML"
+        level = conf_level, method.tau = "REML",
+        random = TRUE, common = FALSE
+    )
+}
+
+# Get the object
+get_obj_fe <- function(estimates, SEs, conf_level) {
+    meta::metagen(
+        TE = estimates, seTE = SEs, sm = "MD",
+        level = conf_level, method.tau = "REML",
+        random = FALSE, common = TRUE
     )
 }
 
 get_obj_hk <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "REML", hakn = TRUE
+        level = conf_level, method.tau = "REML", hakn = TRUE,
+        common = FALSE, random = TRUE
     )
 }
 
+#' @importFrom metafor hc rma
 get_obj_hc <- function(estimates, SEs, conf_level) {
     metafor::hc(
         object = metafor::rma(yi = estimates, sei = SEs, level = conf_level)
@@ -410,6 +422,14 @@ get_ci_reml <- function(reml) {
         c(reml$lower.random, reml$upper.random),
         ncol = 2L,
         dimnames = list(get_method_names()["reml"], c("lower", "upper"))
+    )
+}
+
+get_ci_fe <- function(fe) {
+    matrix(
+        c(fe$lower.random, fe$upper.random),
+        ncol = 2L,
+        dimnames = list(get_method_names()["fe"], c("lower", "upper"))
     )
 }
 
@@ -435,6 +455,14 @@ get_pval_reml <- function(obj) {
         c(0, obj$pval.random),
         ncol = 2L,
         dimnames = list(get_method_names()["reml"], c("x", "y"))
+    )
+}
+
+get_pval_fe <- function(obj) {
+    matrix(
+        c(0, obj$pval.common),
+        ncol = 2L,
+        dimnames = list(get_method_names()["fe"], c("x", "y"))
     )
 }
 
@@ -467,7 +495,8 @@ get_method_names <- function() {
     c(
         "reml" = "Random effects (REML)",
         "hk" = "Hartung & Knapp",
-        "hc" = "Henmi & Copas"
+        "hc" = "Henmi & Copas",
+        "fe" = "Fixed effects"
     )
 }
 
@@ -495,19 +524,26 @@ get_stats_others <- function(method, estimates, SEs, conf_level) {
                     estimates = estimates,
                     SEs = SEs,
                     conf_level = conf_level
+                ),
+                "fe" = get_obj_fe(
+                    estimates = estimates,
+                    SEs = SEs,
+                    conf_level = conf_level
                 )
             )
             ci <- switch(
                 x,
                 "reml" = get_ci_reml(reml = obj),
                 "hk" = get_ci_hk(hk = obj),
-                "hc" = get_ci_hc(hc = obj)
+                "hc" = get_ci_hc(hc = obj),
+                "fe" = get_ci_fe(fe = obj)
             )
             pval <- switch(
                 x,
                 "reml" = get_pval_reml(obj = obj),
                 "hk" = get_pval_hk(obj = obj),
-                "hc" = get_pval_hc(obj = obj, conf_level = conf_level)
+                "hc" = get_pval_hc(obj = obj, conf_level = conf_level),
+                "fe" = get_pval_fe(obj = obj)
             )
             list(
                 ci = ci,

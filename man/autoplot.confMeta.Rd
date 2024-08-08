@@ -12,7 +12,7 @@
   scale_diamonds = TRUE,
   show_studies = TRUE,
   drapery = TRUE,
-  reference_methods = c("re", "hk", "hc"),
+  reference_methods = c("re", "hk", "hc", "fe"),
   xlim = NULL,
   xlab = NULL
 )
