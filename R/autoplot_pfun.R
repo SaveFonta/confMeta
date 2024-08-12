@@ -30,9 +30,11 @@
 #' @param drapery Either `TRUE` (default) or `FALSE`. If `TRUE`, the individual
 #'     study effects are represented as drapery plots. If `FALSE` the studies
 #'     are represented by a simple vertical line at their effect estimates.
-#' @param reference_methods A character vector of length 1, 2 or 3. Valid
-#'     options are any combination of `c("fe", "re", "hk", "hc")`. Defaults to
-#'     `c("fe", "re", "hk", "hc")`.
+#' @param reference_methods A character vector of length 1, 2, 3 or 4. Denotes
+#'     the reference methods that should be shown in the plot. Valid options are
+#'     any combination of `c("fe", "re", "hk", "hc")` which stand for fixed
+#'     effect meta-analysis, random effects meta-analysis, Hartung-Knapp and
+#'     Henmi-Copas. Defaults to `c("fe", "re", "hk", "hc")`.
 #' @param xlim Either NULL (default) or a numeric vector of length 2 which
 #'     indicates the extent of the x-axis that should be shown.
 #' @param xlab Either NULL (default) or a character vector of length 1 which
