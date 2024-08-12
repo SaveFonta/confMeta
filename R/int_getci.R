@@ -311,6 +311,7 @@ find_closest_thetas <- function(minimum, x_max, y_max) {
 # confidence set                                                               #
 ################################################################################
 
+#' importFrom stats uniroot
 find_lower <- function(estimates_min, SEs_min, f) {
     lower <- estimates_min - SEs_min
     while (f(lower) > 0) {
