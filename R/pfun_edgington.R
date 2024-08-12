@@ -34,6 +34,9 @@
 #'
 #' @note Add references to p-value statistics.
 #'
+#' @importFrom ReplicationSuccess z2p
+#' @importFrom stats pnorm dnorm
+#'
 #' @export
 #'
 #' @examples

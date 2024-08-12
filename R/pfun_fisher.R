@@ -12,6 +12,8 @@
 #'         phi = phi
 #'     )
 #'
+#' @importFrom stats pnorm pchisq
+#'
 #' @export
 #'
 p_fisher <- function(
@@ -66,9 +68,9 @@ p_fisher <- function(
         q = -2 * colSums(log(p)),
         df = 2 * n,
         lower.tail = FALSE
-        )
+    )
     if (input_p != "two.sided") {
-        pfis <- 2*pmin(pfis, 1 - pfis)
+        pfis <- 2 * pmin(pfis, 1 - pfis)
     }
     return(pfis)
 }

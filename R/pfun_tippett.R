@@ -1,18 +1,20 @@
 #' @rdname p_value_functions
 #' @order 6
 #'
+#' @importFrom stats pnorm
+#'
 #' @export
 #'
 #' @examples
-#'     # Using Tippett's method to calculate the combined p-value
-#'     # for each of the means with multiplicative adjustement for SEs
-#'     p_tippett(
-#'         estimates = estimates,
-#'         SEs = SEs,
-#'         mu = mu,
-#'         heterogeneity = "multiplicative",
-#'         phi = phi
-#'     )
+#' # Using Tippett's method to calculate the combined p-value
+#' # for each of the means with multiplicative adjustement for SEs
+#' p_tippett(
+#'     estimates = estimates,
+#'     SEs = SEs,
+#'     mu = mu,
+#'     heterogeneity = "multiplicative",
+#'     phi = phi
+#' )
 p_tippett <- function(
     estimates,
     SEs,
@@ -21,9 +23,7 @@ p_tippett <- function(
     tau2 = NULL,
     heterogeneity = "none",
     check_inputs = TRUE,
-    input_p = "greater"
-) {
-
+    input_p = "greater") {
     # check inputs
     if (check_inputs) {
         check_inputs_p_value(
@@ -41,10 +41,10 @@ p_tippett <- function(
 
     # adjust se based on heterogeneity model
     SEs <- adjust_se(
-      SEs = SEs,
-      heterogeneity = heterogeneity,
-      phi = phi,
-      tau2 = tau2
+        SEs = SEs,
+        heterogeneity = heterogeneity,
+        phi = phi,
+        tau2 = tau2
     )
 
     # Get length
@@ -68,7 +68,7 @@ p_tippett <- function(
     ## p <- stats::pbeta(q = S_t, shape1 = 1, shape2 = n, lower.tail = TRUE)
     # return
     if (input_p != "two.sided") {
-        ptippett <- 2*pmin(ptippett, 1 - ptippett)
+        ptippett <- 2 * pmin(ptippett, 1 - ptippett)
     }
     return(ptippett)
 }

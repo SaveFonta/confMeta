@@ -17,6 +17,7 @@
 #'     )
 #'
 #' @export
+#' @importFrom stats pf pchisq
 p_hmean <- function(
     estimates,
     SEs,

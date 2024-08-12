@@ -1,18 +1,20 @@
 #' @rdname p_value_functions
 #' @order 5
 #'
+#' @importFrom stats pnorm pchisq
+#'
 #' @export
 #'
 #' @examples
-#'     # Using Pearson's method to calculate the combined p-value
-#'     # for each of the means with multiplicative adjustement for SEs
-#'     p_pearson(
-#'         estimates = estimates,
-#'         SEs = SEs,
-#'         mu = mu,
-#'         heterogeneity = "multiplicative",
-#'         phi = phi
-#'     )
+#' # Using Pearson's method to calculate the combined p-value
+#' # for each of the means with multiplicative adjustement for SEs
+#' p_pearson(
+#'     estimates = estimates,
+#'     SEs = SEs,
+#'     mu = mu,
+#'     heterogeneity = "multiplicative",
+#'     phi = phi
+#' )
 p_pearson <- function(
     estimates,
     SEs,
@@ -21,9 +23,7 @@ p_pearson <- function(
     tau2 = NULL,
     heterogeneity = "none",
     check_inputs = TRUE,
-    input_p = "greater"
-) {
-
+    input_p = "greater") {
     # check inputs
     if (check_inputs) {
         check_inputs_p_value(
@@ -67,9 +67,9 @@ p_pearson <- function(
         q = -2 * colSums(log(1 - p)),
         df = 2 * n,
         lower.tail = TRUE
-        )
+    )
     if (input_p != "two.sided") {
-        ppearson <-  2*pmin(ppearson, 1 - ppearson)
+        ppearson <- 2 * pmin(ppearson, 1 - ppearson)
     }
     return(ppearson)
 }
