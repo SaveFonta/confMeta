@@ -200,40 +200,40 @@ Add references to p-value statistics.
         distr = "chisq"
     )
 
-    # Using Wilkinson's method to calculate the combined p-value
-    # for each of the means with multiplicative adjustement for SEs
-    p_wilkinson(
-        estimates = estimates,
-        SEs = SEs,
-        mu = mu,
-        heterogeneity = "multiplicative",
-        phi = phi
-    )
-    # Using Pearson's method to calculate the combined p-value
-    # for each of the means with multiplicative adjustement for SEs
-    p_pearson(
-        estimates = estimates,
-        SEs = SEs,
-        mu = mu,
-        heterogeneity = "multiplicative",
-        phi = phi
-    )
-    # Using Tippett's method to calculate the combined p-value
-    # for each of the means with multiplicative adjustement for SEs
-    p_tippett(
-        estimates = estimates,
-        SEs = SEs,
-        mu = mu,
-        heterogeneity = "multiplicative",
-        phi = phi
-    )
-    # Using weighted Stouffer's method to calculate the combined p-value for
-    # each of the means with multiplicative adjustement for SEs
-    p_stouffer(
-        estimates = estimates,
-        SEs = SEs,
-        mu = mu,
-        heterogeneity = "multiplicative",
-        phi = phi
-    )
+# Using Wilkinson's method to calculate the combined p-value
+# for each of the means with multiplicative adjustement for SEs
+p_wilkinson(
+    estimates = estimates,
+    SEs = SEs,
+    mu = mu,
+    heterogeneity = "multiplicative",
+    phi = phi
+)
+# Using Pearson's method to calculate the combined p-value
+# for each of the means with multiplicative adjustement for SEs
+p_pearson(
+    estimates = estimates,
+    SEs = SEs,
+    mu = mu,
+    heterogeneity = "multiplicative",
+    phi = phi
+)
+# Using Tippett's method to calculate the combined p-value
+# for each of the means with multiplicative adjustement for SEs
+p_tippett(
+    estimates = estimates,
+    SEs = SEs,
+    mu = mu,
+    heterogeneity = "multiplicative",
+    phi = phi
+)
+# Using weighted Stouffer's method to calculate the combined p-value for
+# each of the means with multiplicative adjustement for SEs
+p_stouffer(
+    estimates = estimates,
+    SEs = SEs,
+    mu = mu,
+    heterogeneity = "multiplicative",
+    phi = phi
+)
 }

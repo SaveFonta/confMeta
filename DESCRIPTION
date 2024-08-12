@@ -1,13 +1,20 @@
 Package: confMeta
 Title: Confidence Curves and P-Value Functions for Meta-Analysis
-Version: 0.3.2
+Version: 0.3.3
 Authors@R: c(
-    person("Felix", "Hofmann", email = "felix.hofmann2@uzh.ch", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3891-6239")),
-    person("Leonhard", "Held", email = "leonhard.held@uzh.ch", role = c("aut"), comment = c(ORCID = "0000-0002-8686-5325")),
-    person("Pawel", "Samuel", email = "samuel.pawel@uzh.ch", role = c("aut"), comment = c(ORCID = "0000-0003-2779-320X"))
+    person("Felix", "Hofmann", email = "felix@fshofmann.com",
+           role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3891-6239")),
+    person("Leonhard", "Held", email = "leonhard.held@uzh.ch", role = c("aut"),
+           comment = c(ORCID = "0000-0002-8686-5325")),
+    person("Samuel", "Pawel", email = "samuel.pawel@uzh.ch", role = c("aut"),
+           comment = c(ORCID = "0000-0003-2779-320X"))
     )
-Description: Provides tools for meta-analyses and evidence synthesis.
+Description: Provides tools for the combination of individual study results in
+    meta-analyses using the p-value function. Implements various p-value
+    combination methods and contains functionality for the visualization of
+    results.
 License: GPL (>= 3)
+BugReports: https://github.com/felix-hof/confMeta/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

@@ -12,7 +12,7 @@
   scale_diamonds = TRUE,
   show_studies = TRUE,
   drapery = TRUE,
-  reference_methods = c("re", "hk", "hc", "fe"),
+  reference_methods = c("re", "hk", "hc"),
   xlim = NULL,
   xlab = NULL
 )
@@ -51,8 +51,8 @@ study effects are represented as drapery plots. If \code{FALSE} the studies
 are represented by a simple vertical line at their effect estimates.}
 
 \item{reference_methods}{A character vector of length 1, 2 or 3. Valid
-options are any combination of \code{c("re", "hk", "hc")}. Defaults to
-\code{c("re", "hk", "hc")}.}
+options are any combination of \code{c("fe", "re", "hk", "hc")}. Defaults to
+\code{c("fe", "re", "hk", "hc")}.}
 
 \item{xlim}{Either NULL (default) or a numeric vector of length 2 which
 indicates the extent of the x-axis that should be shown.}

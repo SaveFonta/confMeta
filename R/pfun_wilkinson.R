@@ -1,18 +1,20 @@
 #' @rdname p_value_functions
 #' @order 4
-
+#'
+#' @importFrom stats pnorm
+#'
 #' @export
 #'
 #' @examples
-#'     # Using Wilkinson's method to calculate the combined p-value
-#'     # for each of the means with multiplicative adjustement for SEs
-#'     p_wilkinson(
-#'         estimates = estimates,
-#'         SEs = SEs,
-#'         mu = mu,
-#'         heterogeneity = "multiplicative",
-#'         phi = phi
-#'     )
+#' # Using Wilkinson's method to calculate the combined p-value
+#' # for each of the means with multiplicative adjustement for SEs
+#' p_wilkinson(
+#'     estimates = estimates,
+#'     SEs = SEs,
+#'     mu = mu,
+#'     heterogeneity = "multiplicative",
+#'     phi = phi
+#' )
 p_wilkinson <- function(
     estimates,
     SEs,
@@ -22,9 +24,7 @@ p_wilkinson <- function(
     heterogeneity = "none",
     alternative = "none",
     check_inputs = TRUE,
-    input_p = "greater"
-) {
-
+    input_p = "greater") {
     if (check_inputs) {
         check_inputs_p_value(
             estimates = estimates,
@@ -54,8 +54,7 @@ p_wilkinson <- function(
     if (alternative == "none") {
         z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
         if (input_p == "two.sided") {
-            ## # p <- ReplicationSuccess::z2p(z, "two.sided")
-            p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
+            p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
         } else if (input_p == "greater") {
             p <- stats::pnorm(q = z, lower.tail = FALSE)
         } else {
@@ -63,7 +62,7 @@ p_wilkinson <- function(
         }
         res <- apply(p, 2L, max)^n
         if (input_p != "two.sided") {
-            res <- 2*pmin(res, 1 - res)
+            res <- 2 * pmin(res, 1 - res)
         }
     } else {
         stop("Invalid argument 'alternative'.")

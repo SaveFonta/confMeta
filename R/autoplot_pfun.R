@@ -30,15 +30,19 @@
 #' @param drapery Either `TRUE` (default) or `FALSE`. If `TRUE`, the individual
 #'     study effects are represented as drapery plots. If `FALSE` the studies
 #'     are represented by a simple vertical line at their effect estimates.
-#' @param reference_methods A character vector of length 1, 2 or 3. Valid
-#'     options are any combination of `c("re", "hk", "hc")`. Defaults to
-#'     `c("re", "hk", "hc")`.
+#' @param reference_methods A character vector of length 1, 2, 3 or 4. Denotes
+#'     the reference methods that should be shown in the plot. Valid options are
+#'     any combination of `c("fe", "re", "hk", "hc")` which stand for fixed
+#'     effect meta-analysis, random effects meta-analysis, Hartung-Knapp and
+#'     Henmi-Copas. Defaults to `c("fe", "re", "hk", "hc")`.
 #' @param xlim Either NULL (default) or a numeric vector of length 2 which
 #'     indicates the extent of the x-axis that should be shown.
 #' @param xlab Either NULL (default) or a character vector of length 1 which
 #'     is used as the label for the x-axis.
 #'
 #' @return An object of class `ggplot` containing the specified plot(s).
+#'
+#' @importFrom patchwork wrap_plots
 #'
 #' @export
 autoplot.confMeta <- function(
@@ -49,14 +53,22 @@ autoplot.confMeta <- function(
     scale_diamonds = TRUE,
     show_studies = TRUE,
     drapery = TRUE,
-    reference_methods = c("re", "hk", "hc", "fe"),
+    # drapery_ma = c("fe"),
+    reference_methods = c("re", "hk", "hc"),
     xlim = NULL,
     xlab = NULL
 ) {
 
+    # Check validity of reference methods
+    check_ref_methods(reference_methods = reference_methods)
+
     # get the type of plot
     type <- match.arg(type, several.ok = TRUE)
-    reference_methods <- match.arg(reference_methods, several.ok = TRUE)
+    reference_methods <- match.arg(
+        reference_methods,
+        several.ok = TRUE,
+        choices = c("fe", "re", "hk", "hc")
+    )
 
     # Check all the confMeta objects
     cms <- list(...)
@@ -97,7 +109,6 @@ autoplot.confMeta <- function(
     if (!is.null(xlim)) {
         check_xlim(x = xlim)
     } else {
-
         candidates <- unname(
             do.call(
                 "c",
@@ -124,7 +135,8 @@ autoplot.confMeta <- function(
                 cms = cms,
                 drapery = drapery,
                 xlim = xlim,
-                xlab = xlab
+                xlab = xlab,
+                reference_methods = reference_methods
             )
         }),
         forest = quote({
@@ -279,15 +291,46 @@ check_xlim <- function(x) {
     invisible(NULL)
 }
 
+
+check_ref_methods <- function(reference_methods) {
+    # Check for invalid reference_methods
+    valid_methods <- c("fe", "re", "hk", "hc")
+    is_invalid <- !(reference_methods %in% valid_methods)
+    if (any(is_invalid)) {
+        msg <- paste0(
+            "Detected invalid reference_methods: ",
+            paste0(reference_methods[is_invalid], collapse = ", "),
+            "."
+        )
+        stop(msg)
+    }
+    # Check that there is only either fixed effect or random effects
+    if ("fe" %in% reference_methods && "re" %in% reference_methods) {
+        stop(
+            paste0(
+                "At the moment `reference_methods` can only contain either ",
+                "\"fe\" or \"re\" but not both."
+            )
+        )
+    }
+}
+
 # ==============================================================================
 # p-value function plot
 # ==============================================================================
 
+#' @importFrom stats qnorm
+#' @importFrom ggplot2 ggplot aes xlim geom_line geom_hline geom_vline
+#' @importFrom ggplot2 geom_point scale_y_continuous sec_axis geom_segment
+#' @importFrom ggplot2 theme theme_minimal labs element_text element_blank
+#' @importFrom ggplot2 xlim scale_color_discrete
+#' @importFrom scales hue_pal
 ggPvalueFunction <- function(
     cms,
     xlim,
     drapery,
-    xlab
+    xlab,
+    reference_methods
 ) {
 
     # Set some constants that are equal for all grid rows
@@ -300,7 +343,14 @@ ggPvalueFunction <- function(
         muSeq = seq(xlim[1], xlim[2], length.out = 1e4)
     )
 
+    # Get the function names (for legend)
     fun_names <- vapply(cms, "[[", i = "fun_name", character(1L))
+    # Add the reference methods and make factor levels
+    fac_levels <- if ("fe" %in% reference_methods) {
+        c(map_ref_methods("fe"), fun_names)
+    } else if ("re" %in% reference_methods) {
+        c(map_ref_methods("re"), fun_names)
+    }
 
     # Calculate the p-values and CIs
     data <- lapply(seq_along(cms), function(x) {
@@ -318,23 +368,25 @@ ggPvalueFunction <- function(
         CIs <- cm$joint_ci
         y0 <- cm$p_0[, 2L]
 
+        # Data frame with the lines of the p-value function: (x,y coords, value
+        # at x = 0)
         df1 <- data.frame(
             x = const$muSeq,
             y = pval,
             p_val_fun = cm$fun_name,
             y0 = y0,
-            group = factor(fun_name, levels = fun_names),
+            group = factor(fun_name, levels = fac_levels),
             stringsAsFactors = FALSE,
             row.names = NULL
         )
         # make a second data frame for the display of confidence intervals
         df2 <- data.frame(
-            xmin = CIs[, 1],
-            xmax = CIs[, 2],
+            xmin = CIs[, 1L],
+            xmax = CIs[, 2L],
             p_val_fun = fun_name,
             # y = rep(1 - conf_level, nrow(CIs$CI)) + factor * const$eps,
             y = rep(alpha, nrow(CIs)),
-            group = factor(fun_name, levels = fun_names),
+            group = factor(fun_name, levels = fac_levels),
             stringsAsFactors = FALSE,
             row.names = NULL
         )
@@ -360,13 +412,26 @@ ggPvalueFunction <- function(
             mu = const$muSeq
         )
         ## also compute the RMA p-value function
-        rmaestimate <- mean(cms[[1]]$comparison_cis[1,])
-        rmase <- diff(cms[[1]]$comparison_cis[1,])/(2*stats::qnorm(p = (1 + cms[[1]]$conf_level)/2))
+        ### Object containing CIs for the reference methods
+        ci_obj <- cms[[1L]]$comparison_cis
+        cl <- cms[[1L]]$conf_level
+        ## What reference method should we calculate drapery plot for:
+        ## "fe" or "re"
+        index <- if ("fe" %in% reference_methods) 1L else 2L
+        ## In a further step, we might want to show more than 1, then just
+        ## uncomment the following
+        # index <- which(
+        #     rownames(ci_obj) %in% map_ref_methods(abbrevs = reference_methods)
+        # )
+        rmaestimate <- rowMeans(ci_obj[index, , drop = FALSE])
+        rmase <- (ci_obj[index, 2L] - ci_obj[index, 1L]) /
+            (2 * stats::qnorm(p = (1 + cl) / 2))
         rmadf <- get_drapery_df(
             estimates = rmaestimate,
             SEs = rmase,
             mu = const$muSeq
         )
+        rmadf$study <- factor(rmadf$study, levels = fac_levels)
     }
 
     # Define function to convert breaks from primary y-axis to
@@ -385,8 +450,10 @@ ggPvalueFunction <- function(
         data = lines,
         ggplot2::aes(x = x, y = y, color = group)
     ) +
-    ggplot2::xlim(xlim) +
-    ggplot2::geom_hline(yintercept = 1 - const$conf_level, linetype = "dashed")
+        ggplot2::xlim(xlim) +
+        ggplot2::geom_hline(
+            yintercept = 1 - const$conf_level, linetype = "dashed"
+        )
     if (!drapery) {
         p <- p + ggplot2::geom_vline(
             xintercept = estimates,
@@ -395,17 +462,17 @@ ggPvalueFunction <- function(
     } else {
         p <- p +
             ggplot2::geom_line(
-            data = dp,
-            mapping = ggplot2::aes(x = x, y = y, group = study),
-            linetype = "dashed",
-            color = "lightgrey",
-            show.legend = FALSE
+                data = dp,
+                mapping = ggplot2::aes(x = x, y = y, group = study),
+                linetype = "dashed",
+                color = "lightgrey",
+                show.legend = FALSE
             ) +
             ggplot2::geom_line(
-            data = rmadf,
-            mapping = ggplot2::aes(x = x, y = y),
-            color = "#00000099",
-            show.legend = FALSE
+                data = rmadf,
+                mapping = ggplot2::aes(x = x, y = y, color = study),
+                # color = "#00000099",
+                show.legend = TRUE
             )
 
 
@@ -413,71 +480,74 @@ ggPvalueFunction <- function(
     if (0 > xlim[1L] && 0 < xlim[2L]) {
         # Vertical line at 0
         p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "solid") +
-        # Points at (x = 0, y = p_0)
-        ggplot2::geom_point(
-            data = lines[!is.na(lines$y0), ],
-            ggplot2::aes(x = 0, y = y0, color = group),
-            alpha = transparency
-        )
+            ggplot2::geom_point(
+                # Points at (x = 0, y = p_0)
+                data = lines[!is.na(lines$y0), ],
+                ggplot2::aes(x = 0, y = y0, color = group),
+                alpha = transparency
+            )
     }
     p <- p +
-    ggplot2::geom_hline(yintercept = 0, linetype = "solid") +
-    ggplot2::geom_line(alpha = transparency) +
-    ggplot2::scale_y_continuous(
-        name = "p-value",
-        breaks = breaks_y1,
-        limits = c(0, 1),
-        expand = c(0, 0),
-        sec.axis = ggplot2::sec_axis(
-            trans = trans,
-            name = "Confidence level [%]",
-            breaks = trans(breaks_y1)
+        ggplot2::geom_hline(yintercept = 0, linetype = "solid") +
+        ggplot2::geom_line(alpha = transparency) +
+        ggplot2::scale_y_continuous(
+            name = "p-value",
+            breaks = breaks_y1,
+            limits = c(0, 1),
+            expand = c(0, 0),
+            sec.axis = ggplot2::sec_axis(
+                transform = trans,
+                name = "Confidence level [%]",
+                breaks = trans(breaks_y1)
+            )
+        ) +
+        # Draw intervals on x-axis
+        ggplot2::geom_segment(
+            data = errorbars[!is.na(errorbars$xmin), ],
+            ggplot2::aes(x = xmin, xend = xmax, y = y, yend = y)
+        ) +
+        ggplot2::geom_segment(
+            data = errorbars[!is.na(errorbars$xmin), ],
+            ggplot2::aes(x = xmin, xend = xmin, y = ymin, yend = ymax)
+        ) +
+        ggplot2::geom_segment(
+            data = errorbars[!is.na(errorbars$xmin), ],
+            ggplot2::aes(x = xmax, xend = xmax, y = ymin, yend = ymax)
+        ) +
+        # Set x-axis window, labels
+        # ggplot2::labs(
+        #     x = bquote(mu),
+        #     color = "Configuration"
+        # ) +
+        # Set theme
+        ggplot2::theme_minimal() +
+        ggplot2::theme(
+            axis.title.y.right = ggplot2::element_text(angle = 90),
+            legend.position = "bottom"
         )
-    ) +
-    # Draw intervals on x-axis
-    ggplot2::geom_segment(
-        data = errorbars[!is.na(errorbars$xmin), ],
-        ggplot2::aes(x = xmin, xend = xmax, y = y, yend = y)
-    ) +
-    ggplot2::geom_segment(
-        data = errorbars[!is.na(errorbars$xmin), ],
-        ggplot2::aes(x = xmin, xend = xmin, y = ymin, yend = ymax)
-    ) +
-    ggplot2::geom_segment(
-        data = errorbars[!is.na(errorbars$xmin), ],
-        ggplot2::aes(x = xmax, xend = xmax, y = ymin, yend = ymax)
-    ) +
-    # Set x-axis window, labels
-    # ggplot2::labs(
-    #     x = bquote(mu),
-    #     color = "Configuration"
-    # ) +
-    # Set theme
-    ggplot2::theme_minimal() +
-    ggplot2::theme(
-        axis.title.y.right = ggplot2::element_text(angle = 90),
-        legend.position = "bottom"
-    )
 
-    if (is.null(xlab)) {
-        p <- p +
-        ggplot2::labs(
-            x = bquote(mu),
-            color = "Configuration"
-        )
+    # Add axis/legend labels
+    xlab <- if (is.null(xlab)) {
+        bquote(mu)
     } else {
-        p <- p +
+        xlab
+    }
+    p <- p +
         ggplot2::labs(
             x = xlab,
-            color = "Configuration"
+            color = ggplot2::element_blank()
         )
-    }
+
+    # Add desired coloring for curves
+    line_cols <- c("#000000", scales::hue_pal()(length(fac_levels) - 1))
+    p <- p + ggplot2::scale_color_discrete(type = line_cols)
 
     # return
     p
 }
 
 # Calculate the drapery lines
+#' @importFrom stats pnorm
 get_drapery_df <- function(estimates, SEs, mu) {
     # get lenghts
     l_t <- length(estimates)
@@ -488,10 +558,11 @@ get_drapery_df <- function(estimates, SEs, mu) {
     y_dp <- study <- numeric(l_tot)
     # Indices to loop over
     idx <- seq_len(l_m)
+    nms <- names(estimates)
     for (i in seq_along(estimates)) {
         y_dp[idx] <- 2 *
-        (1 - stats::pnorm(abs(estimates[i] - mu) / SEs[i]))
-        study[idx] <- rep(i, l_m)
+            (1 - stats::pnorm(abs(estimates[i] - mu) / SEs[i]))
+        study[idx] <- if (is.null(nms)) rep(i, l_m) else rep(nms[i], l_m)
         idx <- idx + l_m
     }
     data.frame(
@@ -502,10 +573,28 @@ get_drapery_df <- function(estimates, SEs, mu) {
     )
 }
 
+map_ref_methods <- function(abbrevs) {
+    map_one <- function(abbrev) {
+        switch(
+            abbrev,
+            "re" = "Random effects",
+            "hk" = "Hartung & Knapp",
+            "hc" = "Henmi & Copas",
+            "fe" = "Fixed effect"
+        )
+    }
+    vapply(abbrevs, map_one, character(1L), USE.NAMES = FALSE)
+}
+
 # ==============================================================================
 # forest plot
 # ==============================================================================
 
+#' @importFrom ggplot2 ggplot xlim geom_vline geom_errorbarh aes geom_point
+#' @importFrom ggplot2 geom_polygon theme_minimal theme element_blank
+#' @importFrom ggplot2 element_line scale_y_continuous labs scale_fill_discrete
+#' @importFrom ggplot2 annotate
+#' @importFrom scales hue_pal
 ForestPlot <- function(
     cms,
     diamond_height,
@@ -549,50 +638,34 @@ ForestPlot <- function(
     # Quick fix, remove the below at some point                               #
     ###########################################################################
 
-    rename_methods <- function(old_methods){
-        rename_one <- function(old_method){
+    rename_methods <- function(old_methods) {
+        rename_one <- function(old_method) {
             switch(
                 old_method,
-                "Random effects (REML)" = "Random effects",
+                "Fixed effect" = "Fixed effect",
+                "Random effects" = "Random effects",
                 "Hartung & Knapp" = "Hartung & Knapp",
-                "Henmi & Copas" = "Henmi & Copas",
-                "Fixed effects" = "Fixed effects"
+                "Henmi & Copas" = "Henmi & Copas"
             )
         }
         vapply(old_methods, rename_one, character(1L), USE.NAMES = FALSE)
     }
 
-    old_methods_cis <- lapply(old_methods_cis, function(x){
+    old_methods_cis <- lapply(old_methods_cis, function(x) {
         within(x, name <- rename_methods(name))
     })
 
-    ###########################################################################
-    # Quick fix, remove the above at some point                               #
-    ###########################################################################
 
-    map_ref_methods <- function(old_methods){
-        map_one <- function(old_method){
-            switch(
-                old_method,
-                "re" = "Random effects",
-                "hk" = "Hartung & Knapp",
-                "hc" = "Henmi & Copas",
-                "fe" = "Fixed effects"
-            )
-        }
-        vapply(old_methods, map_one, character(1L), USE.NAMES = FALSE)
-    }
-
-    reference_methods <- map_ref_methods(old_methods = reference_methods)
+    reference_methods <- map_ref_methods(abbrevs = reference_methods)
 
     keep_cis <- with(old_methods_cis, CIs$name %in% reference_methods)
     keep_p0 <- with(old_methods_cis, p_0$name %in% reference_methods)
 
-    old_methods_cis$CIs <- old_methods_cis$CIs[keep_cis,]
-    old_methods_cis$p_0 <- old_methods_cis$p_0[keep_p0,]
+    old_methods_cis$CIs <- old_methods_cis$CIs[keep_cis, ]
+    old_methods_cis$p_0 <- old_methods_cis$p_0[keep_p0, ]
 
     ###########################################################################
-    # Quick fix, remove this at some point                                    #
+    # Quick fix, remove the above at some point                               #
     ###########################################################################
 
     # Assemble p_0
@@ -643,7 +716,7 @@ ForestPlot <- function(
     p <- ggplot2::ggplot()
     if (!is.null(xlim)) {
         p <- p + ggplot2::xlim(xlim)
-        if (0 > xlim[1L] & 0 < xlim[2L]) {
+        if (0 > xlim[1L] && 0 < xlim[2L]) {
             p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "dashed")
         }
     }
@@ -696,14 +769,14 @@ ForestPlot <- function(
 
     if (is.null(xlab)) {
         p <- p +
-        ggplot2::labs(
-            x = bquote(mu)
-        )
+            ggplot2::labs(
+                x = bquote(mu)
+            )
     } else {
         p <- p +
-        ggplot2::labs(
-            x = xlab
-        )
+            ggplot2::labs(
+                x = xlab
+            )
     }
 
     if (na_cis) {
@@ -811,7 +884,7 @@ get_CI_old_methods <- function(
 
     # Create df
     t_ci <- t(cis$CI)
-    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L,], ests)
+    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L, ], ests)
     x <- c(t_ci)
     y <- rep(
         c(0, -diamond_height / 2, 0, diamond_height / 2),

@@ -193,6 +193,7 @@ confMeta <- function(
 }
 
 # Constructor function
+#' @importFrom stats qnorm
 new_confMeta <- function(
     estimates = double(),
     SEs = double(),
@@ -223,7 +224,7 @@ new_confMeta <- function(
     )
 
     # Calculate joint CIs with the comparison methods
-    method <- c("reml", "hk", "hc", "fe")
+    method <- c("fe", "re", "hk", "hc")
     comparison <- get_stats_others(
         method = method,
         estimates = estimates,
@@ -383,8 +384,8 @@ validate_confMeta <- function(confMeta) {
 # Calculate the CIs using the other methods ====================================
 # ==============================================================================
 
-# Get the object
-get_obj_reml <- function(estimates, SEs, conf_level) {
+#' @importFrom meta metagen
+get_obj_re <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
         level = conf_level, method.tau = "REML",
@@ -392,7 +393,7 @@ get_obj_reml <- function(estimates, SEs, conf_level) {
     )
 }
 
-# Get the object
+#' @importFrom meta metagen
 get_obj_fe <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
@@ -401,6 +402,7 @@ get_obj_fe <- function(estimates, SEs, conf_level) {
     )
 }
 
+#' @importFrom meta metagen
 get_obj_hk <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
@@ -417,17 +419,17 @@ get_obj_hc <- function(estimates, SEs, conf_level) {
 }
 
 # Get the CI
-get_ci_reml <- function(reml) {
+get_ci_re <- function(re) {
     matrix(
-        c(reml$lower.random, reml$upper.random),
+        c(re$lower.random, re$upper.random),
         ncol = 2L,
-        dimnames = list(get_method_names()["reml"], c("lower", "upper"))
+        dimnames = list(get_method_names()["re"], c("lower", "upper"))
     )
 }
 
 get_ci_fe <- function(fe) {
     matrix(
-        c(fe$lower.random, fe$upper.random),
+        c(fe$lower.common, fe$upper.common),
         ncol = 2L,
         dimnames = list(get_method_names()["fe"], c("lower", "upper"))
     )
@@ -450,11 +452,11 @@ get_ci_hc <- function(hc) {
 }
 
 # Get the p-value for the null-effect
-get_pval_reml <- function(obj) {
+get_pval_re <- function(obj) {
     matrix(
         c(0, obj$pval.random),
         ncol = 2L,
-        dimnames = list(get_method_names()["reml"], c("x", "y"))
+        dimnames = list(get_method_names()["re"], c("x", "y"))
     )
 }
 
@@ -474,7 +476,7 @@ get_pval_hk <- function(obj) {
     )
 }
 
-
+#' @importFrom ReplicationSuccess ci2p
 get_pval_hc <- function(obj, conf_level) {
     ci <- get_ci_hc(obj)
     p <- ReplicationSuccess::ci2p(
@@ -493,10 +495,10 @@ get_pval_hc <- function(obj, conf_level) {
 
 get_method_names <- function() {
     c(
-        "reml" = "Random effects (REML)",
+        "fe" = "Fixed effect",
+        "re" = "Random effects",
         "hk" = "Hartung & Knapp",
-        "hc" = "Henmi & Copas",
-        "fe" = "Fixed effects"
+        "hc" = "Henmi & Copas"
     )
 }
 
@@ -510,7 +512,7 @@ get_stats_others <- function(method, estimates, SEs, conf_level) {
         function(x, estimates, SEs, conf_level, nms) {
             obj <- switch(
                 x,
-                "reml" = get_obj_reml(
+                "re" = get_obj_re(
                     estimates = estimates,
                     SEs = SEs,
                     conf_level = conf_level
@@ -533,14 +535,14 @@ get_stats_others <- function(method, estimates, SEs, conf_level) {
             )
             ci <- switch(
                 x,
-                "reml" = get_ci_reml(reml = obj),
+                "re" = get_ci_re(re = obj),
                 "hk" = get_ci_hk(hk = obj),
                 "hc" = get_ci_hc(hc = obj),
                 "fe" = get_ci_fe(fe = obj)
             )
             pval <- switch(
                 x,
-                "reml" = get_pval_reml(obj = obj),
+                "re" = get_pval_re(obj = obj),
                 "hk" = get_pval_hk(obj = obj),
                 "hc" = get_pval_hc(obj = obj, conf_level = conf_level),
                 "fe" = get_pval_fe(obj = obj)

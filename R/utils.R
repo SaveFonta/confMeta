@@ -480,6 +480,7 @@ get_z <- function(estimates, SEs, mu) {
 # R CMD check. Thus we declare all of the variables here.                      #
 # ##############################################################################
 
+#' @importFrom utils globalVariables
 utils::globalVariables(
     c(
         # autoplot.confMeta
