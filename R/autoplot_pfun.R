@@ -278,7 +278,7 @@ is_TF <- function(x) {
 }
 
 check_xlim <- function(x) {
-    ok <- length(x) == 2L && is.numeric(xlim) && xlim[1L] < xlim[2L]
+    ok <- length(x) == 2L && is.numeric(x) && x[1L] < x[2L]
     if (!ok) {
         stop(
             paste0(
