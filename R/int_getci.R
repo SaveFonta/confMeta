@@ -1,9 +1,13 @@
 get_ci <- function(
-  estimates,
-  SEs,
-  conf_level,
-  p_fun
+    estimates,
+    SEs,
+    conf_level,
+    p_fun
 ) {
+
+    # Keep a copy of estimates for later on since `estimates` is overwritten
+    orig_est <- estimates
+    orig_se <- SEs
 
     # Get the function we need to optimise
     # This is calls the p-value function with specified
@@ -16,7 +20,7 @@ get_ci <- function(
         p_fun = p_fun
     )
 
-    # remove duplicates and sort thetahat and se
+    # remove duplicates and sort estimates and SEs
     keep <- !duplicated(estimates)
     estimates <- estimates[keep]
     SEs <- SEs[keep]
@@ -25,9 +29,9 @@ get_ci <- function(
     SEs <- SEs[o]
 
     # Check if CI exists: This is the case if
-    # the function f(thetahat) returns at least one
+    # the function f(estimates) returns at least one
     # positive value or we can find a local maximum x
-    # between the thetahats where f(x) > 0.
+    # between the estimates where f(x) > 0.
     # Also, keep track of the status:
     # - 0 = estimate
     # - 1 = maximum
@@ -37,19 +41,19 @@ get_ci <- function(
         ncol = 3L,
         dimnames = list(NULL, c("x", "y", "status"))
     )
-    ## search for local maxima in between thetahats
+    ## search for local maxima in between estimates
     maxima <- find_optima(estimates = estimates[, 1L], f = f, maximum = TRUE)
     ## Find out which of these maxima is relevant, i.e. it has a higher p-value
-    ## than both, the next smaller and the next larger thetahat
+    ## than both, the next smaller and the next larger estimate
     isRelevant_max <- is_relevant(
         f_estimates = estimates[, 2L],
         f_extremum = maxima[, 2L],
         maximum = TRUE
     )
 
-    ## For searching CIs: Add the relevant maxima to the thetahats
+    ## For searching CIs: Add the relevant maxima to the estimates
     ## Here, we only care about the maxima since they might be > 0
-    ## even though none of the thetahats are
+    ## even though none of the estimates are
     if (any(isRelevant_max)) {
         estimates <- rbind(estimates, maxima[isRelevant_max, ])
         ## Sort this by the x-coordinate
@@ -83,11 +87,11 @@ get_ci <- function(
         colnames(out$gamma) <- c("x", "y")
     } else {
         # If the CI does exist:
-        # 1. Determine the smallest and largest thetahat where f(thetahat) > 0
-        # 2. Find the lower and upper bounds based on these thetahats
-        # 3. Corners/Cusps are always at thetahats. Thus, we search between
-        #    the lower bound, thetahat_min, all the thetahats in between and
-        #    finally thetahat_max and the upper bound, this is implemented in
+        # 1. Determine the smallest and largest estimate where f(estimate) > 0
+        # 2. Find the lower and upper bounds based on these estimates
+        # 3. Corners/Cusps are always at estimates. Thus, we search between
+        #    the lower bound, estimate_min, all the estimates in between and
+        #    finally estimate_max and the upper bound, this is implemented in
         #    the function get_CI
 
         # 1.
@@ -110,12 +114,12 @@ get_ci <- function(
             SEs_max = step
         )
         # 3.
-        ## Get the thetahats we need to examine. These are all in
-        ## between thetahat_min and thetahat_max.
+        ## Get the estimates we need to examine. These are all in
+        ## between estimates_min and estimates_max.
         estimates <- estimates[idx_min:idx_max]
         f_estimates <- f_estimates[idx_min:idx_max]
 
-        ## Get the number of intervals between these thetahats
+        ## Get the number of intervals between these estimates
         n_intervals <- length(estimates) - 1L
 
         ## For the intervals in the middle, compute the minimum and the
@@ -142,25 +146,25 @@ get_ci <- function(
 
         # Whereever the p-value function is negative at the minimum,
         # search for the two roots. Also add the lower and upper bound
-        # If there is no minimum (i.e. only one thetahat is positive),
+        # If there is no minimum (i.e. only one estimate is positive),
         # then, we can also just use lower & upper for the CI
         minima <- gam[, 2L]
-        # only search roots if there is more than one positive f(thetahat)
+        # only search roots if there is more than one positive f(estimate)
         # and there is at least one negative minimum
         one_pos_theta_only <- length(minima) == 1L && is.na(minima)
         exist_neg_minima <- any(minima < 0)
         search_roots <- !one_pos_theta_only && exist_neg_minima
         if (search_roots) {
             # Now that we know all the minima between the smallest and largest
-            # positive thetahat, we need to apply an algorithm to find the
-            # roots. These exist if the minimum between two thetahats i
-            # and j is negative and both f(thetahat[i]) and f(thetahat[j])
+            # positive estimate, we need to apply an algorithm to find the
+            # roots. These exist if the minimum between two estimates i
+            # and j is negative and both f(estimate[i]) and f(estimate[j])
             # are positive.
 
             # In order to find the correct intervals to search, we first
             # need to find all negative minima and then for each of them
-            # the closest smaller thetahat where f_thetahat > 0 and the
-            # closest larger thetahat where f_thetahat > 0. This is
+            # the closest smaller estimate where f_estimate > 0 and the
+            # closest larger estimate where f_estimate > 0. This is
             # is implemented in the functions get_search_interval and
             # find_closest_thetas
             intervals <- get_search_interval(
@@ -200,22 +204,65 @@ get_ci <- function(
             gam[, 2L] <- gam[, 2L] + alpha
         }
 
+        # # Calculate p_max
+        idx <- f_estimates == max(f_estimates)
+        p_max <- matrix(
+            c(x = estimates[idx], y = f_estimates[idx] + alpha),
+            ncol = 2L,
+            dimnames = list(NULL, c("x", "y"))
+        )
+
+        # Calculate the AUCC and the ratio
+        # Basically we need to integrate p_fun and for the ratio we need to
+        # also integrate from -Infinity up to the x coordinate of p_max
+        if (nrow(p_max) > 1L) {
+            msg <- paste0(
+                "More than one maximum of the p-value function found. ",
+                "The AUCC ratio is thus "
+            )
+            warning(msg)
+            aucc <- NA_real_
+            aucc_ratio <- NA_real_
+        } else {
+            a <- integrate(
+                p_fun,
+                estimates = orig_est,
+                SEs = orig_se,
+                lower = -Inf,
+                upper = p_max[, "x"]
+            )$value
+            b <- integrate(
+                p_fun,
+                estimates = orig_est,
+                SEs = orig_se,
+                lower = p_max[, "x"],
+                upper = Inf
+            )$value
+            aucc <- a + b
+            aucc_ratio <- if (a == 0) {
+                1
+            } else if (b == 0) {
+                -1
+            } else if (a == b) {
+                0
+            } else {
+                (b - a) / (aucc)
+            }
+        }
+
         # return
         # Calculate p_max
-        idx <- f_estimates == max(f_estimates)
         out <- list(
             CI = CI,
             gamma = gam,
-            p_max = matrix(
-                c(x = estimates[idx], y = f_estimates[idx] + alpha),
-                ncol = 2L,
-                dimnames = list(NULL, c("x", "y"))
-            ),
+            p_max = p_max,
             p_0 = matrix(
                 c(0, f(0) + alpha),
                 ncol = 2L,
                 dimnames = list(NULL, c("x", "y"))
-            )
+            ),
+            aucc = aucc,
+            aucc_ratio = aucc_ratio
             # gammaMean = mean(gam[, 2L]),
             # gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L]),
             # forest_plot_estimates = estimates,
@@ -242,7 +289,7 @@ is_relevant <- function(f_estimates, f_extremum, maximum) {
 }
 
 ################################################################################
-# Helper function to find local maxima/minima between thetahats                #
+# Helper function to find local maxima/minima between estimates                #
 ################################################################################
 
 find_optima <- function(f, estimates, maximum, ...) {
@@ -348,7 +395,7 @@ make_function <- function(
     p_fun
 ) {
 
-    # Add/Overwrite thetahat and se args
+    # Add/Overwrite estimate and se args
     function(limit) {
         do.call(
             "p_fun",
