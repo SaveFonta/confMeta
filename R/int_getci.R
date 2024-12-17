@@ -63,23 +63,65 @@ get_ci <- function(
     f_estimates <- estimates[, 2L]
     estimates <- estimates[, 1L]
 
+    # Calculate p_max
+    idx <- f_estimates == max(f_estimates)
+    p_max <- matrix(
+        c(x = estimates[idx], y = f_estimates[idx] + alpha),
+        ncol = 2L,
+        dimnames = list(NULL, c("x", "y"))
+    )
+
+    # Calculate the AUCC and the ratio
+    # Basically we need to integrate p_fun and for the ratio we need to
+    # also integrate from -Infinity up to the x coordinate of p_max
+    if (nrow(p_max) > 1L) {
+        msg <- paste0(
+            "More than one maximum of the p-value function found. ",
+            "The AUCC ratio is thus "
+        )
+        warning(msg)
+        aucc <- NA_real_
+        aucc_ratio <- NA_real_
+    } else {
+        a <- integrate(
+            p_fun,
+            estimates = orig_est,
+            SEs = orig_se,
+            lower = -Inf,
+            upper = p_max[, "x"]
+        )$value
+        b <- integrate(
+            p_fun,
+            estimates = orig_est,
+            SEs = orig_se,
+            lower = p_max[, "x"],
+            upper = Inf
+        )$value
+        aucc <- a + b
+        aucc_ratio <- if (a == 0) {
+            1
+        } else if (b == 0) {
+            -1
+        } else if (a == b) {
+            0
+        } else {
+            (b - a) / (aucc)
+        }
+    }
+
     if (all(f_estimates <= 0)) {
-        # Calculate p_max
-        idx <- f_estimates == max(f_estimates)
         # If it does not exist, return same format
         out <- list(
             CI = matrix(rep(NA_real_, 2L), ncol = 2L),
             gamma = matrix(rep(NA_real_, 2L), ncol = 2L),
-            p_max = matrix(
-                c(x = estimates[idx], y = f_estimates[idx] + alpha),
-                ncol = 2L,
-                dimnames = list(NULL, c("x", "y"))
-            ),
+            p_max = p_max,
             p_0 = matrix(
                 c(0, f(0) + alpha),
                 ncol = 2L,
                 dimnames = list(NULL, c("x", "y"))
-            )
+            ),
+            aucc = aucc,
+            aucc_ratio = aucc_ratio
             # forest_plot_thetahat = thetahat[idx],
             # forest_plot_f_thetahat = f_thetahat[idx] + alpha
         )
@@ -204,51 +246,6 @@ get_ci <- function(
             gam[, 2L] <- gam[, 2L] + alpha
         }
 
-        # # Calculate p_max
-        idx <- f_estimates == max(f_estimates)
-        p_max <- matrix(
-            c(x = estimates[idx], y = f_estimates[idx] + alpha),
-            ncol = 2L,
-            dimnames = list(NULL, c("x", "y"))
-        )
-
-        # Calculate the AUCC and the ratio
-        # Basically we need to integrate p_fun and for the ratio we need to
-        # also integrate from -Infinity up to the x coordinate of p_max
-        if (nrow(p_max) > 1L) {
-            msg <- paste0(
-                "More than one maximum of the p-value function found. ",
-                "The AUCC ratio is thus "
-            )
-            warning(msg)
-            aucc <- NA_real_
-            aucc_ratio <- NA_real_
-        } else {
-            a <- integrate(
-                p_fun,
-                estimates = orig_est,
-                SEs = orig_se,
-                lower = -Inf,
-                upper = p_max[, "x"]
-            )$value
-            b <- integrate(
-                p_fun,
-                estimates = orig_est,
-                SEs = orig_se,
-                lower = p_max[, "x"],
-                upper = Inf
-            )$value
-            aucc <- a + b
-            aucc_ratio <- if (a == 0) {
-                1
-            } else if (b == 0) {
-                -1
-            } else if (a == b) {
-                0
-            } else {
-                (b - a) / (aucc)
-            }
-        }
 
         # return
         # Calculate p_max
