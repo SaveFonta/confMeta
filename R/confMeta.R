@@ -215,7 +215,7 @@ new_confMeta <- function(
         dimnames = list(study_names, c("lower", "upper"))
     )
 
-    # Calculate the joint CIs
+    # Calculate the joint CIs with the p-value function
     joint_cis <- get_ci(
         estimates = estimates,
         SEs = SEs,
@@ -232,6 +232,8 @@ new_confMeta <- function(
         conf_level = conf_level
     )
 
+    # Calculate the AUCC (area under confidence curve)
+
 
     # Return object
     structure(
@@ -247,6 +249,8 @@ new_confMeta <- function(
             gamma = joint_cis$gamma,
             p_max = joint_cis$p_max,
             p_0 = joint_cis$p_0,
+            aucc = joint_cis$aucc,
+            aucc_ratio = joint_cis$aucc_ratio,
             comparison_cis = comparison$CI,
             comparison_p_0 = comparison$p_0
         ),
@@ -311,6 +315,8 @@ validate_confMeta <- function(confMeta) {
         "gamma",
         "p_max",
         "p_0",
+        "aucc",
+        "aucc_ratio",
         "comparison_cis",
         "comparison_p_0"
     )
@@ -340,6 +346,8 @@ validate_confMeta <- function(confMeta) {
             check_type(x = gamma, "double", val = TRUE)
             check_type(x = p_max, "double", val = TRUE)
             check_type(x = p_0, "double", val = TRUE)
+            check_type(x = aucc, "double", val = TRUE)
+            check_type(x = aucc_ratio, "double", val = TRUE)
             check_type(x = comparison_cis, "double", val = TRUE)
             check_type(x = comparison_p_0, "double", val = TRUE)
             check_is_function(x = p_fun)
@@ -350,6 +358,8 @@ validate_confMeta <- function(confMeta) {
             check_class(x = gamma, class = "matrix", val = TRUE)
             check_class(x = p_max, class = "matrix", val = TRUE)
             check_class(x = p_0, class = "matrix", val = TRUE)
+            check_class(x = aucc, class = "numeric", val = TRUE)
+            check_class(x = aucc_ratio, class = "numeric", val = TRUE)
             check_class(x = comparison_cis, "matrix", val = TRUE)
             check_class(x = comparison_p_0, "matrix", val = TRUE)
 
@@ -372,6 +382,8 @@ validate_confMeta <- function(confMeta) {
             )
             check_length_1(x = conf_level)
             check_length_1(x = fun_name)
+            check_length_1(x = aucc)
+            check_length_1(x = aucc_ratio)
 
             invisible(NULL)
         }
