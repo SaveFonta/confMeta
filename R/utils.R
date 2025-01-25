@@ -1,4 +1,28 @@
 ################################################################################
+# Wrapper around integrate                                                     #
+################################################################################
+
+integrate_f <- function(max_iter, ...) {
+    exponent <- 0.25
+    counter <- 0L
+    while (exponent > 0.075 && counter < max_iter) {
+        rel_tol <- .Machine$double.eps^exponent
+        out <- try(
+            integrate(..., rel.tol = rel_tol),
+            silent = TRUE
+        )
+        if (class(out) == "try-error") {
+            exponent <- exponent - 0.025
+            counter <- counter + 1L
+        } else {
+            break
+        }
+    }
+    out
+}
+
+
+################################################################################
 # Helper functions                                                             #
 ################################################################################
 

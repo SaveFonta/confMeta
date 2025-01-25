@@ -83,19 +83,23 @@ get_ci <- function(
         aucc <- NA_real_
         aucc_ratio <- NA_real_
     } else {
-        a <- integrate(
+        a <- integrate_f(
+            max_iter = 7,
             p_fun,
             estimates = orig_est,
             SEs = orig_se,
             lower = -Inf,
-            upper = p_max[, "x"]
+            upper = p_max[, "x"],
+            subdivisions = 1000L
         )$value
-        b <- integrate(
+        b <- integrate_f(
+            max_iter = 7,
             p_fun,
             estimates = orig_est,
             SEs = orig_se,
             lower = p_max[, "x"],
-            upper = Inf
+            upper = Inf,
+            subdivisions = 1000L
         )$value
         aucc <- a + b
         aucc_ratio <- if (a == 0) {
