@@ -14,7 +14,7 @@
 #'     differentiate the individual studies. For more information, check out the
 #'     Details section.
 #' @param conf_level The confidence level. Must be a numeric vector of length
-#'     one with it's value being in (0, 1).
+#'     one with its value being in (0, 1).
 #' @param fun A function that combines individual effect estimates and the
 #'     corresponding standard errors into a combined p-value. The function must
 #'     have arguments named 'estimates', 'SEs', and 'mu'.
@@ -25,6 +25,10 @@
 #'     identifier for the function `fun` and is only used as a label in
 #'     plots. The default is just the literal that the function `fun` is
 #'     bound to.
+#' @param w An optional numeric vector of weights for the studies. Must be of 
+#'     the same length as `estimates` and `SEs`, finite, and non-negative. 
+#'     If `NULL` (the default), equal weights are assumed. Used by weighted 
+#'     p-value combination functions such as the weighted Edgington method.
 #' @param ... Additional arguments passed to `fun`. See the Details
 #'     section.
 #' @return An S3 object of class `confMeta`. The object contains the
@@ -35,6 +39,8 @@
 #'             estimates.}
 #'         \item{study_names}{The names of the individual studies.}
 #'         \item{conf_level}{The confidence level.}
+#'         \item{w}{The weights for the studies (if specified). If `NULL`, 
+#'             equal weights were assumed.}
 #'         \item{individual_cis}{The confidence intervals for the
 #'             individual effects. The exact calculation of these intervals
 #'             can be found in the Details section.}
@@ -54,8 +60,8 @@
 #'             column 'x' refers to the mean `mu` and the column 'y' contains
 #'             the corresponding $p$-value.}
 #'         \item{p_0}{The value of the $p$-value at `mu` = 0}
-#'         \item{comparison_cis}{Combined confindence intervals calculated
-#'             with other methods. These can be used to for comparison
+#'         \item{comparison_cis}{Combined confidence intervals calculated
+#'             with other methods. These can be used for comparison
 #'             purposes. Currently, these other methods are random effects
 #'             (REML), Hartung & Knapp, and Henmi & Copas.}
 #'         \item{comparison_p_0}{The same as in element 'p_0' but for the
@@ -67,9 +73,9 @@
 #'
 #'     The argument `study_names` is used to differentiate between the
 #'     different individual estimates. If the argument is set to `NULL`,
-#'     the element 'study_names' in the return object will just be the a
+#'     the element 'study_names' in the return object will just be a
 #'     character vector with elements "Study n" where n is a number from 1
-#'     to `length(elements)`. These names are only used in some of the
+#'     to `length(estimates)`. These names are only used in some of the
 #'     `autoplot` methods.
 #'
 #'     The argument `fun` must have arguments 'estimates', 'SEs',
@@ -79,21 +85,24 @@
 #'     are additional arguments passed via `...`,
 #'     `confMeta` will internally create a new
 #'     function that calls `fun` with the additional arguments fixed.
-#'     Thus, any any argument passed via `...` overwrites existing
+#'     Thus, any argument passed via `...` overwrites existing
 #'     defaults.
 #'     Since this is the p-value function that is used to calculate the
 #'     combined confidence interval(s), it should return a vector of class
 #'     'numeric' with value(s) in the interval [0, 1].
 #'
-#'     # Confidence intervals
+#'     The argument `w` allows assigning weights to the studies. If not 
+#'     specified, all studies receive equal weight (`w = rep(1, n)`). 
+#'     Weighted p-value combination functions (e.g. weighted Edgington) 
+#'     will use these values directly; other functions that do not depend 
+#'     on weights will ignore `w`.
 #'
-#'     The confidence intervals returned by `confMeta` are calculated as
-#'     follows:
+#'     # Confidence intervals
 #'
 #'     The `individual_cis` are calculated as
 #'     \deqn{x_{i} \pm \Phi^{-1}{\text{conf_level}} \cdot \sigma_{i}}
 #'     where \eqn{x_{i}} corresponds to the elements of vector
-#'     `estimates}, \eqn{\Phi^{-1}} is the quantile function of
+#'     `estimates`, \eqn{\Phi^{-1}} is the quantile function of
 #'     the standard normal distribution, conf_level is the confidence
 #'     level passed as argument `conf_level`, and
 #'     \eqn{\sigma_{i}}, are the standard errors passed in argument
@@ -102,7 +111,7 @@
 #'     The boundaries of the confidence intervals returned in element
 #'     `joint_cis` are found by searching where the function returned
 #'     in element 'p_fun' is equal to 1-`conf_level`.
-#'
+#' 
 #' @examples
 #'     # Simulate effect estimates and standard errors
 #'     set.seed(42)
@@ -143,53 +152,50 @@ confMeta <- function(
     conf_level = 0.95,
     fun,
     fun_name = NULL,
+    w = NULL,   # [MODIFICA] opzionale, può rimanere NULL
     ...
 ) {
-
-    # If study names is NULL, construct default names
-    if (is.null(study_names)) {
-        study_names <- paste0("Study ", seq_along(estimates))
-    }
-    # If the function name is not given, add a default one
-    if (is.null(fun_name)) {
-        fun_name <- deparse1(substitute(fun))
-    }
-
-    # Catch the ... arguments
-    ell <- list(...)
-    ell <- remove_unused(fun = fun, ell = ell)
-
-    # coerce inputs into correct format
-    if (inherits(estimates, "numeric")) estimates <- as.double(estimates)
-    if (inherits(SEs, "numeric")) SEs <- as.double(SEs)
-    if (inherits(conf_level, "numeric")) conf_level <- as.double(conf_level)
-    study_names <- as.character(study_names)
-
-    # run input checks
-    validate_inputs(
-        estimates = estimates,
-        SEs = SEs,
-        study_names = study_names,
-        conf_level = conf_level,
-        fun = fun,
-        fun_name = fun_name,
-        ell = ell
-    )
-
-    # Make the p-value function
-    p_fun <- make_p_fun(
-        fun = fun,
-        ell = ell
-    )
-
-    new_confMeta(
-        estimates = estimates,
-        SEs = SEs,
-        study_names = study_names,
-        conf_level = conf_level,
-        p_fun = p_fun,
-        fun_name = fun_name
-    )
+  
+  if (is.null(study_names)) {
+    study_names <- paste0("Study ", seq_along(estimates))
+  }
+  if (is.null(fun_name)) {
+    fun_name <- deparse1(substitute(fun))
+  }
+  
+  ell <- list(...)
+  ell <- remove_unused(fun = fun, ell = ell)
+  
+  if (inherits(estimates, "numeric")) estimates <- as.double(estimates)
+  if (inherits(SEs, "numeric")) SEs <- as.double(SEs)
+  if (inherits(conf_level, "numeric")) conf_level <- as.double(conf_level)
+  study_names <- as.character(study_names)
+  
+  validate_inputs(
+    estimates = estimates,
+    SEs = SEs,
+    study_names = study_names,
+    conf_level = conf_level,
+    fun = fun,
+    fun_name = fun_name,
+    ell = ell,
+    w = w #[MODIFICA]
+  )
+  
+  p_fun <- make_p_fun(
+    fun = fun,
+    ell = ell
+  )
+  
+  new_confMeta(
+    estimates = estimates,
+    SEs = SEs,
+    w = w,  # [MODIFICA] può anche essere NULL, ci penserà new_confMeta
+    study_names = study_names,
+    conf_level = conf_level,
+    p_fun = p_fun,
+    fun_name = fun_name
+  )
 }
 
 # Constructor function
