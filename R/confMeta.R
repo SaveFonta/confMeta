@@ -203,65 +203,66 @@ confMeta <- function(
 new_confMeta <- function(
     estimates = double(),
     SEs = double(),
+    w = NULL,   # [MODIFICA] 
     study_names = character(),
     conf_level = double(1L),
     p_fun,
     fun_name
 ) {
-
-    # Calculate individual CIs
-    alpha <- 1 - conf_level
-    se_term <- stats::qnorm(1 - alpha / 2) * SEs
-    individual_cis <- matrix(
-        c(
-            estimates - se_term,
-            estimates + se_term
-        ),
-        ncol = 2L,
-        dimnames = list(study_names, c("lower", "upper"))
-    )
-
-    # Calculate the joint CIs with the p-value function
-    joint_cis <- get_ci(
-        estimates = estimates,
-        SEs = SEs,
-        conf_level = conf_level,
-        p_fun = p_fun
-    )
-
-    # Calculate joint CIs with the comparison methods
-    method <- c("fe", "re", "hk", "hc")
-    comparison <- get_stats_others(
-        method = method,
-        estimates = estimates,
-        SEs = SEs,
-        conf_level = conf_level
-    )
-
-    # Calculate the AUCC (area under confidence curve)
-
-
-    # Return object
-    structure(
-        list(
-            estimates = estimates,
-            SEs = SEs,
-            study_names = study_names,
-            conf_level = conf_level,
-            p_fun = p_fun,
-            fun_name = fun_name,
-            individual_cis = individual_cis,
-            joint_cis = joint_cis$CI,
-            gamma = joint_cis$gamma,
-            p_max = joint_cis$p_max,
-            p_0 = joint_cis$p_0,
-            aucc = joint_cis$aucc,
-            aucc_ratio = joint_cis$aucc_ratio,
-            comparison_cis = comparison$CI,
-            comparison_p_0 = comparison$p_0
-        ),
-        class = "confMeta"
-    )
+  
+  
+  # Calculate individual CIs (classic Wald type)
+  alpha <- 1 - conf_level
+  se_term <- stats::qnorm(1 - alpha / 2) * SEs 
+  individual_cis <- matrix(
+    c(
+      estimates - se_term,
+      estimates + se_term
+    ), 
+    ncol = 2L,
+    dimnames = list(study_names, c("lower", "upper"))
+  )
+  
+  # Calculate the joint CIs with the p-value function
+  joint_cis <- get_ci(
+    estimates = estimates,
+    SEs = SEs,
+    w = w,  # [MODIFICA] se non è NULL, verrà usato dentro get_ci
+    conf_level = conf_level,
+    p_fun = p_fun
+  )
+  
+  # Calculate joint CIs with the comparison methods
+  method <- c("fe", "re", "hk", "hc")
+  comparison <- get_stats_others(
+    method = method,
+    estimates = estimates,
+    SEs = SEs,
+    conf_level = conf_level
+  )
+  
+  # Return object
+  structure(
+    list(
+      estimates = estimates,
+      SEs = SEs,
+      w = w,   # [MODIFICA] salvo i pesi se presenti
+      study_names = study_names,
+      conf_level = conf_level,
+      p_fun = p_fun,
+      fun_name = fun_name,
+      individual_cis = individual_cis,
+      joint_cis = joint_cis$CI,
+      gamma = joint_cis$gamma,
+      p_max = joint_cis$p_max,
+      p_0 = joint_cis$p_0,
+      aucc = joint_cis$aucc,
+      aucc_ratio = joint_cis$aucc_ratio,
+      comparison_cis = comparison$CI,
+      comparison_p_0 = comparison$p_0
+    ),
+    class = "confMeta"
+  )
 }
 
 # Input checker
