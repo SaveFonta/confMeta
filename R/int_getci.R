@@ -330,21 +330,22 @@ find_upper <- function(estimates_max, SEs_max, f) {
 # Helper function that returns a function to optimize                          #
 ################################################################################
 
+
 make_function <- function(
     estimates,
     SEs,
+    w = NULL,   # [MODIFICA], note some p_fun don't have the weight
     alpha,
     p_fun
 ) {
-
-    # Add/Overwrite estimate and se args
-    function(limit) {
-        do.call(
-            "p_fun",
-            append(
-                list(estimates = estimates, SEs = SEs),
-                alist(mu = limit)
-            )
-        ) - alpha
-    }
+  function(mu) {
+    do.call(
+      p_fun,
+      append(
+        list(estimates = estimates, SEs = SEs, w = w), # [MODIFICA]
+        alist(mu = mu)
+      )
+    ) - alpha
+  }
 }
+

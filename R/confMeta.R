@@ -311,95 +311,99 @@ validate_inputs <- function(
 
 # Validator function
 validate_confMeta <- function(confMeta) {
-
-    # All valid names
-    cm_elements <- c(
-        "estimates",
-        "SEs",
-        "study_names",
-        "conf_level",
-        "p_fun",
-        "fun_name",
-        "individual_cis",
-        "joint_cis",
-        "gamma",
-        "p_max",
-        "p_0",
-        "aucc",
-        "aucc_ratio",
-        "comparison_cis",
-        "comparison_p_0"
+  
+  # All valid names (aggiunto w)
+  cm_elements <- c(
+    "estimates",
+    "SEs",
+    "study_names",
+    "conf_level",
+    "p_fun",
+    "fun_name",
+    "individual_cis",
+    "joint_cis",
+    "gamma",
+    "p_max",
+    "p_0",
+    "aucc",
+    "aucc_ratio",
+    "comparison_cis",
+    "comparison_p_0",
+    "w"   # [MODIFICA]
+  )
+  
+  ok <- cm_elements %in% names(confMeta)
+  if (!all(ok)) {
+    miss <- cm_elements[!ok]
+    msg <- paste0(
+      "The confMeta object is missing components: ",
+      format_elements(miss)
     )
-
-    ok <- cm_elements %in% names(confMeta)
-    if (!all(ok)) {
-        miss <- cm_elements[!ok]
-        msg <- paste0(
-            "The confMeta object is missing components: ",
-            format_elements(miss)
-        )
-        stop(msg)
+    stop(msg)
+  }
+  
+  # type checks
+  with(
+    confMeta,
+    {
+      # Check types
+      check_type(x = estimates, "double", val = TRUE)
+      check_type(x = SEs, "double", val = TRUE)
+      check_type(x = study_names, "character", val = TRUE)
+      check_type(x = fun_name, "character", val = TRUE)
+      check_type(x = conf_level, "double", val = TRUE)
+      check_type(x = individual_cis, "double", val = TRUE)
+      check_type(x = joint_cis, "double", val = TRUE)
+      check_type(x = gamma, "double", val = TRUE)
+      check_type(x = p_max, "double", val = TRUE)
+      check_type(x = p_0, "double", val = TRUE)
+      check_type(x = aucc, "double", val = TRUE)
+      check_type(x = aucc_ratio, "double", val = TRUE)
+      check_type(x = comparison_cis, "double", val = TRUE)
+      check_type(x = comparison_p_0, "double", val = TRUE)
+      check_type(x = w, "double", val = TRUE)   # [MODIFICA]
+      check_is_function(x = p_fun)
+      
+      # Check classes
+      check_class(x = individual_cis, class = "matrix", val = TRUE)
+      check_class(x = joint_cis, class = "matrix", val = TRUE)
+      check_class(x = gamma, class = "matrix", val = TRUE)
+      check_class(x = p_max, class = "matrix", val = TRUE)
+      check_class(x = p_0, class = "matrix", val = TRUE)
+      check_class(x = aucc, class = "numeric", val = TRUE)
+      check_class(x = aucc_ratio, class = "numeric", val = TRUE)
+      check_class(x = comparison_cis, "matrix", val = TRUE)
+      check_class(x = comparison_p_0, "matrix", val = TRUE)
+      
+      # Check validity of values
+      check_all_finite(x = estimates, val = TRUE)
+      check_all_finite(x = SEs, val = TRUE)
+      check_all_finite(x = conf_level, val = TRUE)
+      check_all_finite(x = w, val = TRUE)         # [MODIFICA]
+      check_prob(x = conf_level, val = TRUE)
+      check_fun_args(
+        fun = p_fun,
+        ell = list(),
+        val = TRUE
+      )
+      
+      # Check lengths
+      check_equal_length(
+        estimates = estimates,
+        SEs = SEs,
+        study_names = study_names,
+        w = w   # [MODIFICA]
+      )
+      check_length_1(x = conf_level)
+      check_length_1(x = fun_name)
+      check_length_1(x = aucc)
+      check_length_1(x = aucc_ratio)
+      
+      invisible(NULL)
     }
-
-    # type checks
-    with(
-        confMeta,
-        {
-            # Check types
-            check_type(x = estimates, "double", val = TRUE)
-            check_type(x = SEs, "double", val = TRUE)
-            check_type(x = study_names, "character", val = TRUE)
-            check_type(x = fun_name, "character", val = TRUE)
-            check_type(x = conf_level, "double", val = TRUE)
-            check_type(x = individual_cis, "double", val = TRUE)
-            check_type(x = joint_cis, "double", val = TRUE)
-            check_type(x = gamma, "double", val = TRUE)
-            check_type(x = p_max, "double", val = TRUE)
-            check_type(x = p_0, "double", val = TRUE)
-            check_type(x = aucc, "double", val = TRUE)
-            check_type(x = aucc_ratio, "double", val = TRUE)
-            check_type(x = comparison_cis, "double", val = TRUE)
-            check_type(x = comparison_p_0, "double", val = TRUE)
-            check_is_function(x = p_fun)
-
-            # Check classes
-            check_class(x = individual_cis, class = "matrix", val = TRUE)
-            check_class(x = joint_cis, class = "matrix", val = TRUE)
-            check_class(x = gamma, class = "matrix", val = TRUE)
-            check_class(x = p_max, class = "matrix", val = TRUE)
-            check_class(x = p_0, class = "matrix", val = TRUE)
-            check_class(x = aucc, class = "numeric", val = TRUE)
-            check_class(x = aucc_ratio, class = "numeric", val = TRUE)
-            check_class(x = comparison_cis, "matrix", val = TRUE)
-            check_class(x = comparison_p_0, "matrix", val = TRUE)
-
-            # Check validity of values
-            check_all_finite(x = estimates, val = TRUE)
-            check_all_finite(x = SEs, val = TRUE)
-            check_all_finite(x = conf_level, val = TRUE)
-            check_prob(x = conf_level, val = TRUE)
-            check_fun_args(
-                fun = p_fun,
-                ell = list(),
-                val = TRUE
-            )
-
-            # Check lengths
-            check_equal_length(
-                estimates = estimates,
-                SEs = SEs,
-                study_names = study_names
-            )
-            check_length_1(x = conf_level)
-            check_length_1(x = fun_name)
-            check_length_1(x = aucc)
-            check_length_1(x = aucc_ratio)
-
-            invisible(NULL)
-        }
-    )
-
-    invisible(NULL)
+  )
+  
+  invisible(NULL)
 }
 
 # ==============================================================================
