@@ -287,13 +287,21 @@ validate_inputs <- function(
   check_is_function(x = fun)
   if (!is.null(w)) check_type(x = w, "double") # [MODIFICA]
   
-  # Check lengths
-  check_equal_length(                    # estimates, SEs, study_names should
-    estimates = estimates,             # have same length
-    SEs = SEs,
-    study_names = study_names,
-    w = w              #[MODIFICA] check same length
-  )
+  #[MODIFICA]
+  if (is.null(w)) {
+    check_equal_length(             # estimates, SEs, study_names should
+      estimates = estimates,        # have same length
+      SEs = SEs,
+      study_names = study_names
+    )
+  } else {         
+    check_equal_length(
+      estimates = estimates,
+      SEs = SEs,
+      study_names = study_names,
+      w = w
+    )
+  }
   check_length_1(x = conf_level)         # conf_level must be of length 1
   check_length_1(x = fun_name)           # fun_name must be of length 1
   
@@ -361,7 +369,7 @@ validate_confMeta <- function(confMeta) {
       check_type(x = aucc_ratio, "double", val = TRUE)
       check_type(x = comparison_cis, "double", val = TRUE)
       check_type(x = comparison_p_0, "double", val = TRUE)
-      check_type(x = w, "double", val = TRUE)   # [MODIFICA]
+      if (!is.null(w)) check_type(x = w, "double", val = TRUE)   # [MODIFICA]
       check_is_function(x = p_fun)
       
       # Check classes
@@ -379,7 +387,7 @@ validate_confMeta <- function(confMeta) {
       check_all_finite(x = estimates, val = TRUE)
       check_all_finite(x = SEs, val = TRUE)
       check_all_finite(x = conf_level, val = TRUE)
-      check_all_finite(x = w, val = TRUE)         # [MODIFICA]
+      if (!is.null(w)) check_all_finite(x = w, val = TRUE)         # [MODIFICA]
       check_prob(x = conf_level, val = TRUE)
       check_fun_args(
         fun = p_fun,
@@ -388,12 +396,20 @@ validate_confMeta <- function(confMeta) {
       )
       
       # Check lengths
-      check_equal_length(
-        estimates = estimates,
-        SEs = SEs,
-        study_names = study_names,
-        w = w   # [MODIFICA]
-      )
+      if (is.null(w)) { #[MODIFICA]
+        check_equal_length(
+          estimates = estimates,
+          SEs = SEs,
+          study_names = study_names
+        )
+      } else {
+        check_equal_length(
+          estimates = estimates,
+          SEs = SEs,
+          study_names = study_names,
+          w = w
+        )
+      }
       check_length_1(x = conf_level)
       check_length_1(x = fun_name)
       check_length_1(x = aucc)

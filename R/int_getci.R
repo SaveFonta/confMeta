@@ -339,13 +339,10 @@ make_function <- function(
     p_fun
 ) {
   function(mu) {
-    do.call(
-      p_fun,
-      append(
-        list(estimates = estimates, SEs = SEs, w = w), # [MODIFICA]
-        alist(mu = mu)
-      )
-    ) - alpha
+    args <- list(estimates = estimates, SEs = SEs, mu = mu)
+    if (!is.null(w)) args$w <- w
+    do.call(p_fun, args) - alpha
+
   }
 }
 
