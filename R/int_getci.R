@@ -73,7 +73,7 @@ get_ci <- function(
       p_fun,
       estimates = orig_est,
       SEs = orig_se,
-      w = orig_w,   # [MODIFICA]
+      #w = orig_w,   # [MODIFICA]
       lower = -Inf,
       upper = p_max[, "x"],
       subdivisions = 1000L
@@ -83,7 +83,7 @@ get_ci <- function(
       p_fun,
       estimates = orig_est,
       SEs = orig_se,
-      w = orig_w,   # [MODIFICA]
+      #w = orig_w,   # [MODIFICA]
       lower = p_max[, "x"],
       upper = Inf,
       subdivisions = 1000L

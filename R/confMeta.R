@@ -163,6 +163,12 @@ confMeta <- function(
     fun_name <- deparse1(substitute(fun))
   }
   
+  #[MODIFICA] --> It's an homemade check to block Confmeta if we are using weights and 
+  #we are using a p_fun that doesnt support them. Maybe think of a better one next
+  if (!is.null(w) && substitute(fun) != "p_edgington_w2") {
+    stop("Argument `w` can only be used with `p_edgington_w2`.", call. = FALSE)
+  }
+  
   ell <- list(...)
   ell <- remove_unused(fun = fun, ell = ell)
   
