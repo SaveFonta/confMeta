@@ -273,37 +273,40 @@ validate_inputs <- function(
     conf_level,
     fun,
     fun_name,
-    ell
+    ell,
+    w = NULL
 ) {
-
-    # Check inputs
-
-    # type checks
-    check_type(x = estimates, "double")
-    check_type(x = SEs, "double")
-    check_type(x = study_names, "character")
-    check_type(x = fun_name, "character")
-    check_type(x = conf_level, "double")
-    check_is_function(x = fun)
-
-    # Check lengths
-    check_equal_length(                    # estimates, SEs, study_names should
-        estimates = estimates,             # have same length
-        SEs = SEs,
-        study_names = study_names
-    )
-    check_length_1(x = conf_level)         # conf_level must be of length 1
-    check_length_1(x = fun_name)           # fun_name must be of length 1
-
-    # Check validity of values
-    check_all_finite(x = estimates)        # no NAs, NaNs etc in estimates
-    check_all_finite(x = SEs)              # no NAs, NaNs etc in SEs
-    check_all_finite(x = conf_level)       # no NAs, NaNs etc in conf_level
-    check_prob(x = conf_level)             # conf_level must be between 0 & 1
-    check_fun_args(fun = fun, ell = ell)   # function must have correct args
-
-    # Check the function and its arguments
-    invisible(NULL)
+  # Check inputs
+  
+  # type checks
+  check_type(x = estimates, "double")
+  check_type(x = SEs, "double")
+  check_type(x = study_names, "character")
+  check_type(x = fun_name, "character")
+  check_type(x = conf_level, "double")
+  check_is_function(x = fun)
+  if (!is.null(w)) check_type(x = w, "double") # [MODIFICA]
+  
+  # Check lengths
+  check_equal_length(                    # estimates, SEs, study_names should
+    estimates = estimates,             # have same length
+    SEs = SEs,
+    study_names = study_names,
+    w = w              #[MODIFICA] check same length
+  )
+  check_length_1(x = conf_level)         # conf_level must be of length 1
+  check_length_1(x = fun_name)           # fun_name must be of length 1
+  
+  # Check validity of values
+  check_all_finite(x = estimates)        # no NAs, NaNs etc in estimates
+  check_all_finite(x = SEs)              # no NAs, NaNs etc in SEs
+  check_all_finite(x = conf_level)       # no NAs, NaNs etc in conf_level
+  if (!is.null(w)) check_all_finite(x = w) #[MODIFICA]
+  check_prob(x = conf_level)             # conf_level must be between 0 & 1
+  check_fun_args(fun = fun, ell = ell)   # function must have correct args
+  
+  # Check the function and its arguments
+  invisible(NULL)
 }
 
 # Validator function
