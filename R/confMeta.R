@@ -276,18 +276,6 @@ validate_inputs <- function(
     ell,
     w = NULL
 ) {
-  # Check inputs
-  
-  # type checks
-  check_type(x = estimates, "double")
-  check_type(x = SEs, "double")
-  check_type(x = study_names, "character")
-  check_type(x = fun_name, "character")
-  check_type(x = conf_level, "double")
-  check_is_function(x = fun)
-  if (!is.null(w)) check_type(x = w, "double") # [MOD]
-  
-  #[MOD] length checks
   if (is.null(w)) {
     check_equal_length(             # estimates, SEs, study_names should
       estimates = estimates,        # have same length
@@ -314,7 +302,8 @@ validate_inputs <- function(
     if (any(w < 0)) {
       stop("Weights (w) must be non-negative.") #[MOD] 
     }
-  }  check_prob(x = conf_level)             # conf_level must be between 0 & 1
+  }  
+  check_prob(x = conf_level)             # conf_level must be between 0 & 1
   check_fun_args(fun = fun, ell = ell)   # function must have correct args
   
   # Check the function and its arguments

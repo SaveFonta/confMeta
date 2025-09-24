@@ -68,26 +68,51 @@ get_ci <- function(
     aucc <- NA_real_
     aucc_ratio <- NA_real_
   } else {
-    a <- integrate_f(
-      max_iter = 7,
-      p_fun,
-      estimates = orig_est,
-      SEs = orig_se,
-      #w = orig_w,   # [MOD]
-      lower = -Inf,
-      upper = p_max[, "x"],
-      subdivisions = 1000L
-    )$value
-    b <- integrate_f(
-      max_iter = 7,
-      p_fun,
-      estimates = orig_est,
-      SEs = orig_se,
-      #w = orig_w,   # [MOD]
-      lower = p_max[, "x"],
-      upper = Inf,
-      subdivisions = 1000L
-    )$value
+    #I know it's a bit of a trivial way to pass the weight argument for the integration but I don't 
+    #know how to do it in another way, this is also the most intuitive I guess 
+    if (is.null(orig_w)) { 
+      #  unweighted case (w is not provided)
+      a <- integrate_f(
+        max_iter = 7,
+        p_fun,
+        estimates = orig_est,
+        SEs = orig_se,
+        lower = -Inf,
+        upper = p_max[, "x"],
+        subdivisions = 1000L
+      )$value
+      b <- integrate_f(
+        max_iter = 7,
+        p_fun,
+        estimates = orig_est,
+        SEs = orig_se,
+        lower = p_max[, "x"],
+        upper = Inf,
+        subdivisions = 1000L
+      )$value
+    } else {
+      # weighted case (w provided)
+      a <- integrate_f(
+        max_iter = 7,
+        p_fun,
+        estimates = orig_est,
+        SEs = orig_se,
+        w = orig_w,
+        lower = -Inf,
+        upper = p_max[, "x"],
+        subdivisions = 1000L
+      )$value
+      b <- integrate_f(
+        max_iter = 7,
+        p_fun,
+        estimates = orig_est,
+        SEs = orig_se,
+        w = orig_w,
+        lower = p_max[, "x"],
+        upper = Inf,
+        subdivisions = 1000L
+      )$value
+    }
     aucc <- a + b
     aucc_ratio <- if (a == 0) {
       1
@@ -96,9 +121,10 @@ get_ci <- function(
     } else if (a == b) {
       0
     } else {
-      (b - a) / (aucc)
+      (b - a) / aucc
     }
   }
+  
   
   if (all(f_estimates <= 0)) {
     # No CI exists
