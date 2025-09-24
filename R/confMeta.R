@@ -441,7 +441,7 @@ get_obj_fe <- function(estimates, SEs, conf_level) {
 get_obj_hk <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "REML", hakn = TRUE,
+        level = conf_level, method.tau = "REML", method.random.ci = "HK",  #[MOD]--> hakn = TRUE is deprecated
         common = FALSE, random = TRUE
     )
 }
