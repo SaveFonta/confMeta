@@ -359,12 +359,24 @@ ggPvalueFunction <- function(
         fun <- cm$p_fun
         fun_name <- cm$fun_name
         alpha <- 1 - const$conf_level
-
-        pval <- fun(
+#[MODIFICA]
+        args_fun <- names(formals(fun))
+        
+        if ("w" %in% args_fun) {
+          pval <- fun(
+            estimates = const$estimates,
+            SEs = const$SEs,
+            mu = const$muSeq,
+            w = cm$w
+          )
+        } else {
+          pval <- fun(
             estimates = const$estimates,
             SEs = const$SEs,
             mu = const$muSeq
-        )
+          )
+        }
+        
         CIs <- cm$joint_ci
         y0 <- cm$p_0[, 2L]
 
