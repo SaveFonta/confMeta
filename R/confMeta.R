@@ -152,7 +152,7 @@ confMeta <- function(
     conf_level = 0.95,
     fun,
     fun_name = NULL,
-    w = NULL,   # [MODIFICA] opzionale, può rimanere NULL
+    w = NULL,   # [MOD] opzionale, può rimanere NULL
     ...
 ) {
   
@@ -161,12 +161,6 @@ confMeta <- function(
   }
   if (is.null(fun_name)) {
     fun_name <- deparse1(substitute(fun))
-  }
-  
-  #[MODIFICA] --> It's an homemade check to block Confmeta if we are using weights and 
-  #we are using a p_fun that doesnt support them. Maybe think of a better one next
-  if (!is.null(w) && substitute(fun) != "p_edgington_w2") {
-    stop("Argument `w` can only be used with `p_edgington_w2`.", call. = FALSE)
   }
   
   ell <- list(...)
@@ -185,7 +179,7 @@ confMeta <- function(
     fun = fun,
     fun_name = fun_name,
     ell = ell,
-    w = w #[MODIFICA]
+    w = w #[MOD]
   )
   
   p_fun <- make_p_fun(
@@ -196,7 +190,7 @@ confMeta <- function(
   new_confMeta(
     estimates = estimates,
     SEs = SEs,
-    w = w,  # [MODIFICA] può anche essere NULL, ci penserà new_confMeta
+    w = w,  # [MOD] può anche essere NULL, ci penserà new_confMeta
     study_names = study_names,
     conf_level = conf_level,
     p_fun = p_fun,
@@ -209,7 +203,7 @@ confMeta <- function(
 new_confMeta <- function(
     estimates = double(),
     SEs = double(),
-    w = NULL,   # [MODIFICA] 
+    w = NULL,   # [MOD] 
     study_names = character(),
     conf_level = double(1L),
     p_fun,
@@ -233,7 +227,7 @@ new_confMeta <- function(
   joint_cis <- get_ci(
     estimates = estimates,
     SEs = SEs,
-    w = w,  # [MODIFICA] se non è NULL, verrà usato dentro get_ci
+    w = w,  # [MOD] se non è NULL, verrà usato dentro get_ci
     conf_level = conf_level,
     p_fun = p_fun
   )
@@ -252,7 +246,7 @@ new_confMeta <- function(
     list(
       estimates = estimates,
       SEs = SEs,
-      w = w,   # [MODIFICA] salvo i pesi se presenti
+      w = w,   # [MOD] salvo i pesi se presenti
       study_names = study_names,
       conf_level = conf_level,
       p_fun = p_fun,
@@ -291,9 +285,9 @@ validate_inputs <- function(
   check_type(x = fun_name, "character")
   check_type(x = conf_level, "double")
   check_is_function(x = fun)
-  if (!is.null(w)) check_type(x = w, "double") # [MODIFICA]
+  if (!is.null(w)) check_type(x = w, "double") # [MOD]
   
-  #[MODIFICA]
+  #[MOD] length checks
   if (is.null(w)) {
     check_equal_length(             # estimates, SEs, study_names should
       estimates = estimates,        # have same length
@@ -315,8 +309,12 @@ validate_inputs <- function(
   check_all_finite(x = estimates)        # no NAs, NaNs etc in estimates
   check_all_finite(x = SEs)              # no NAs, NaNs etc in SEs
   check_all_finite(x = conf_level)       # no NAs, NaNs etc in conf_level
-  if (!is.null(w)) check_all_finite(x = w) #[MODIFICA]
-  check_prob(x = conf_level)             # conf_level must be between 0 & 1
+  if (!is.null(w)) {
+    check_all_finite(x = w)             
+    if (any(w < 0)) {
+      stop("Weights (w) must be non-negative.") #[MOD] 
+    }
+  }  check_prob(x = conf_level)             # conf_level must be between 0 & 1
   check_fun_args(fun = fun, ell = ell)   # function must have correct args
   
   # Check the function and its arguments
@@ -343,7 +341,7 @@ validate_confMeta <- function(confMeta) {
     "aucc_ratio",
     "comparison_cis",
     "comparison_p_0",
-    "w"   # [MODIFICA]
+    "w"   # [MOD]
   )
   
   ok <- cm_elements %in% names(confMeta)
@@ -375,7 +373,7 @@ validate_confMeta <- function(confMeta) {
       check_type(x = aucc_ratio, "double", val = TRUE)
       check_type(x = comparison_cis, "double", val = TRUE)
       check_type(x = comparison_p_0, "double", val = TRUE)
-      if (!is.null(w)) check_type(x = w, "double", val = TRUE)   # [MODIFICA]
+      if (!is.null(w)) check_type(x = w, "double", val = TRUE)   # [MOD]
       check_is_function(x = p_fun)
       
       # Check classes
@@ -393,7 +391,7 @@ validate_confMeta <- function(confMeta) {
       check_all_finite(x = estimates, val = TRUE)
       check_all_finite(x = SEs, val = TRUE)
       check_all_finite(x = conf_level, val = TRUE)
-      if (!is.null(w)) check_all_finite(x = w, val = TRUE)         # [MODIFICA]
+      if (!is.null(w)) check_all_finite(x = w, val = TRUE)         # [MOD]
       check_prob(x = conf_level, val = TRUE)
       check_fun_args(
         fun = p_fun,
@@ -402,7 +400,7 @@ validate_confMeta <- function(confMeta) {
       )
       
       # Check lengths
-      if (is.null(w)) { #[MODIFICA]
+      if (is.null(w)) { #[MOD]
         check_equal_length(
           estimates = estimates,
           SEs = SEs,

@@ -1,7 +1,7 @@
 get_ci <- function(
     estimates,
     SEs,
-    w = NULL,   # [MODIFICA] nuovo argomento per i pesi
+    w = NULL,   # [MOD] 
     conf_level,
     p_fun
 ) {
@@ -9,14 +9,14 @@ get_ci <- function(
   # Keep a copy of estimates and SEs for later (AUCC calculation)
   orig_est <- estimates
   orig_se <- SEs
-  orig_w   <- w              # [MODIFICA]<-- aggiungi questa
+  orig_w   <- w              # [MOD]
   
   # f(mu) = p(mu) - alpha
   alpha <- 1 - conf_level
   f <- make_function(
     estimates = estimates,
     SEs = SEs,
-    w = w,   # [MODIFICA] passo i pesi
+    w = w,   # [MOD] 
     alpha = alpha,
     p_fun = p_fun
   )
@@ -25,12 +25,12 @@ get_ci <- function(
   keep <- !duplicated(estimates)
   estimates <- estimates[keep]
   SEs <- SEs[keep]
-  if (!is.null(w)) w <- w[keep]   # [MODIFICA]
+  if (!is.null(w)) w <- w[keep]   # [MOD]
   
   o <- order(estimates, decreasing = FALSE)
   estimates <- estimates[o]
   SEs <- SEs[o]
-  if (!is.null(w)) w <- w[o]      # [MODIFICA]
+  if (!is.null(w)) w <- w[o]      # [MOD]
   
   # Check if CI exists
   estimates <- matrix(
@@ -73,7 +73,7 @@ get_ci <- function(
       p_fun,
       estimates = orig_est,
       SEs = orig_se,
-      #w = orig_w,   # [MODIFICA]
+      #w = orig_w,   # [MOD]
       lower = -Inf,
       upper = p_max[, "x"],
       subdivisions = 1000L
@@ -83,7 +83,7 @@ get_ci <- function(
       p_fun,
       estimates = orig_est,
       SEs = orig_se,
-      #w = orig_w,   # [MODIFICA]
+      #w = orig_w,   # [MOD]
       lower = p_max[, "x"],
       upper = Inf,
       subdivisions = 1000L
@@ -334,7 +334,7 @@ find_upper <- function(estimates_max, SEs_max, f) {
 make_function <- function(
     estimates,
     SEs,
-    w = NULL,   # [MODIFICA], note some p_fun don't have the weight
+    w = NULL,   # [MOD], note some p_fun don't have the weight
     alpha,
     p_fun
 ) {
