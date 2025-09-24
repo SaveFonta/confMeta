@@ -68,7 +68,7 @@ get_ci <- function(
     aucc <- NA_real_
     aucc_ratio <- NA_real_
   } else {
-    #I know it's a bit of a trivial way to pass the weight argument for the integration but I don't 
+    #I know it's a bit of a dumb way to pass the weight argument for the integration but I don't 
     #know how to do it in another way, this is also the most intuitive I guess 
     if (is.null(orig_w)) { 
       #  unweighted case (w is not provided)

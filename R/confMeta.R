@@ -152,7 +152,7 @@ confMeta <- function(
     conf_level = 0.95,
     fun,
     fun_name = NULL,
-    w = NULL,   # [MOD] opzionale, può rimanere NULL
+    w = NULL,   # [MOD] 
     ...
 ) {
   
@@ -190,7 +190,7 @@ confMeta <- function(
   new_confMeta(
     estimates = estimates,
     SEs = SEs,
-    w = w,  # [MOD] può anche essere NULL, ci penserà new_confMeta
+    w = w,  # [MOD] can be NULL, new_confMeta will take care
     study_names = study_names,
     conf_level = conf_level,
     p_fun = p_fun,
@@ -227,7 +227,7 @@ new_confMeta <- function(
   joint_cis <- get_ci(
     estimates = estimates,
     SEs = SEs,
-    w = w,  # [MOD] se non è NULL, verrà usato dentro get_ci
+    w = w,  # [MOD] if not null, will be used
     conf_level = conf_level,
     p_fun = p_fun
   )
@@ -246,7 +246,7 @@ new_confMeta <- function(
     list(
       estimates = estimates,
       SEs = SEs,
-      w = w,   # [MOD] salvo i pesi se presenti
+      w = w,   # [MOD] 
       study_names = study_names,
       conf_level = conf_level,
       p_fun = p_fun,
@@ -441,7 +441,7 @@ get_obj_fe <- function(estimates, SEs, conf_level) {
 get_obj_hk <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "REML", method.random.ci = "HK",  #[MOD]--> hakn = TRUE is deprecated
+        level = conf_level, method.tau = "REML", method.random.ci = "HK",  #[MOD]--> "hakn = TRUE" is deprecated
         common = FALSE, random = TRUE
     )
 }
