@@ -134,3 +134,46 @@ test_that("Weighted with weights=1 vs unweighted", {
     expect_equal(obj_unw[[nm]], obj_w1[[nm]])
   }
 })
+
+
+
+
+
+
+
+#######################
+
+
+test_that("The order doesnt change the output", {
+  est <- c(-0.5, -0.1, 0.2)
+  se  <- c(0.2, 0.25, 0.3)
+  w   <- c(2, 1, 3)
+  
+  obj1 <- confMeta(
+    estimates = est,
+    SEs = se,
+    w = w,
+    conf_level = 0.95,
+    fun = p_edgington_w2
+  )
+  
+  o <- c(3,1,2)  # reorder in a different way
+  obj2 <- confMeta(
+    estimates = est[o],
+    SEs = se[o],
+    w = w[o],
+    conf_level = 0.95,
+    fun = p_edgington_w2
+  )
+  
+  #expect equal
+  expect_equal(obj1$joint_cis,     obj2$joint_cis)
+  expect_equal(obj1$gamma,         obj2$gamma)
+  expect_equal(obj1$p_max,         obj2$p_max)
+  expect_equal(obj1$p_0,           obj2$p_0)
+  expect_equal(obj1$aucc,          obj2$aucc)
+  expect_equal(obj1$aucc_ratio,    obj2$aucc_ratio)
+  expect_equal(obj1$comparison_cis,obj2$comparison_cis)
+  expect_equal(obj1$comparison_p_0,obj2$comparison_p_0)
+
+})
