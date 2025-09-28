@@ -56,3 +56,81 @@ test_that("weights argument is validated correctly", {
   expect_s3_class(eval(cl1), "confMeta")
 })
 
+
+
+
+
+################################################################################
+test_that("Weighted vs unweighted", {
+  est <- c(-0.5, -0.1, 0.2)
+  se  <- c(0.2, 0.25, 0.3)
+  w   <- c(2, 1, 1)
+  
+  obj_unw <- confMeta(
+    estimates = est,
+    SEs = se,
+    conf_level = 0.95,
+    fun = p_edgington_w2,
+    fun_name = "Edgington unweighted"
+  )
+  
+  obj_w <- confMeta(
+    estimates = est,
+    SEs = se,
+    conf_level = 0.95,
+    fun = p_edgington_w2,
+    fun_name = "Edgington weighted",
+    w = w
+  )
+  
+  # what MUST not change
+  expect_equal(obj_unw$estimates,       obj_w$estimates)
+  expect_equal(obj_unw$SEs,             obj_w$SEs)
+  expect_equal(obj_unw$study_names,     obj_w$study_names)
+  expect_equal(obj_unw$conf_level,      obj_w$conf_level)
+  expect_equal(obj_unw$individual_cis,  obj_w$individual_cis)
+  expect_equal(obj_unw$comparison_cis,  obj_w$comparison_cis)
+  expect_equal(obj_unw$comparison_p_0,  obj_w$comparison_p_0)
+  
+  # what MUST change
+  expect_false(isTRUE(all.equal(obj_unw$w,          obj_w$w)))
+  expect_false(isTRUE(all.equal(obj_unw$joint_cis,  obj_w$joint_cis)))
+  expect_false(isTRUE(all.equal(obj_unw$gamma,      obj_w$gamma)))
+  expect_false(isTRUE(all.equal(obj_unw$p_max,      obj_w$p_max)))
+  expect_false(isTRUE(all.equal(obj_unw$p_0,        obj_w$p_0)))
+  expect_false(isTRUE(all.equal(obj_unw$aucc,       obj_w$aucc)))
+  expect_false(isTRUE(all.equal(obj_unw$aucc_ratio, obj_w$aucc_ratio)))
+})
+
+
+##################################################################à
+test_that("Weighted with weights=1 vs unweighted", {
+  est <- c(-0.5, -0.1, 0.2)
+  se  <- c(0.2, 0.25, 0.3)
+  w1  <- rep(1, length(est))
+  
+  obj_unw <- confMeta(
+    estimates = est,
+    SEs = se,
+    conf_level = 0.95,
+    fun = p_edgington_w2,
+    fun_name = "Edgington unweighted"
+  )
+  
+  obj_w1 <- confMeta(
+    estimates = est,
+    SEs = se,
+    conf_level = 0.95,
+    fun = p_edgington_w2,
+    fun_name = "Edgington weighted (all ones)",
+    w = w1
+  )
+  
+  # What changes
+  ignore <- c("w", "fun_name")
+  
+  #The rest MUST be the same
+  for (nm in setdiff(names(obj_unw), ignore)) {
+    expect_equal(obj_unw[[nm]], obj_w1[[nm]])
+  }
+})
