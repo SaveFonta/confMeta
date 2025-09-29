@@ -12,6 +12,9 @@ get_ci <- function(
   orig_w   <- w              # [MOD]
   
   # f(mu) = p(mu) - alpha
+  # Get the function we need to optimise
+  # This is calls the p-value function with specified
+  # args and subtracts alpha
   alpha <- 1 - conf_level
   f <- make_function(
     estimates = estimates,
@@ -21,7 +24,7 @@ get_ci <- function(
     p_fun = p_fun
   )
   
-  # remove duplicates and sort estimates, SEs, and w
+  # remove duplicates and sort estimates, SEs, and w (!!!)
   keep <- !duplicated(estimates)
   estimates <- estimates[keep]
   SEs <- SEs[keep]
@@ -32,22 +35,37 @@ get_ci <- function(
   SEs <- SEs[o]
   if (!is.null(w)) w <- w[o]      # [MOD]
   
-  # Check if CI exists
+  # Check if CI exists: This is the case if
+  # the function f(estimates) returns at least one
+  # positive value or we can find a local maximum x
+  # between the estimates where f(x) > 0.
+  # Also, keep track of the status:
+  # - 0 = estimate
+  # - 1 = maximum
+  # - 2 = minimum
   estimates <- matrix(
     c(estimates, f(estimates), rep(0, length(estimates))),
     ncol = 3L,
     dimnames = list(NULL, c("x", "y", "status"))
   )
   
+  ## search for local maxima in between estimates
   maxima <- find_optima(estimates = estimates[, 1L], f = f, maximum = TRUE)
+  
+  ## Find out which of these maxima is relevant, i.e. it has a higher p-value
+  ## than both, the next smaller and the next larger estimate
   isRelevant_max <- is_relevant(
     f_estimates = estimates[, 2L],
     f_extremum = maxima[, 2L],
     maximum = TRUE
   )
   
+  ## For searching CIs: Add the relevant maxima to the estimates
+  ## Here, we only care about the maxima since they might be > 0
+  ## even though none of the estimates are
   if (any(isRelevant_max)) {
     estimates <- rbind(estimates, maxima[isRelevant_max, ])
+    ## Sort this by the x-coordinate
     o <- order(estimates[, 1L], decreasing = FALSE)
     estimates <- estimates[o, ]
   }
@@ -62,7 +80,15 @@ get_ci <- function(
     dimnames = list(NULL, c("x", "y"))
   )
   
-  # Calculate AUCC and ratio
+  # Calculate the AUCC and the ratio
+  
+  #IDEA:
+  #integrate the function p_fun(mu) on the Real line.
+  #   - 'a' = integral from -∞ to x_max (point where p_fun has the max)
+  #   - 'b' = integral from x_max to +∞
+  # total AUCC is a+b.
+  # The "ratio" compares how much weight right vs left of the max
+  
   if (nrow(p_max) > 1L) {
     warning("More than one maximum of the p-value function found. The AUCC ratio is thus undefined.")
     aucc <- NA_real_
@@ -71,7 +97,7 @@ get_ci <- function(
     #I know it's a bit of a dumb way to pass the weight argument for the integration but I don't 
     #know how to do it in another way, this is also the most intuitive I guess 
     if (is.null(orig_w)) { 
-      #  unweighted case (w is not provided)
+      #  --> unweighted case (w is not provided)
       a <- integrate_f(
         max_iter = 7,
         p_fun,
@@ -91,7 +117,7 @@ get_ci <- function(
         subdivisions = 1000L
       )$value
     } else {
-      # weighted case (w provided)
+      # --> weighted case (w provided)
       a <- integrate_f(
         max_iter = 7,
         p_fun,
@@ -113,11 +139,13 @@ get_ci <- function(
         subdivisions = 1000L
       )$value
     }
+    
+    #TOTAL AUCC
     aucc <- a + b
     aucc_ratio <- if (a == 0) {
-      1
+      1 #all the area is on the right of the max
     } else if (b == 0) {
-      -1
+      -1 #all the area on the left of max
     } else if (a == b) {
       0
     } else {
@@ -127,10 +155,13 @@ get_ci <- function(
   
   
   if (all(f_estimates <= 0)) {
-    # No CI exists
-    out <- list(
-      CI = matrix(rep(NA_real_, 2L), ncol = 2L),
-      gamma = matrix(rep(NA_real_, 2L), ncol = 2L),
+    # No CI exists  
+    #f(mu) = p(mu) - alpha always <= 0
+    #  p-funct never above 5%
+    
+    out <- list(  #give an output anyway
+      CI = matrix(rep(NA_real_, 2L), ncol = 2L), #put NA
+      gamma = matrix(rep(NA_real_, 2L), ncol = 2L), #put NA
       p_max = p_max,
       p_0 = matrix(
         c(0, f(0) + alpha),
@@ -139,18 +170,30 @@ get_ci <- function(
       ),
       aucc = aucc,
       aucc_ratio = aucc_ratio
+      # forest_plot_thetahat = thetahat[idx],
+      # forest_plot_f_thetahat = f_thetahat[idx] + alpha
     )
     colnames(out$CI) <- c("lower", "upper")
     colnames(out$gamma) <- c("x", "y")
   } else {
-    # CI exists
-    estimates_pos <- which(f_estimates > 0)
-    idx_min <- min(estimates_pos)
-    idx_max <- max(estimates_pos)
-    estimates_min <- estimates[idx_min]
-    estimates_max <- estimates[idx_max]
-    step <- max(SEs)
+    # If the CI does exist:
+    # 1. Determine the smallest and largest estimate where f(estimate) > 0
+    # 2. Find the lower and upper bounds based on these estimates
+    # 3. Corners/Cusps are always at estimates. Thus, we search between
+    #    the lower bound, estimate_min, all the estimates in between and
+    #    finally estimate_max and the upper bound, this is implemented in
+    #    the function get_CI
     
+    
+    # 1.
+    estimates_pos <- which(f_estimates > 0)
+    idx_min <- min(estimates_pos) #get the index 
+    idx_max <- max(estimates_pos)
+    estimates_min <- estimates[idx_min] #get the estimate
+    estimates_max <- estimates[idx_max]
+    step <- max(SEs) #searching step
+    
+    # 2.
     lower <- find_lower(
       f = f,
       estimates_min = estimates_min,
@@ -162,10 +205,17 @@ get_ci <- function(
       SEs_max = step
     )
     
+    # 3.
+    ## Get the estimates we need to examine. These are all in
+    ## between estimates_min and estimates_max.
     estimates <- estimates[idx_min:idx_max]
     f_estimates <- f_estimates[idx_min:idx_max]
+    
+    ## Get the number of intervals between these estimates
     n_intervals <- length(estimates) - 1L
     
+    ## For the intervals in the middle, compute the minimum and the
+    ## corresponding p-value
     if (n_intervals == 0) {
       gam <- matrix(NA_real_, ncol = 2L, nrow = 1L)
     } else {
@@ -186,11 +236,29 @@ get_ci <- function(
     }
     colnames(gam) <- c("x", "y")
     
+    # Whereever the p-value function is negative at the minimum,
+    # search for the two roots. Also add the lower and upper bound
+    # If there is no minimum (i.e. only one estimate is positive),
+    # then, we can also just use lower & upper for the CI
     minima <- gam[, 2L]
+    # only search roots if there is more than one positive f(estimate)
+    # and there is at least one negative minimum
     one_pos_theta_only <- length(minima) == 1L && is.na(minima)
     exist_neg_minima <- any(minima < 0)
     search_roots <- !one_pos_theta_only && exist_neg_minima
     if (search_roots) {
+      # Now that we know all the minima between the smallest and largest
+      # positive estimate, we need to apply an algorithm to find the
+      # roots. These exist if the minimum between two estimates i
+      # and j is negative and both f(estimate[i]) and f(estimate[j])
+      # are positive.
+      
+      # In order to find the correct intervals to search, we first
+      # need to find all negative minima and then for each of them
+      # the closest smaller estimate where f_estimate > 0 and the
+      # closest larger estimate where f_estimate > 0. This is
+      # is implemented in the functions get_search_interval and
+      # find_closest_thetas
       intervals <- get_search_interval(
         x_max = estimates,
         y_max = f_estimates,
@@ -220,10 +288,17 @@ get_ci <- function(
     }
     colnames(CI) <- c("lower", "upper")
     
+    # Increase the y-coordinate of the minima by alpha
+    # -> the if clause is only there because the object `gam`
+    # does not exist if the p-value function is positive for
+    # only one estimate/maximum
     if (!one_pos_theta_only) {
       gam[, 2L] <- gam[, 2L] + alpha
     }
     
+    
+    # return
+    # Calculate p_max
     out <- list(
       CI = CI,
       gamma = gam,
@@ -235,6 +310,10 @@ get_ci <- function(
       ),
       aucc = aucc,
       aucc_ratio = aucc_ratio
+      # gammaMean = mean(gam[, 2L]),
+      # gammaHMean = nrow(gam) / sum(nrow(gam) / gam[, 2L]),
+      # forest_plot_estimates = estimates,
+      # forest_plot_f_estimates = f_estimates + alpha
     )
   }
   out

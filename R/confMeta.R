@@ -156,21 +156,29 @@ confMeta <- function(
     ...
 ) {
   
+  # If study names is NULL, construct default names
   if (is.null(study_names)) {
     study_names <- paste0("Study ", seq_along(estimates))
   }
+  # If the function name is not given, add a default one
   if (is.null(fun_name)) {
     fun_name <- deparse1(substitute(fun))
   }
   
+  # Catch the ... arguments
   ell <- list(...)
   ell <- remove_unused(fun = fun, ell = ell)
   
+  
+  # coerce inputs into correct format
   if (inherits(estimates, "numeric")) estimates <- as.double(estimates)
   if (inherits(SEs, "numeric")) SEs <- as.double(SEs)
+  if (!is.null(w)) w <- as.double(w) #[MOD]
   if (inherits(conf_level, "numeric")) conf_level <- as.double(conf_level)
   study_names <- as.character(study_names)
   
+  
+  # run input checks
   validate_inputs(
     estimates = estimates,
     SEs = SEs,
@@ -182,6 +190,7 @@ confMeta <- function(
     w = w #[MOD]
   )
   
+  # Make the p-value function
   p_fun <- make_p_fun(
     fun = fun,
     ell = ell
@@ -209,8 +218,7 @@ new_confMeta <- function(
     p_fun,
     fun_name
 ) {
-  
-  
+
   # Calculate individual CIs (classic Wald type)
   alpha <- 1 - conf_level
   se_term <- stats::qnorm(1 - alpha / 2) * SEs 
