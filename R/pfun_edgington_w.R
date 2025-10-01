@@ -75,7 +75,7 @@
 #'     to each value of \code{mu}.
 
 
-p_edgington_w2 <- function(
+p_edgington_w <- function(
     estimates, SEs, mu = 0,
     alternative = "two.sided",        
     approx = TRUE,

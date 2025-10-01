@@ -22,7 +22,8 @@ get_ci <- function(
     w = w,   # [MOD] 
     alpha = alpha,
     p_fun = p_fun
-  )
+  ) 
+  #now f accepts as input only mu (H0) 
   
   # remove duplicates and sort estimates, SEs, and w (!!!)
   keep <- !duplicated(estimates)
@@ -435,6 +436,8 @@ find_upper <- function(estimates_max, SEs_max, f) {
 # Helper function that returns a function to optimize                          #
 ################################################################################
 
+# Fix the arguments (estimates, SEs, w, mu) in p_fun,  Outputs a new function that has 
+# only the argument mu, then SUBSTRACT ALPHA
 
 make_function <- function(
     estimates,

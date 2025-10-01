@@ -1,5 +1,5 @@
 # ========================================================================
-# Tests for weights (w) argument with p_edgington_w2
+# Tests for weights (w) argument with p_edgington_w
 # ========================================================================
 
 test_that("weights argument is validated correctly", {
@@ -14,7 +14,7 @@ test_that("weights argument is validated correctly", {
       estimates = estimates,
       SEs = SEs,
       conf_level = conf_level,
-      fun = p_edgington_w2,   # <-- use p_edgington_w2 directly
+      fun = p_edgington_w,   # <-- use p_edgington_w directly
       w = w
     )
   })
@@ -70,7 +70,7 @@ test_that("Weighted vs unweighted", {
     estimates = est,
     SEs = se,
     conf_level = 0.95,
-    fun = p_edgington_w2,
+    fun = p_edgington_w,
     fun_name = "Edgington unweighted"
   )
   
@@ -78,7 +78,7 @@ test_that("Weighted vs unweighted", {
     estimates = est,
     SEs = se,
     conf_level = 0.95,
-    fun = p_edgington_w2,
+    fun = p_edgington_w,
     fun_name = "Edgington weighted",
     w = w
   )
@@ -113,7 +113,7 @@ test_that("Weighted with weights=1 vs unweighted", {
     estimates = est,
     SEs = se,
     conf_level = 0.95,
-    fun = p_edgington_w2,
+    fun = p_edgington_w,
     fun_name = "Edgington unweighted"
   )
   
@@ -121,7 +121,7 @@ test_that("Weighted with weights=1 vs unweighted", {
     estimates = est,
     SEs = se,
     conf_level = 0.95,
-    fun = p_edgington_w2,
+    fun = p_edgington_w,
     fun_name = "Edgington weighted (all ones)",
     w = w1
   )
@@ -154,7 +154,7 @@ test_that("The order doesnt change the output", {
     SEs = se,
     w = w,
     conf_level = 0.95,
-    fun = p_edgington_w2
+    fun = p_edgington_w
   )
   
   o <- c(3,1,2)  # reorder in a different way
@@ -163,7 +163,7 @@ test_that("The order doesnt change the output", {
     SEs = se[o],
     w = w[o],
     conf_level = 0.95,
-    fun = p_edgington_w2
+    fun = p_edgington_w
   )
   
   #expect equal
