@@ -340,7 +340,7 @@ ggPvalueFunction <- function(
     xlab,
     reference_methods
 ) {
-  browser()
+
   # Set some constants that are equal for all grid rows
   #use const as a list for containing stuff, muSeq is for creating the grid of mu values,
   # I added that also w is inside const for cleaner code
@@ -396,6 +396,9 @@ ggPvalueFunction <- function(
         
         
         #now we have a vector p val of length 10.000 (one for each mu) 
+        
+        
+        pval <- pmin(pmax(pval, 0), 1) #sometimes due to approx error are a tiny bit smaller than 0, fix to not have any error messages
         
         CIs <- cm$joint_ci
         y0 <- cm$p_0[, 2L] #p_val at mu = 0
