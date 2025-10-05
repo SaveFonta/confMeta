@@ -30,11 +30,19 @@
 #' @param drapery Either `TRUE` (default) or `FALSE`. If `TRUE`, the individual
 #'     study effects are represented as drapery plots. If `FALSE` the studies
 #'     are represented by a simple vertical line at their effect estimates.
-#' @param reference_methods A character vector of length 1, 2, 3 or 4. Denotes
-#'     the reference methods that should be shown in the plot. Valid options are
-#'     any combination of `c("fe", "re", "hk", "hc")` which stand for fixed
-#'     effect meta-analysis, random effects meta-analysis, Hartung-Knapp and
-#'     Henmi-Copas. Defaults to `c("fe", "re", "hk", "hc")`.
+#' @param reference_methods A character vector of length 1, 2, 3 or 4.
+#'     Specifies which reference meta-analysis methods should be shown in
+#'     the plot. Valid options are any subset of
+#'     `c("fe", "re", "hk", "hc")`, which correspond to:
+#'     - `"fe"`: fixed-effect meta-analysis  
+#'     - `"re"`: random-effects meta-analysis  
+#'     - `"hk"`: Hartung–Knapp adjustment  
+#'     - `"hc"`: Henmi–Copas adjustment.  
+#'
+#'     **Note:** at most one of `"fe"` or `"re"` can be included at a time.
+#'     These two methods are mutually exclusive, as only one baseline
+#'     meta-analysis model (fixed or random effects) can be displayed in
+#'     a single plot. Defaults to `c("re", "hk", "hc")`.
 #' @param xlim Either NULL (default) or a numeric vector of length 2 which
 #'     indicates the extent of the x-axis that should be shown.
 #' @param xlab Either NULL (default) or a character vector of length 1 which
@@ -60,14 +68,14 @@ autoplot.confMeta <- function(
 ) {
 
     # Check validity of reference methods
-    check_ref_methods(reference_methods = reference_methods)
+    check_ref_methods(reference_methods = reference_methods) #w/ this fct, there is a mutual exclusiveness between re and fe, dont have a clue why 
 
     # get the type of plot
     type <- match.arg(type, several.ok = TRUE)
     reference_methods <- match.arg(
         reference_methods,
         several.ok = TRUE,
-        choices = c("fe", "re", "hk", "hc")
+        choices = c("fe", "re", "hk", "hc") 
     )
 
     # Check all the confMeta objects
@@ -105,7 +113,7 @@ autoplot.confMeta <- function(
     check_length_1(x = v_space)
     check_class(x = v_space, "numeric")
 
-    # determine the xlim
+    # if xlim not specified, builds a range that covers all CIs and add 5% of margin
     if (!is.null(xlim)) {
         check_xlim(x = xlim)
     } else {
@@ -128,7 +136,7 @@ autoplot.confMeta <- function(
         xlim <- c(lower - margin, upper + margin)
     }
 
-    # generate plots
+    # generate plots, but don't run yer, just save them using "quote", to launch use "eval"
     expr <- list(
         p = quote({
             pplot <- ggPvalueFunction(
@@ -167,7 +175,7 @@ autoplot.confMeta <- function(
         xlab = xlab
     )
 
-    # make the p_value function plot
+      # PLOT!
     plots <- lapply(
         expr,
         function(x, cms, pars) eval(x),
@@ -178,7 +186,7 @@ autoplot.confMeta <- function(
     if (length(plots) < 2L) {
         plots[[1L]]
     } else {
-        patchwork::wrap_plots(plots, ncol = 1L)
+        patchwork::wrap_plots(plots, ncol = 1L) #put them vertically if there are 2 plots
     }
 }
 
@@ -332,20 +340,25 @@ ggPvalueFunction <- function(
     xlab,
     reference_methods
 ) {
-
-    # Set some constants that are equal for all grid rows
+  
+  # Set some constants that are equal for all grid rows
+  #use const as a list for containing stuff, muSeq is for creating the grid of mu values,
+  # I added that also w is inside const for cleaner code
+  
     const <- list(
-        estimates = cms[[1L]]$estimates,
-        SEs = cms[[1L]]$SEs,
-        conf_level = cms[[1L]]$conf_level,
-        eps = 0.0025, # for plotting error bars
-        eb_height = 0.025,
-        muSeq = seq(xlim[1], xlim[2], length.out = 1e4)
+      estimates  = cms[[1L]]$estimates,
+      SEs        = cms[[1L]]$SEs,
+      conf_level = cms[[1L]]$conf_level,
+      eps = 0.0025,
+      eb_height = 0.025,
+      muSeq = seq(xlim[1], xlim[2], length.out = 1e4),
+      w = if (!is.null(cms[[1L]]$w)) cms[[1L]]$w else NULL #[MOD]
     )
+  
 
     # Get the function names (for legend)
     fun_names <- vapply(cms, "[[", i = "fun_name", character(1L))
-    # Add the reference methods and make factor levels
+    # Add the reference methods and make factor levels (fe vs re)
     fac_levels <- if ("fe" %in% reference_methods) {
         c(map_ref_methods("fe"), fun_names)
     } else if ("re" %in% reference_methods) {
@@ -359,15 +372,15 @@ ggPvalueFunction <- function(
         fun <- cm$p_fun
         fun_name <- cm$fun_name
         alpha <- 1 - const$conf_level
-#[MODIFICA]
-        args_fun <- names(formals(fun))
         
-        if ("w" %in% args_fun) {
+        #[MOD] --> so we can use w in the plot if we have them 
+        args_fun <- names(formals(fun))
+        if ("w" %in% args_fun && !is.null(const$w)) {
           pval <- fun(
             estimates = const$estimates,
             SEs = const$SEs,
             mu = const$muSeq,
-            w = cm$w
+            w = const$w  
           )
         } else {
           pval <- fun(
@@ -377,8 +390,20 @@ ggPvalueFunction <- function(
           )
         }
         
+        ################################################################################################################
+        #         ######## NOTE FOR WHO CARES 
+        # (!!) here we call just those arguments, cause the others are already saved inside p_fun as default parameters 
+        #thanks to make_p_fun() (e.g. heterogeneity, approx, tau2, neff...)
+        #
+        #just remember that w in this closure is by default (1,...1) so if you have it and don't call it can break
+        #############################################################################################à##################
+        
+        
+        
+        #now we have a vector p val of length 10.000 (one for each mu) 
+        
         CIs <- cm$joint_ci
-        y0 <- cm$p_0[, 2L]
+        y0 <- cm$p_0[, 2L] #p_val at mu = 0
 
         # Data frame with the lines of the p-value function: (x,y coords, value
         # at x = 0)
@@ -386,8 +411,8 @@ ggPvalueFunction <- function(
             x = const$muSeq,
             y = pval,
             p_val_fun = cm$fun_name,
-            y0 = y0,
-            group = factor(fun_name, levels = fac_levels),
+            y0 = y0, # p value at mu = 0
+            group = factor(fun_name, levels = fac_levels), #to plot different lines each method
             stringsAsFactors = FALSE,
             row.names = NULL
         )
@@ -397,15 +422,23 @@ ggPvalueFunction <- function(
             xmax = CIs[, 2L],
             p_val_fun = fun_name,
             # y = rep(1 - conf_level, nrow(CIs$CI)) + factor * const$eps,
-            y = rep(alpha, nrow(CIs)),
+            y = rep(alpha, nrow(CIs)), #horiz segment at confidence level
             group = factor(fun_name, levels = fac_levels),
             stringsAsFactors = FALSE,
             row.names = NULL
         )
-        df2$ymax <- df2$y + const$eb_height
+        #define the height of the small vertical tiks at the extreme of CI:
+        #  |
+        #--|---------|--
+        #  |
+        df2$ymax <- df2$y + const$eb_height 
         df2$ymin <- df2$y - const$eb_height
         list(df1, df2)
     })
+    
+    #now we have the data object (e.g. data[[1]] = list(df1, df2) is the first ConfMeta object
+    # data[[2]] = list(df1, df2) second ConfMeta obj etc...)
+    
     # Extract the data frame for the lines with p-value functions
     # as well as the data frame for the error bars
     plot_data <- lapply(
@@ -416,7 +449,15 @@ ggPvalueFunction <- function(
     lines <- plot_data[["lines"]]
     errorbars <- plot_data[["errorbars"]]
 
-    # Calculate the drapery lines
+    
+    
+    #if you print errorbars:
+    #xmin     xmax   y   ymax   ymin
+    # 1   -2.4671   1.9013 0.05 0.075 0.025
+    # means that the graph will be drawed: an horiz segm from mu=-2.47 to mu=1.9, positioned at level 
+    # p = 0.05, with two vertical ticks from 0.025 to 0.075
+
+    # Calculate the drapery lines if TRUE (by default)
     if (drapery) {
         dp <- get_drapery_df(
             estimates = const$estimates,
@@ -427,17 +468,25 @@ ggPvalueFunction <- function(
         ### Object containing CIs for the reference methods
         ci_obj <- cms[[1L]]$comparison_cis
         cl <- cms[[1L]]$conf_level
+        
         ## What reference method should we calculate drapery plot for:
         ## "fe" or "re"
         index <- if ("fe" %in% reference_methods) 1L else 2L
+        
+        #NOTE: it is the black plot showed in the drapery. Default is RE
+        
         ## In a further step, we might want to show more than 1, then just
         ## uncomment the following
         # index <- which(
         #     rownames(ci_obj) %in% map_ref_methods(abbrevs = reference_methods)
         # )
-        rmaestimate <- rowMeans(ci_obj[index, , drop = FALSE])
-        rmase <- (ci_obj[index, 2L] - ci_obj[index, 1L]) /
+        
+        rmaestimate <- rowMeans(ci_obj[index, , drop = FALSE]) #mean btw lower and upper bound of the chosen method to plot in black (i.e. central estimate)
+        
+        rmase <- (ci_obj[index, 2L] - ci_obj[index, 1L]) /  #now compute the s.e. of the chosen method using the inverse formula
             (2 * stats::qnorm(p = (1 + cl) / 2))
+        
+        #Create the drapery for the baseline:
         rmadf <- get_drapery_df(
             estimates = rmaestimate,
             SEs = rmase,
@@ -445,33 +494,41 @@ ggPvalueFunction <- function(
         )
         rmadf$study <- factor(rmadf$study, levels = fac_levels)
     }
+    
+    
+    #now dp and rmdaf are two similar df, one for my method, the other for the basline method  
 
     # Define function to convert breaks from primary y-axis to
     # breaks for secondary y-axis
-    trans <- function(x) abs(x - 1) * 100
-    # Define breaks for the primary y-axis
+    trans <- function(x) abs(x - 1) * 100 #trasform p value p=0.05 -> 95%.
+    
+    # Define breaks for the primary y-axis (the one on the right)
     b_points <- c(1 - const$conf_level, pretty(c(lines$y, 1)))
     o <- order(b_points, decreasing = FALSE)
     breaks_y1 <- b_points[o]
+    
     # Compute breaks for the secondary y-axis
     # breaks_y2 <- trans(b_points[o])
     # Set transparency
     transparency <- 1
 
+    #add plots for single studies
     p <- ggplot2::ggplot(
         data = lines,
         ggplot2::aes(x = x, y = y, color = group)
     ) +
         ggplot2::xlim(xlim) +
-        ggplot2::geom_hline(
+        ggplot2::geom_hline( #add dashed conf level line
             yintercept = 1 - const$conf_level, linetype = "dashed"
         )
-    if (!drapery) {
+    
+    #now add the plot for baseline method
+    if (!drapery) { #only vertical lines if drapery FALSE
         p <- p + ggplot2::geom_vline(
             xintercept = estimates,
             linetype = "dashed"
         )
-    } else {
+    } else { #otwise add the drapery
         p <- p +
             ggplot2::geom_line(
                 data = dp,
@@ -500,7 +557,7 @@ ggPvalueFunction <- function(
             )
     }
     p <- p +
-        ggplot2::geom_hline(yintercept = 0, linetype = "solid") +
+        ggplot2::geom_hline(yintercept = 0, linetype = "solid") + #horiz line at y=0
         ggplot2::geom_line(alpha = transparency) +
         ggplot2::scale_y_continuous(
             name = "p-value",
@@ -546,9 +603,13 @@ ggPvalueFunction <- function(
     }
     p <- p +
         ggplot2::labs(
-            x = xlab,
-            color = ggplot2::element_blank()
+          x = xlab,
+          color = NULL
+        ) +
+        ggplot2::theme(
+          legend.title = ggplot2::element_blank()
         )
+    
 
     # Add desired coloring for curves
     line_cols <- c("#000000", scales::hue_pal()(length(fac_levels) - 1))
@@ -558,26 +619,33 @@ ggPvalueFunction <- function(
     p
 }
 
-# Calculate the drapery lines
+# Calculate the drapery lines, i.e. p-value functions of single studies, that are plotted as 
+# grey dashed lines
 #' @importFrom stats pnorm
 get_drapery_df <- function(estimates, SEs, mu) {
+  
     # get lenghts
-    l_t <- length(estimates)
-    l_m <- length(mu)
-    l_tot <- l_t * l_m
+    l_t <- length(estimates) #n studies
+    l_m <- length(mu) 
+    l_tot <- l_t * l_m #total n points to generate
+    
     # Initialize vectors
-    x_dp <- rep(mu, times = l_t)
+    x_dp <- rep(mu, times = l_t)  #create the grids [mu1,...,mu10000, mu1, ..., mu10000, ..] repetead for each study
     y_dp <- study <- numeric(l_tot)
+    
     # Indices to loop over
     idx <- seq_len(l_m)
     nms <- names(estimates)
+    
+    # Loop on each study
     for (i in seq_along(estimates)) {
         y_dp[idx] <- 2 *
-            (1 - stats::pnorm(abs(estimates[i] - mu) / SEs[i]))
-        study[idx] <- if (is.null(nms)) rep(i, l_m) else rep(nms[i], l_m)
+            (1 - stats::pnorm(abs(estimates[i] - mu) / SEs[i])) #compute bilateral p value function for study i
+        study[idx] <- if (is.null(nms)) rep(i, l_m) else rep(nms[i], l_m) # assing identificator, if the studies have names uses them, otwise use index
         idx <- idx + l_m
     }
-    data.frame(
+    #combine studies in a single df
+    data.frame( 
         x = x_dp,
         y = y_dp,
         study = study,
@@ -618,6 +686,7 @@ ForestPlot <- function(
     xlab
 ) {
 
+  browser()
     # Make a data frame for the single studies
     cm <- cms[[1L]]
     studyCIs <- data.frame(
