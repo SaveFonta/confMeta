@@ -1,5 +1,7 @@
 # confMeta
 
+NOTE --> This is a fork from the original confMeta package. In this some bugs from previous package are fixed, and also p_edgington_w is added giving the possibility to use weights with the edgington combination method
+
 The `confMeta` package implements methods related to meta-analysis. The
 functions that `confMeta` provides, can be categorized roughly into three
 categories:
@@ -22,7 +24,7 @@ install.packages("remotes")
 Once `remotes` has been installed, you can install `confMeta` by running
 
 ```r
-remotes::install_github("felix-hof/confMeta")
+remotes::install_github("SaveFonta/confMeta")
 ```
 
 Once installed, the package can be used by loading it into the `R` session. This
