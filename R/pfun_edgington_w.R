@@ -185,12 +185,5 @@ p_edgington_w <- function(
   return(sp)
 }
 
-# Vectorize over mu
-#p_edgington_w2 <- Vectorize(FUN = p_edgington_w2., vectorize.args = "mu")
 
-"completelY useless, why did he do it?"
-
-
-
-# NEXT STEP: write a testhat
 

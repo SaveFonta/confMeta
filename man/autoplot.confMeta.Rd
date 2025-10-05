@@ -50,11 +50,20 @@ contains \code{"forest"} and will be ignored otherwise.}
 study effects are represented as drapery plots. If \code{FALSE} the studies
 are represented by a simple vertical line at their effect estimates.}
 
-\item{reference_methods}{A character vector of length 1, 2, 3 or 4. Denotes
-the reference methods that should be shown in the plot. Valid options are
-any combination of \code{c("fe", "re", "hk", "hc")} which stand for fixed
-effect meta-analysis, random effects meta-analysis, Hartung-Knapp and
-Henmi-Copas. Defaults to \code{c("fe", "re", "hk", "hc")}.}
+\item{reference_methods}{A character vector of length 1, 2, 3 or 4.
+Specifies which reference meta-analysis methods should be shown in
+the plot. Valid options are any subset of
+\code{c("fe", "re", "hk", "hc")}, which correspond to:
+- \code{"fe"}: fixed-effect meta-analysis
+- \code{"re"}: random-effects meta-analysis
+- \code{"hk"}: Hartung–Knapp adjustment
+- \code{"hc"}: Henmi–Copas adjustment.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{**Note:** at most one of `"fe"` or `"re"` can be included at a time.
+These two methods are mutually exclusive, as only one baseline
+meta-analysis model (fixed or random effects) can be displayed in
+a single plot. Defaults to `c("re", "hk", "hc")`.
+}\if{html}{\out{</div>}}}
 
 \item{xlim}{Either NULL (default) or a numeric vector of length 2 which
 indicates the extent of the x-axis that should be shown.}

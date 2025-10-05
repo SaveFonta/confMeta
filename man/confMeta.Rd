@@ -11,6 +11,7 @@ confMeta(
   conf_level = 0.95,
   fun,
   fun_name = NULL,
+  w = NULL,
   ...
 )
 }
@@ -30,7 +31,7 @@ differentiate the individual studies. For more information, check out the
 Details section.}
 
 \item{conf_level}{The confidence level. Must be a numeric vector of length
-one with it's value being in (0, 1).}
+one with its value being in (0, 1).}
 
 \item{fun}{A function that combines individual effect estimates and the
 corresponding standard errors into a combined p-value. The function must
@@ -44,6 +45,11 @@ identifier for the function \code{fun} and is only used as a label in
 plots. The default is just the literal that the function \code{fun} is
 bound to.}
 
+\item{w}{An optional numeric vector of weights for the studies. Must be of
+the same length as \code{estimates} and \code{SEs}, finite, and non-negative.
+If \code{NULL} (the default), equal weights are assumed. Used by weighted
+p-value combination functions such as the weighted Edgington method.}
+
 \item{...}{Additional arguments passed to \code{fun}. See the Details
 section.}
 }
@@ -56,6 +62,8 @@ following elements:
 estimates.}
 \item{study_names}{The names of the individual studies.}
 \item{conf_level}{The confidence level.}
+\item{w}{The weights for the studies (if specified). If \code{NULL},
+equal weights were assumed.}
 \item{individual_cis}{The confidence intervals for the
 individual effects. The exact calculation of these intervals
 can be found in the Details section.}
@@ -75,8 +83,8 @@ column 'y' contains the corresponding $p$-value.}
 column 'x' refers to the mean \code{mu} and the column 'y' contains
 the corresponding $p$-value.}
 \item{p_0}{The value of the $p$-value at \code{mu} = 0}
-\item{comparison_cis}{Combined confindence intervals calculated
-with other methods. These can be used to for comparison
+\item{comparison_cis}{Combined confidence intervals calculated
+with other methods. These can be used for comparison
 purposes. Currently, these other methods are random effects
 (REML), Hartung & Knapp, and Henmi & Copas.}
 \item{comparison_p_0}{The same as in element 'p_0' but for the
@@ -94,9 +102,9 @@ run \code{methods(confMeta)}.
 
 The argument `study_names` is used to differentiate between the
 different individual estimates. If the argument is set to `NULL`,
-the element 'study_names' in the return object will just be the a
+the element 'study_names' in the return object will just be a
 character vector with elements "Study n" where n is a number from 1
-to `length(elements)`. These names are only used in some of the
+to `length(estimates)`. These names are only used in some of the
 `autoplot` methods.
 
 The argument `fun` must have arguments 'estimates', 'SEs',
@@ -106,21 +114,24 @@ need to be passed via the `...` argument. If there
 are additional arguments passed via `...`,
 `confMeta` will internally create a new
 function that calls `fun` with the additional arguments fixed.
-Thus, any any argument passed via `...` overwrites existing
+Thus, any argument passed via `...` overwrites existing
 defaults.
 Since this is the p-value function that is used to calculate the
 combined confidence interval(s), it should return a vector of class
 'numeric' with value(s) in the interval [0, 1].
 
-# Confidence intervals
+The argument `w` allows assigning weights to the studies. If not 
+specified, all studies receive equal weight (`w = rep(1, n)`). 
+Weighted p-value combination functions (e.g. weighted Edgington) 
+will use these values directly; other functions that do not depend 
+on weights will ignore `w`.
 
-The confidence intervals returned by `confMeta` are calculated as
-follows:
+# Confidence intervals
 
 The `individual_cis` are calculated as
 \deqn{x_{i} \pm \Phi^{-1}{\text{conf_level}} \cdot \sigma_{i}}
 where \eqn{x_{i}} corresponds to the elements of vector
-`estimates\}, \eqn{\Phi^{-1}} is the quantile function of
+`estimates`, \eqn{\Phi^{-1}} is the quantile function of
 the standard normal distribution, conf_level is the confidence
 level passed as argument `conf_level`, and
 \eqn{\sigma_{i}}, are the standard errors passed in argument

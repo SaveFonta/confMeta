@@ -2,6 +2,8 @@
 #' @rdname p_value_functions
 #' @order 1
 #'
+#' @export
+#'
 #' @template estimates
 #' @template SEs
 #' @template mu
