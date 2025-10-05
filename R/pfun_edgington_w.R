@@ -35,8 +35,8 @@
 #'     \code{tau2} or \code{phi}.
 #' @param phi Multiplicative heterogeneity parameter (if applicable).
 #' @param tau2 Additive heterogeneity parameter (if applicable).
-#' @param approx_rule Rule for normal approximation: \code{"n"} (default)
-#'     uses the number of studies; \code{"neff"} uses the effective sample
+#' @param approx_rule Rule for normal approximation: \code{"n"} 
+#'     uses the number of studies; \code{"neff"} (default) uses the effective sample
 #'     size criterion (see Details).
 #' @param neff_cut Numeric threshold (default 12). If \code{approx_rule="n"},
 #'     normal approximation is used when \eqn{n \geq 12}. If
@@ -83,7 +83,7 @@ p_edgington_w <- function(
     w = rep(1, length(estimates)),
     heterogeneity = "none",           
     phi = NULL, tau2 = NULL,
-    approx_rule = "n",                
+    approx_rule = "neff",                
     neff_cut = 12,
     check_inputs = TRUE
 ){
