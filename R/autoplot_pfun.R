@@ -340,20 +340,20 @@ ggPvalueFunction <- function(
     xlab,
     reference_methods
 ) {
-  
+  browser()
   # Set some constants that are equal for all grid rows
   #use const as a list for containing stuff, muSeq is for creating the grid of mu values,
   # I added that also w is inside const for cleaner code
   
-    const <- list(
-      estimates  = cms[[1L]]$estimates,
-      SEs        = cms[[1L]]$SEs,
-      conf_level = cms[[1L]]$conf_level,
-      eps = 0.0025,
-      eb_height = 0.025,
-      muSeq = seq(xlim[1], xlim[2], length.out = 1e4),
-      w = if (!is.null(cms[[1L]]$w)) cms[[1L]]$w else NULL #[MOD]
-    )
+  const <- list(
+    estimates  = cms[[1L]]$estimates,
+    SEs        = cms[[1L]]$SEs,
+    conf_level = cms[[1L]]$conf_level,
+    eps = 0.0025,
+    eb_height = 0.025,
+    muSeq = seq(xlim[1], xlim[2], length.out = 1e4)
+  )
+  
   
 
     # Get the function names (for legend)
@@ -372,23 +372,18 @@ ggPvalueFunction <- function(
         fun <- cm$p_fun
         fun_name <- cm$fun_name
         alpha <- 1 - const$conf_level
+        w <- if (!is.null(cm$w)) cm$w else NULL
         
-        #[MOD] --> so we can use w in the plot if we have them 
-        args_fun <- names(formals(fun))
-        if ("w" %in% args_fun && !is.null(const$w)) {
-          pval <- fun(
-            estimates = const$estimates,
-            SEs = const$SEs,
-            mu = const$muSeq,
-            w = const$w  
-          )
-        } else {
-          pval <- fun(
-            estimates = const$estimates,
-            SEs = const$SEs,
-            mu = const$muSeq
-          )
-        }
+        
+        # use the new call for the function 
+        pval <- call_pfun(
+          fun = fun,
+          estimates = cm$estimates,
+          SEs = cm$SEs,
+          mu = const$muSeq,
+          w = w
+        )
+        
         
         ################################################################################################################
         #         ######## NOTE FOR WHO CARES 
@@ -809,8 +804,8 @@ ForestPlot <- function(
                     y = y,
                     xmin = lower,
                     xmax = upper,
-                    height = diamond_height
                 ),
+                width = diamond_height, #this parameter was inside for older ggplot (called height), now deprecated
                 show.legend = FALSE
             ) +
             ggplot2::geom_point(
@@ -1017,23 +1012,13 @@ calculate_polygon <- function(
     pt_eval <- with(
         cm,
         {
-          #[MOD] --> to include weights
-          args_fun <- names(formals(p_fun))
-          
-          if ("w" %in% args_fun) {
-            f_estimates <- p_fun(
-              estimates = estimates,
-              SEs = SEs,
-              mu = estimates,
-              w = w  
-            )
-          } else {
-            f_estimates <- p_fun(
-              estimates = estimates,
-              SEs = SEs,
-              mu = estimates
-            )
-          }
+          f_estimates <- call_pfun(
+            fun = p_fun,
+            estimates = estimates,
+            SEs = SEs,
+            mu = estimates,
+            w = w
+          )
 
             nrep <- nrow(joint_cis)
             m <- rbind(
@@ -1116,4 +1101,24 @@ calculate_polygon <- function(
             )
         )
     }
+}
+
+
+
+
+
+# ------------------------------------------------------------------------------
+# Helper to call p_val function since we added weights
+# ------------------------------------------------------------------------------
+
+call_pfun <- function(fun, estimates, SEs, mu, w = NULL) {
+  args <- names(formals(fun))
+  
+  # if 'w' exists in the arguments and we have a valide w--> pass 
+  if ("w" %in% args && !is.null(w)) {
+    fun(estimates = estimates, SEs = SEs, mu = mu, w = w)
+  } else {
+    # otwise ignore weigths
+    fun(estimates = estimates, SEs = SEs, mu = mu)
+  }
 }
