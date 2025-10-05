@@ -686,7 +686,7 @@ ForestPlot <- function(
     xlab
 ) {
 
-  browser()
+  
     # Make a data frame for the single studies
     cm <- cms[[1L]]
     studyCIs <- data.frame(
@@ -1010,30 +1010,45 @@ calculate_polygon <- function(
     # type of point
     # 0 = lower ci
     # 1 = minimum
-    # 2 = maximum
+    # 2 = estimate or maximum
     # 3 = upper ci
+
+    
     pt_eval <- with(
         cm,
         {
+          #[MOD] --> to include weights
+          args_fun <- names(formals(p_fun))
+          
+          if ("w" %in% args_fun) {
             f_estimates <- p_fun(
-                estimates = estimates,
-                SEs = SEs,
-                mu = estimates
+              estimates = estimates,
+              SEs = SEs,
+              mu = estimates,
+              w = w  
             )
+          } else {
+            f_estimates <- p_fun(
+              estimates = estimates,
+              SEs = SEs,
+              mu = estimates
+            )
+          }
+
             nrep <- nrow(joint_cis)
             m <- rbind(
-                cbind(p_max, 2),
+                cbind(p_max, 2),  #max --> type 2
                 matrix(
-                    c(estimates, f_estimates, rep(2, length(cm$estimates))),
+                    c(estimates, f_estimates, rep(2, length(cm$estimates))), #estimates --> type 2
                     ncol = 3L
                 ),
-                matrix(c(joint_cis[, 1L], rep(0, 2 * nrep)), ncol = 3L),
+                matrix(c(joint_cis[, 1L], rep(0, 2 * nrep)), ncol = 3L), #lower CI --> type 0
                 matrix(
-                    c(joint_cis[, 2L], rep(0, nrep), rep(3, nrep)),
+                    c(joint_cis[, 2L], rep(0, nrep), rep(3, nrep)), #upper CI --> type 3
                     ncol = 3L
                 )
             )
-            if (!no_gamma) m <- rbind(m, cbind(gamma, 1))
+            if (!no_gamma) m <- rbind(m, cbind(gamma, 1)) #gamma --> type 1
             m
         }
     )
