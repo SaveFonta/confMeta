@@ -2,6 +2,8 @@
 #' @rdname p_value_functions
 #' @order 8
 #'
+#'@export
+#'
 #' @description
 #' Weighted generalization of Edgington’s method for combining
 #' \emph{p}-values across studies. The method forms a weighted sum
@@ -91,10 +93,10 @@ p_edgington_w <- function(
   # Input checks
   # -------------------------
   if (check_inputs) {
-    confMeta:::check_inputs_p_value(estimates = estimates, SEs = SEs, 
+    check_inputs_p_value(estimates = estimates, SEs = SEs, 
                                     mu = mu, heterogeneity = heterogeneity, 
                                     phi = phi, tau2 = tau2)
-    confMeta:::check_alternative_arg_edg(alternative = alternative)
+    check_alternative_arg_edg(alternative = alternative)
   }
   
   # Recycle SEs if only one provided
@@ -109,12 +111,12 @@ p_edgington_w <- function(
   
   # Optionally adjust SEs for heterogeneity
   if (heterogeneity != "none") {
-    SEs <- confMeta:::adjust_se(SEs = SEs, heterogeneity = heterogeneity,
+    SEs <- adjust_se(SEs = SEs, heterogeneity = heterogeneity,
                                 phi = phi, tau2 = tau2)
   }
   
   # Compute z-values (matrix: n x length(mu))
-  z <- confMeta:::get_z(estimates = estimates, SEs = SEs, mu = mu)
+  z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
   
   # Convert to p-values depending on input_p
   p <- switch(input_p,
@@ -129,7 +131,7 @@ p_edgington_w <- function(
 
     # Case 1: unweighted → Irwin–Hall distribution
   if (all(w == 1)) {
-    sp <- confMeta:::pirwinhall(q = colSums(p), n = n, approx = approx)
+    sp <- pirwinhall(q = colSums(p), n = n, approx = approx)
   } else {
     # Case 2: weighted version
     # Decide whether to use normal approximation

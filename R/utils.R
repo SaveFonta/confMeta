@@ -12,7 +12,7 @@ integrate_f <- function(max_iter, ...) {
             integrate(..., rel.tol = rel_tol),
             silent = TRUE
         )
-        if (class(out) == "try-error") {
+        if (inherits(out, "try-error")) {
             exponent <- exponent - 0.025
             counter <- counter + 1L
         } else {
