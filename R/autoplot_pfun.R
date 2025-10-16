@@ -5,6 +5,12 @@
 #'     forest plot. This allows to compare different *p*-value functions with
 #'     each other.
 #'
+#'Optionally, a Bayesian meta-analysis object created with the
+#' [bayesmeta::bayesmeta()] function can be supplied via the `bayesmeta` argument.
+#' When provided, its posterior summary is displayed as an additional diamond
+#' at the bottom of the forest plot for comparison with the frequentist methods
+#' 
+#' 
 #' @param ... One or more objects of class `confMeta`.
 #' @param type A character vector of length 1 or 2. Indicates what type of
 #'     plot should be returned. Accepted is any combination of `"p"` and
@@ -55,7 +61,13 @@
 #'     Defaults to `0.5`. This argument is used in both the *p*-value function
 #'     plot and the forest plot to control the resolution of the x-axis ticks.
 #'     
-#'     
+#' @param bayesmeta Either `NULL` (default) or an object of class `"bayesmeta"`,
+#'     typically created using [bayesmeta::bayesmeta()]. When provided, the
+#'     posterior median (or mean, depending on the `mu_estimate` setting) and
+#'     95% credible interval are displayed as an additional diamond at the
+#'     bottom of the forest plot for direct comparison with the frequentist
+#'     confidence intervals. This argument has no effect on the *p*-value
+#'     function plot.
 #' @return An object of class `ggplot` containing the specified plot(s).
 #'
 #' @importFrom patchwork wrap_plots
@@ -203,7 +215,7 @@ autoplot.confMeta <- function(
       # Add the Bayesian diamond only if the forest plot is part of 'type'
       if ("forest" %in% type) {
         plots[["forest"]] <- add_bayes_forest(
-          p  = plots[["forest"]],   # 👈 use the existing forest plot (not cms)
+          p  = plots[["forest"]],   
           bm = bayesmeta,
           color = "black",
           label = "Bayesmeta"
