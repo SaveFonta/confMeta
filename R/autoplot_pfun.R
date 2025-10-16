@@ -48,6 +48,14 @@
 #' @param xlab Either NULL (default) or a character vector of length 1 which
 #'     is used as the label for the x-axis.
 #'
+#' @param xbreaks Numeric value of length 1. Defines the spacing of the tick
+#'     marks along the x-axis, expressed in the same units as the effect size.
+#'     For example, `xbreaks = 0.5` will show tick marks at
+#'     `..., -1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5, ...`.  
+#'     Defaults to `0.5`. This argument is used in both the *p*-value function
+#'     plot and the forest plot to control the resolution of the x-axis ticks.
+#'     
+#'     
 #' @return An object of class `ggplot` containing the specified plot(s).
 #'
 #' @importFrom patchwork wrap_plots
@@ -64,7 +72,9 @@ autoplot.confMeta <- function(
     # drapery_ma = c("fe"),
     reference_methods = c("re", "hk", "hc"),
     xlim = NULL,
-    xlab = NULL
+    xlab = NULL,
+    xbreaks = 0.5,
+    bayesmeta = NULL
 ) {
 
     # Check validity of reference methods
@@ -144,7 +154,8 @@ autoplot.confMeta <- function(
                 drapery = drapery,
                 xlim = xlim,
                 xlab = xlab,
-                reference_methods = reference_methods
+                reference_methods = reference_methods,
+                xbreaks
             )
         }),
         forest = quote({
@@ -156,7 +167,8 @@ autoplot.confMeta <- function(
                 show_studies = show_studies,
                 scale_diamonds = scale_diamonds,
                 reference_methods = reference_methods,
-                xlab = xlab
+                xlab = xlab,
+                xbreaks
             )
         })
     )
@@ -182,6 +194,23 @@ autoplot.confMeta <- function(
         cms = cms,
         pars = pars
     )
+    
+    
+    # If a bayesmeta object is provided, add its diamond to the forest plot
+    if (!is.null(bayesmeta)) {
+      stopifnot(inherits(bayesmeta, "bayesmeta"))
+      
+      # Add the Bayesian diamond only if the forest plot is part of 'type'
+      if ("forest" %in% type) {
+        plots[["forest"]] <- add_bayes_forest(
+          p  = plots[["forest"]],   # 👈 use the existing forest plot (not cms)
+          bm = bayesmeta,
+          color = "black",
+          label = "Bayesmeta"
+        )
+      }
+    }
+    
 
     if (length(plots) < 2L) {
         plots[[1L]]
@@ -338,7 +367,8 @@ ggPvalueFunction <- function(
     xlim,
     drapery,
     xlab,
-    reference_methods
+    reference_methods,
+    xbreaks
 ) {
 
   # Set some constants that are equal for all grid rows
@@ -528,7 +558,7 @@ ggPvalueFunction <- function(
         breaks = seq(
           from = floor(xlim[1] * 2) / 2,
           to   = ceiling(xlim[2] * 2) / 2,
-          by   = 0.5
+          by   = xbreaks
         ),
         minor_breaks = NULL
       )
@@ -698,7 +728,8 @@ ForestPlot <- function(
     scale_diamonds,
     reference_methods,
     xlim,
-    xlab
+    xlab,
+    xbreaks
 ) {
 
   
@@ -818,7 +849,7 @@ ForestPlot <- function(
       p <- p +
         ggplot2::scale_x_continuous(
           limits = xlim,
-          breaks = c(-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2),
+          breaks = xbreaks,
           minor_breaks = NULL
         )
       
@@ -832,7 +863,7 @@ ForestPlot <- function(
           breaks = seq(
             from = floor(xlim[1] * 2) / 2,   # start at the nearest multiple of 0.5 below xlim[1]
             to   = ceiling(xlim[2] * 2) / 2, # end at the nearest multiple of 0.5 above xlim[2]
-            by   = 0.5                       # spacing between ticks
+            by   = xbreaks                       # spacing between ticks
           ),
           minor_breaks = NULL
         )
@@ -1163,4 +1194,70 @@ call_pfun <- function(fun, estimates, SEs, mu, w = NULL) {
     # otwise ignore weigths
     fun(estimates = estimates, SEs = SEs, mu = mu)
   }
+}
+
+
+
+
+
+#  ---------------------------------------------------------------------------- 
+#   Add the bayesmeta object to the forest plot. 
+# --------------------------------------------------------------------------------
+
+
+
+add_bayes_forest <- function(p, bm, color = "black", label = "Bayesmeta",
+                             mu_estimate = "median") {
+  stopifnot(inherits(p, "ggplot"), inherits(bm, "bayesmeta"))
+  
+  # Extract summary from the bayesmeta object
+  s <- bm$summary
+  mu_est <- s[mu_estimate, "mu"]
+  lower  <- s["95% lower", "mu"]
+  upper  <- s["95% upper", "mu"]
+  
+  # Extract layout from the existing plot
+  gb <- ggplot_build(p)
+  y_breaks <- gb$layout$panel_params[[1]]$y$get_breaks()
+  y_labels <- gb$layout$panel_params[[1]]$y$get_labels()
+  
+  # Distance between rows (to find spacing for new diamond)
+  dy <- median(diff(sort(y_breaks)))
+  y_bayes <- min(y_breaks) - dy
+  
+  # Extract diamond layer info to get height and line width
+  diamond_layer <- gb$data[[4]]  # polygon layer (same assumption)
+  height <- (diamond_layer[4, 2] - diamond_layer[2, 2]) / 2
+  linewidth <- diamond_layer$linewidth[1]
+  
+  # Define polygon for the Bayesmeta diamond
+  diamond <- data.frame(
+    x = c(lower, mu_est, upper, mu_est),
+    y = c(y_bayes, y_bayes + height, y_bayes, y_bayes - height)
+  )
+  
+  # Add the diamond and updated y-axis
+  p <- p +
+    ggplot2::geom_polygon(
+      data = diamond,
+      aes(x = x, y = y),
+      fill = color,
+      color = "black",
+      linewidth = linewidth,
+      alpha = NA
+    )
+  
+  # Extend y-axis labels and breaks
+  y_breaks <- c(y_breaks, y_bayes)
+  y_labels <- c(y_labels, label)
+  
+  suppressMessages({
+    p <- p + ggplot2::scale_y_continuous(
+      breaks = y_breaks,
+      labels = y_labels,
+      expand = ggplot2::expansion(mult = c(0.05, 0.1))
+    )
+  })
+  
+  p
 }

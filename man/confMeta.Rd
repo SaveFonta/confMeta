@@ -141,6 +141,9 @@ The boundaries of the confidence intervals returned in element
 `joint_cis` are found by searching where the function returned
 in element 'p_fun' is equal to 1-`conf_level`.
 }\if{html}{\out{</div>}}
+
+\strong{Note:} due to necessity in further analysis, the method for estimating the between-study variance $\tau^2$ in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not anymore the REML.
+Also, the HK method uses the Ad hoc  variance correction (Knapp and Hartung, 2003) if HK standard error is smaller than standard error from classic random effects meta-analysis
 }
 \examples{
     # Simulate effect estimates and standard errors

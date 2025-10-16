@@ -8,6 +8,8 @@ Authors@R: c(
            comment = c(ORCID = "0000-0002-8686-5325")),
     person("Samuel", "Pawel", email = "samuel.pawel@uzh.ch", role = c("aut"),
            comment = c(ORCID = "0000-0003-2779-320X"))
+    person("Saverio", "Fontana", email = "sfontan@ethz.ch", role = c("aut")
+           )
     )
 Description: Provides tools for the combination of individual study results in
     meta-analyses using the p-value function. Implements various p-value
