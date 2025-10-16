@@ -112,6 +112,9 @@
 #'     `joint_cis` are found by searching where the function returned
 #'     in element 'p_fun' is equal to 1-`conf_level`.
 #' 
+#' **Note:** due to necessity in further analysis, the method for estimating the between-study variance $\tau^2$ in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not anymore the REML.
+#' Also, the HK method uses the Ad hoc  variance correction (Knapp and Hartung, 2003) if HK standard error is smaller than standard error from classic random effects meta-analysis 
+#'
 #' @examples
 #'     # Simulate effect estimates and standard errors
 #'     set.seed(42)
@@ -449,10 +452,15 @@ get_obj_fe <- function(estimates, SEs, conf_level) {
 get_obj_hk <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "REML", method.random.ci = "HK",  #[MOD]--> "hakn = TRUE" is deprecated
+        level = conf_level, method.tau = "PM", method.random.ci = "HK", adhoc.hakn.ci = "se", #[MOD]--> "hakn = TRUE" is deprecated
         common = FALSE, random = TRUE
     )
-}
+} # IMPORTANT --> reading the documentation of metagen we have that method.tau = gs("method.tau"), this mean that by default it will
+# try to find a method.tau in the env, that can be actually modified using settings.meta(method.tau = "PM"), even though
+# it can be useful, this would mean that at the beginning of every confMeta session, we should set the method, and it is not
+# always practical and straightforward to new users of the package. So I decided to force it to PM for the moment.
+
+#I also added the ad.hoc correction
 
 #' @importFrom metafor hc rma
 get_obj_hc <- function(estimates, SEs, conf_level) {

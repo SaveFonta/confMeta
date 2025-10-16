@@ -512,13 +512,26 @@ ggPvalueFunction <- function(
 
     #add plots for single studies
     p <- ggplot2::ggplot(
-        data = lines,
-        ggplot2::aes(x = x, y = y, color = group)
+      data = lines,
+      ggplot2::aes(x = x, y = y, color = group)
     ) +
-        ggplot2::xlim(xlim) +
-        ggplot2::geom_hline( #add dashed conf level line
-            yintercept = 1 - const$conf_level, linetype = "dashed"
-        )
+      ggplot2::geom_hline(yintercept = 1 - const$conf_level, linetype = "dashed") + #line at CI
+      ggplot2::geom_vline(xintercept = 0, linetype = "solid") #line at mu = 0
+    
+    
+    # DEFINE THE axis scale! NOTE: in previous versione the break was of 1, but I think with this break of 0.5 is 
+    # easier to read the graph 
+    
+    p <- p +
+      ggplot2::scale_x_continuous(
+        limits = xlim,
+        breaks = seq(
+          from = floor(xlim[1] * 2) / 2,
+          to   = ceiling(xlim[2] * 2) / 2,
+          by   = 0.5
+        ),
+        minor_breaks = NULL
+      )
     
     #now add the plot for baseline method
     if (!drapery) { #only vertical lines if drapery FALSE
@@ -613,6 +626,10 @@ ggPvalueFunction <- function(
     line_cols <- c("#000000", scales::hue_pal()(length(fac_levels) - 1))
     p <- p + ggplot2::scale_color_discrete(type = line_cols)
 
+
+    
+    
+    
     # return
     p
 }
@@ -793,12 +810,34 @@ ForestPlot <- function(
 
     # Make the plot
     p <- ggplot2::ggplot()
+    
+    
+    # DEFINE THE axis scale! NOTE: in previous versione the break was of 1, but I think with this break of 0.5 is 
+    # easier to read the graph 
     if (!is.null(xlim)) {
-        p <- p + ggplot2::xlim(xlim)
-        if (0 > xlim[1L] && 0 < xlim[2L]) {
-            p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "dashed")
-        }
+      p <- p +
+        ggplot2::scale_x_continuous(
+          limits = xlim,
+          breaks = c(-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2),
+          minor_breaks = NULL
+        )
+      
+      # vertical line at 0
+      if (0 > xlim[1L] && 0 < xlim[2L]) {
+        p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "dashed")
+      }
+    } else {
+      p <- p +
+        ggplot2::scale_x_continuous(
+          breaks = seq(
+            from = floor(xlim[1] * 2) / 2,   # start at the nearest multiple of 0.5 below xlim[1]
+            to   = ceiling(xlim[2] * 2) / 2, # end at the nearest multiple of 0.5 above xlim[2]
+            by   = 0.5                       # spacing between ticks
+          ),
+          minor_breaks = NULL
+        )
     }
+    
     if (show_studies) {
         p <- p +
             ggplot2::geom_errorbarh(
