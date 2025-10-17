@@ -1216,7 +1216,15 @@ call_pfun <- function(fun, estimates, SEs, mu, w = NULL) {
 #   Add the bayesmeta object to the forest plot. 
 # --------------------------------------------------------------------------------
 
-
+#' @title Add Bayesmeta diamond to a forest plot
+#' @description
+#' Internal helper function used by [autoplot.confMeta()] to add the
+#' Bayesian diamond corresponding to a `bayesmeta` object at the bottom
+#' of an existing forest plot.
+#'
+#' @keywords internal
+#' @importFrom ggplot2 ggplot_build
+#' @importFrom stats median
 
 add_bayes_forest <- function(p, bm, color = "black", label = "Bayesmeta",
                              mu_estimate = "median") {
