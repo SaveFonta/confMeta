@@ -861,7 +861,11 @@ ForestPlot <- function(
       p <- p +
         ggplot2::scale_x_continuous(
           limits = xlim,
-          breaks = xbreaks,
+          breaks = seq(
+            from = floor(xlim[1] / xbreaks) * xbreaks,
+            to   = ceiling(xlim[2] / xbreaks) * xbreaks,
+            by   = xbreaks
+          ),
           minor_breaks = NULL
         )
       
