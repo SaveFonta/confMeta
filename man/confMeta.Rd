@@ -54,42 +54,38 @@ p-value combination functions such as the weighted Edgington method.}
 section.}
 }
 \value{
-An S3 object of class \code{confMeta}. The object contains the
-following elements:
-\describe{
-\item{estimates}{The normalized individual effect estimates.}
-\item{SEs}{The standard errors of the normalized individual effect
-estimates.}
-\item{study_names}{The names of the individual studies.}
-\item{conf_level}{The confidence level.}
-\item{w}{The weights for the studies (if specified). If \code{NULL},
-equal weights were assumed.}
-\item{individual_cis}{The confidence intervals for the
-individual effects. The exact calculation of these intervals
-can be found in the Details section.}
-\item{p_fun}{A function with arguments named 'estimates', 'SEs',
-'conf_level', and 'mu'. This is the p-value function that is
-used to find the combined confidence intervals.}
-\item{fun_name}{The name of the function. It is only used in plots
-as a legend entry.}
-\item{joint_cis}{The combined confidence interval(s). These are
-calculated by finding the mean values where the $p$-value
-function is larger than the confidence level in element
-\code{conf_level}.}
-\item{gamma}{The local minima within the range of the individual
-effect estimates. Column 'x' refers to the mean \code{mu} and
-column 'y' contains the corresponding $p$-value.}
-\item{p_max}{The local maxima of the $p$-value function. The
-column 'x' refers to the mean \code{mu} and the column 'y' contains
-the corresponding $p$-value.}
-\item{p_0}{The value of the $p$-value at \code{mu} = 0}
-\item{comparison_cis}{Combined confidence intervals calculated
-with other methods. These can be used for comparison
-purposes. Currently, these other methods are random effects
-(REML), Hartung & Knapp, and Henmi & Copas.}
-\item{comparison_p_0}{The same as in element 'p_0' but for the
-comparison methods (Random effects, Hartung & Knapp,
-Henmi & Copas).}
+An S3 object of class \code{confMeta} containing the following elements:
+\itemize{
+\item \code{estimates}: The normalized individual effect estimates.
+\item \code{SEs}: The standard errors of the normalized individual effect estimates.
+\item \code{study_names}: The names of the individual studies.
+\item \code{conf_level}: The confidence level.
+\item \code{w}: The weights for the studies (if specified). If \code{NULL},
+equal weights were assumed.
+\item \code{individual_cis}: The confidence intervals for the individual effects.
+The exact calculation of these intervals can be found in the Details
+section.
+\item \code{p_fun}: A function with arguments named \code{estimates}, \code{SEs},
+\code{conf_level}, and \code{mu}. This is the p-value function that is used to
+find the combined confidence intervals.
+\item \code{fun_name}: The name of the function. It is only used in plots as
+a legend entry.
+\item \code{joint_cis}: The combined confidence interval(s). These are calculated
+by finding the mean values where the \eqn{p}-value function is larger
+than the confidence level in element \code{conf_level}.
+\item \code{gamma}: The local minima within the range of the individual effect
+estimates. Column \code{x} refers to the mean \eqn{\mu} and column \code{y}
+contains the corresponding \eqn{p}-value.
+\item \code{p_max}: The local maxima of the \eqn{p}-value function. Column \code{x}
+refers to the mean \eqn{\mu} and column \code{y} contains the corresponding
+\eqn{p}-value.
+\item \code{p_0}: The value of the \eqn{p}-value at \eqn{\mu = 0}.
+\item \code{comparison_cis}: Combined confidence intervals calculated with other
+methods. These can be used for comparison purposes. Currently, these
+other methods are random effects (REML), Hartung & Knapp, and
+Henmi & Copas.
+\item \code{comparison_p_0}: The same as in element \code{p_0} but for the comparison
+methods (random effects, Hartung & Knapp, Henmi & Copas).
 }
 }
 \description{
@@ -98,53 +94,59 @@ main class within the package. For an overview of available methods
 run \code{methods(confMeta)}.
 }
 \details{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{# Function arguments
+Additional details are provided in the sections below.
+}
+\section{Function arguments}{
 
-The argument `study_names` is used to differentiate between the
-different individual estimates. If the argument is set to `NULL`,
+
+The argument \code{study_names} is used to differentiate between the
+different individual estimates. If the argument is set to \code{NULL},
 the element 'study_names' in the return object will just be a
 character vector with elements "Study n" where n is a number from 1
-to `length(estimates)`. These names are only used in some of the
-`autoplot` methods.
+to \code{length(estimates)}. These names are only used in some of the
+\code{autoplot} methods.
 
-The argument `fun` must have arguments 'estimates', 'SEs',
+The argument \code{fun} must have arguments 'estimates', 'SEs',
 and 'mu' but it can also have further arguments.
 However, these must either have a default value or
-need to be passed via the `...` argument. If there
-are additional arguments passed via `...`,
-`confMeta` will internally create a new
-function that calls `fun` with the additional arguments fixed.
-Thus, any argument passed via `...` overwrites existing
+need to be passed via the \code{...} argument. If there
+are additional arguments passed via \code{...},
+\code{confMeta} will internally create a new
+function that calls \code{fun} with the additional arguments fixed.
+Thus, any argument passed via \code{...} overwrites existing
 defaults.
 Since this is the p-value function that is used to calculate the
 combined confidence interval(s), it should return a vector of class
-'numeric' with value(s) in the interval [0, 1].
+'numeric' with value(s) in the interval \eqn{[0, 1]}.
 
-The argument `w` allows assigning weights to the studies. If not 
-specified, all studies receive equal weight (`w = rep(1, n)`). 
-Weighted p-value combination functions (e.g. weighted Edgington) 
-will use these values directly; other functions that do not depend 
-on weights will ignore `w`.
+The argument \code{w} allows assigning weights to the studies. If not
+specified, all studies receive equal weight (\code{w = rep(1, n)}).
+Weighted p-value combination functions (e.g. weighted Edgington)
+will use these values directly; other functions that do not depend
+on weights will ignore \code{w}.
+}
 
-# Confidence intervals
+\section{Confidence intervals}{
 
-The `individual_cis` are calculated as
-\deqn{x_{i} \pm \Phi^{-1}{\text{conf_level}} \cdot \sigma_{i}}
-where \eqn{x_{i}} corresponds to the elements of vector
-`estimates`, \eqn{\Phi^{-1}} is the quantile function of
-the standard normal distribution, conf_level is the confidence
-level passed as argument `conf_level`, and
-\eqn{\sigma_{i}}, are the standard errors passed in argument
-`SEs`.
+
+The \code{individual_cis} are calculated as
+\deqn{x_i \pm \Phi^{-1}(\alpha) \cdot \sigma_i}
+
+where \eqn{x_i} corresponds to the elements of vector
+\code{estimates}, \eqn{\Phi^{-1}} is the quantile function of
+the standard normal distribution, \eqn{\alpha} is the confidence
+level passed as argument \code{conf_level}, and
+\eqn{\sigma_i} are the standard errors passed in argument
+\code{SEs}.
 
 The boundaries of the confidence intervals returned in element
-`joint_cis` are found by searching where the function returned
-in element 'p_fun' is equal to 1-`conf_level`.
-}\if{html}{\out{</div>}}
+\code{joint_cis} are found by searching where the function returned
+in element 'p_fun' is equal to 1-\code{conf_level}.
 
 \strong{Note:} due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not anymore the REML.
 Also, the HK method uses the Ad hoc  variance correction (Knapp and Hartung, 2003) if HK standard error is smaller than standard error from classic random effects meta-analysis
 }
+
 \examples{
     # Simulate effect estimates and standard errors
     set.seed(42)

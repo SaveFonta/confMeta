@@ -1,7 +1,7 @@
 #' @title Creating *confMeta* objects
 #' @description Function to create objects of class `confMeta`. This is the
 #'     main class within the package. For an overview of available methods
-#'     run `methods(confMeta)`.
+#'     run `methods(class = "confMeta")`.
 #' @param estimates A vector containing the normalized individual effect
 #'     estimates. Must be of the same length as `SEs` and coercible to
 #'     type 'double'.
@@ -31,86 +31,86 @@
 #'     p-value combination functions such as the weighted Edgington method.
 #' @param ... Additional arguments passed to `fun`. See the Details
 #'     section.
-#' @return An S3 object of class `confMeta`. The object contains the
-#'     following elements:
-#'     \describe{
-#'         \item{estimates}{The normalized individual effect estimates.}
-#'         \item{SEs}{The standard errors of the normalized individual effect
-#'             estimates.}
-#'         \item{study_names}{The names of the individual studies.}
-#'         \item{conf_level}{The confidence level.}
-#'         \item{w}{The weights for the studies (if specified). If `NULL`, 
-#'             equal weights were assumed.}
-#'         \item{individual_cis}{The confidence intervals for the
-#'             individual effects. The exact calculation of these intervals
-#'             can be found in the Details section.}
-#'         \item{p_fun}{A function with arguments named 'estimates', 'SEs',
-#'             'conf_level', and 'mu'. This is the p-value function that is
-#'             used to find the combined confidence intervals.}
-#'         \item{fun_name}{The name of the function. It is only used in plots
-#'             as a legend entry.}
-#'         \item{joint_cis}{The combined confidence interval(s). These are
-#'             calculated by finding the mean values where the $p$-value
-#'             function is larger than the confidence level in element
-#'             `conf_level`.}
-#'         \item{gamma}{The local minima within the range of the individual
-#'             effect estimates. Column 'x' refers to the mean `mu` and
-#'             column 'y' contains the corresponding $p$-value.}
-#'         \item{p_max}{The local maxima of the $p$-value function. The
-#'             column 'x' refers to the mean `mu` and the column 'y' contains
-#'             the corresponding $p$-value.}
-#'         \item{p_0}{The value of the $p$-value at `mu` = 0}
-#'         \item{comparison_cis}{Combined confidence intervals calculated
-#'             with other methods. These can be used for comparison
-#'             purposes. Currently, these other methods are random effects
-#'             (REML), Hartung & Knapp, and Henmi & Copas.}
-#'         \item{comparison_p_0}{The same as in element 'p_0' but for the
-#'             comparison methods (Random effects, Hartung & Knapp,
-#'             Henmi & Copas).}
-#'     }
+#' @return
+#' An S3 object of class `confMeta` containing the following elements:
+#'
+#' - `estimates`: The normalized individual effect estimates.
+#' - `SEs`: The standard errors of the normalized individual effect estimates.
+#' - `w`: The weights for the studies (if specified). If `NULL`,
+#'   equal weights were assumed.
+#' - `study_names`: The names of the individual studies.
+#' - `conf_level`: The confidence level.
+#' - `individual_cis`: The confidence intervals for the individual effects.
+#'   The exact calculation of these intervals can be found in the Details
+#'   section.
+#' - `p_fun`: A function with arguments named `estimates`, `SEs`,
+#'   `conf_level`, and `mu`. This is the p-value function that is used to
+#'   find the combined confidence intervals.
+#' - `fun_name`: The name of the function. It is only used in plots as
+#'   a legend entry.
+#' - `joint_cis`: The combined confidence interval(s). These are calculated
+#'   by finding the mean values where the \eqn{p}-value function is larger
+#'   than the confidence level in element `conf_level`.
+#' - `gamma`: The local minima within the range of the individual effect
+#'   estimates. Column `x` refers to the mean \eqn{\mu} and column `y`
+#'   contains the corresponding \eqn{p}-value.
+#' - `p_max`: The local maxima of the \eqn{p}-value function. Column `x`
+#'   refers to the mean \eqn{\mu} and column `y` contains the corresponding
+#'   \eqn{p}-value.
+#' - `p_0`: The value of the \eqn{p}-value at \eqn{\mu = 0}.
+#' - `comparison_cis`: Combined confidence intervals calculated with other
+#'   methods. These can be used for comparison purposes. Currently, these
+#'   other methods are random effects (REML), Hartung & Knapp, and
+#'   Henmi & Copas.
+#' - `comparison_p_0`: The same as in element `p_0` but for the comparison
+#'   methods (random effects, Hartung & Knapp, Henmi & Copas).
+#'     
 #' @details
-#'     # Function arguments
+#' Additional details are provided in the sections below.
+#' 
+#' @section Function arguments:
 #'
-#'     The argument `study_names` is used to differentiate between the
-#'     different individual estimates. If the argument is set to `NULL`,
-#'     the element 'study_names' in the return object will just be a
-#'     character vector with elements "Study n" where n is a number from 1
-#'     to `length(estimates)`. These names are only used in some of the
-#'     `autoplot` methods.
+#'The argument `study_names` is used to differentiate between the
+#'different individual estimates. If the argument is set to `NULL`,
+#'the element 'study_names' in the return object will just be a
+#'character vector with elements "Study n" where n is a number from 1
+#'to `length(estimates)`. These names are only used in some of the
+#'`autoplot` methods.
 #'
-#'     The argument `fun` must have arguments 'estimates', 'SEs',
-#'     and 'mu' but it can also have further arguments.
-#'     However, these must either have a default value or
-#'     need to be passed via the `...` argument. If there
-#'     are additional arguments passed via `...`,
-#'     `confMeta` will internally create a new
-#'     function that calls `fun` with the additional arguments fixed.
-#'     Thus, any argument passed via `...` overwrites existing
-#'     defaults.
-#'     Since this is the p-value function that is used to calculate the
-#'     combined confidence interval(s), it should return a vector of class
-#'     'numeric' with value(s) in the interval [0, 1].
+#'The argument `fun` must have arguments 'estimates', 'SEs',
+#'and 'mu' but it can also have further arguments.
+#'However, these must either have a default value or
+#'need to be passed via the `...` argument. If there
+#'are additional arguments passed via `...`,
+#'`confMeta` will internally create a new
+#'function that calls `fun` with the additional arguments fixed.
+#'Thus, any argument passed via `...` overwrites existing
+#'defaults.
+#'Since this is the p-value function that is used to calculate the
+#'combined confidence interval(s), it should return a vector of class
+#''numeric' with value(s) in the interval \eqn{[0, 1]}.
 #'
-#'     The argument `w` allows assigning weights to the studies. If not 
-#'     specified, all studies receive equal weight (`w = rep(1, n)`). 
-#'     Weighted p-value combination functions (e.g. weighted Edgington) 
-#'     will use these values directly; other functions that do not depend 
-#'     on weights will ignore `w`.
+#'The argument `w` allows assigning weights to the studies. If not 
+#'specified, all studies receive equal weight (`w = rep(1, n)`). 
+#'Weighted p-value combination functions (e.g. weighted Edgington) 
+#'will use these values directly; other functions that do not depend 
+#'on weights will ignore `w`.
 #'
-#'     # Confidence intervals
+#' @section Confidence intervals:
 #'
-#'     The `individual_cis` are calculated as
-#'     \deqn{x_{i} \pm \Phi^{-1}{\text{conf_level}} \cdot \sigma_{i}}
-#'     where \eqn{x_{i}} corresponds to the elements of vector
-#'     `estimates`, \eqn{\Phi^{-1}} is the quantile function of
-#'     the standard normal distribution, conf_level is the confidence
-#'     level passed as argument `conf_level`, and
-#'     \eqn{\sigma_{i}}, are the standard errors passed in argument
-#'     `SEs`.
+#' The `individual_cis` are calculated as
+#' \deqn{x_i \pm \Phi^{-1}(\alpha) \cdot \sigma_i}
 #'
-#'     The boundaries of the confidence intervals returned in element
-#'     `joint_cis` are found by searching where the function returned
-#'     in element 'p_fun' is equal to 1-`conf_level`.
+#' where \eqn{x_i} corresponds to the elements of vector
+#' `estimates`, \eqn{\Phi^{-1}} is the quantile function of
+#' the standard normal distribution, \eqn{\alpha} is the confidence
+#' level passed as argument `conf_level`, and
+#' \eqn{\sigma_i} are the standard errors passed in argument
+#' `SEs`.
+#'
+#'The boundaries of the confidence intervals returned in element
+#'`joint_cis` are found by searching where the function returned
+#'in element 'p_fun' is equal to 1-`conf_level`.
 #' 
 #' **Note:** due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not anymore the REML.
 #' Also, the HK method uses the Ad hoc  variance correction (Knapp and Hartung, 2003) if HK standard error is smaller than standard error from classic random effects meta-analysis 
@@ -141,7 +141,10 @@
 #'         fun_name = "Edgington (two-sided input)",
 #'         input_p = "two.sided"
 #'     )
-#'
+#'     
+#'     #get a summary of the objects
+#'     summary(cm, cm2)
+#'     
 #'     # Plot the object
 #'     autoplot(cm, cm2, type = "p")                   # p-value function plot
 #'     autoplot(cm, cm2, type = "forest")              # forest plot
