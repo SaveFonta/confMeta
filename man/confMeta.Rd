@@ -58,10 +58,10 @@ An S3 object of class \code{confMeta} containing the following elements:
 \itemize{
 \item \code{estimates}: The normalized individual effect estimates.
 \item \code{SEs}: The standard errors of the normalized individual effect estimates.
-\item \code{study_names}: The names of the individual studies.
-\item \code{conf_level}: The confidence level.
 \item \code{w}: The weights for the studies (if specified). If \code{NULL},
 equal weights were assumed.
+\item \code{study_names}: The names of the individual studies.
+\item \code{conf_level}: The confidence level.
 \item \code{individual_cis}: The confidence intervals for the individual effects.
 The exact calculation of these intervals can be found in the Details
 section.
@@ -91,7 +91,7 @@ methods (random effects, Hartung & Knapp, Henmi & Copas).
 \description{
 Function to create objects of class \code{confMeta}. This is the
 main class within the package. For an overview of available methods
-run \code{methods(confMeta)}.
+run \code{methods(class = "confMeta")}.
 }
 \details{
 Additional details are provided in the sections below.
@@ -173,7 +173,10 @@ Also, the HK method uses the Ad hoc  variance correction (Knapp and Hartung, 200
         fun_name = "Edgington (two-sided input)",
         input_p = "two.sided"
     )
-
+    
+    #get a summary of the objects
+    summary(cm, cm2)
+    
     # Plot the object
     autoplot(cm, cm2, type = "p")                   # p-value function plot
     autoplot(cm, cm2, type = "forest")              # forest plot
