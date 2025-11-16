@@ -3,24 +3,41 @@
 ################################################################################
 #' @importFrom stats integrate
 
-integrate_f <- function(max_iter, ...) {
-    exponent <- 0.25
-    counter <- 0L
-    while (exponent > 0.075 && counter < max_iter) {
-        rel_tol <- .Machine$double.eps^exponent
-        out <- try(
-            integrate(..., rel.tol = rel_tol),
-            silent = TRUE
-        )
-        if (inherits(out, "try-error")) {
-            exponent <- exponent - 0.025
-            counter <- counter + 1L
-        } else {
-            break
+integrate_f <- function (max_iter, ...) {
+  exponent <- 0.25
+  counter  <- 0L
+  
+  while (exponent > 0.075 && counter < max_iter) {
+    rel_tol <- .Machine$double.eps^exponent
+    
+    out <- tryCatch(
+      integrate(..., rel.tol = rel_tol),
+      error = function(e) {
+        msg <- conditionMessage(e)
+        
+        # error due to edgington_w cannot approx properly. To this moment p_edg_w is the only function that can give stop errors
+        if (grepl("Exact method infeasible for n > 18", msg, fixed = TRUE)) {
+          stop(e)
         }
+        
+        # failed integration
+        structure(list(error = e), class = "retry_integrate")
+      }
+    )
+    
+    # not failed integration
+    if (!inherits(out, "retry_integrate")) {
+      return(out)
     }
-    out
+    
+    # failed integration, retry integration
+    exponent <- exponent - 0.025
+    counter  <- counter + 1L
+  }
+  
+  stop("integrate_f: integration failed after trying all tolerances.")
 }
+
 
 
 ################################################################################
