@@ -166,7 +166,24 @@ normal approximation is used when \eqn{n \geq 12}. If
 The corresponding p-values given \eqn{mu} under the null-hypothesis.
 
 A numeric vector of combined \emph{p}-values corresponding
-to each value of \code{mu}.
+to each value of \code{mu}. Note that the output is only
+symmetrized to a two-sided \emph{p}-value if \code{input_p} is
+\code{"greater"} or \code{"less"}.
+
+@references
+D. L. Barrow and P. W. Smith. Spline notation applied to a volume
+problem. \emph{The American Mathematical Monthly}, 86(1):50-51, 1979.
+
+H. Cramér. \emph{Mathematical Methods of Statistics}. Princeton University
+Press, 1946.
+
+E. G. Olds. A note on the convolution of uniform distributions.
+\emph{The Annals of Mathematical Statistics}, 23(2):282-285, 1952.
+
+B. D. Ripley. \emph{Stochastic Simulation}. John Wiley & Sons, Hoboken,
+NJ, 1987.
+
+Add others on p value functions
 }
 \description{
 \if{html}{\out{<div class="sourceCode">}}\preformatted{These functions combine individual effect estimates and the corresponding
@@ -186,37 +203,86 @@ of individual study \emph{p}-values and evaluates it against the
 exact or approximate null distribution.
 
 If all weights are equal, this reduces to the classical Edgington
-procedure, where the null distribution is given by the Irwin–Hall law.
+procedure, where the null distribution is given by the Irwin–Hall distribution.
 }
 \details{
 The weighted Edgington statistic is defined as
 \deqn{S = \sum_{i=1}^k w_i p_i,}
 where \eqn{w_i} are positive study weights and \eqn{p_i} are individual
-study \emph{p}-values.
-
-Under the null hypothesis, the distribution of \eqn{S} can be obtained
-in two ways:
-\itemize{
-\item For small numbers of studies or unbalanced weights, the exact
-distribution is computed via the Barrow–Smith inclusion–exclusion formula.
-\item For sufficiently many studies (or balanced weights), the distribution
-is approximated by a normal distribution with mean \eqn{\sum w_i / 2}
-and variance \eqn{\sum w_i^2 / 12}.
-}
-
-The condition for validity of the normal approximation can be expressed
-in terms of the \strong{effective sample size}:
-\deqn{n_{\mathrm{eff}} = \frac{\|w\|_2^4}{\|w\|_4^4}.}
-If \eqn{n_{\mathrm{eff}} \geq 12}, the approximation error is small
-When all weights are equal, this reduces to
-the simple rule \eqn{n \geq 12}.
-
-By construction, the output is always two-sided:
-\deqn{p_{2s} = 2 \min(p, 1-p).}
+study \emph{p}-values. Under the global null hypothesis, each \eqn{p_i}
+is assumed to follow a \eqn{Unif(0, 1)} distribution.
 }
 \note{
 Add references to p-value statistics.
 }
+\section{Null Distribution and Approximation}{
+
+The CDF of the test statistic S under the null, \eqn{F(t) = P(S \leq t)},
+is computed in one of two ways:
+\itemize{
+\item \strong{Exact Method:} The function uses the exact Barrow-Smith
+inclusion-exclusion formula to compute the CDF.
+This method is computationally intensive and is infeasible for \code{n > 18}
+studies, at which point the function will stop with an error if
+\code{approx = FALSE} is used.
+
+\item \strong{Normal Approximation:} For a large number of studies or
+sufficiently balanced weights, S is approximated by a Normal
+distribution  with:
+\deqn{E[S] = \frac{1}{2}\sum_{i=1}^k w_i}
+\deqn{Var(S) = \frac{1}{12}\sum_{i=1}^k w_i^2}
+}
+}
+
+\section{Approximation Rule}{
+
+The \code{approx = TRUE} argument enables the normal approximation, but it is
+only used if a condition (controlled by \code{approx_rule}) is met.
+\itemize{
+\item \code{approx_rule = "n"}: Uses the approximation if the
+number of studies n > neff_cut.
+\item \code{approx_rule = "neff"} (default): Uses the approximation if the
+\strong{effective sample size} n_eff > neff_cut.
+}
+The effective sample size is defined as:
+\deqn{n_{\mathrm{eff}} = \frac{(\sum w_i^2)^2}{\sum w_i^4} = \frac{\|w\|_2^4}{\|w\|_4^4}}
+The default threshold \code{neff_cut = 12} is based on error bounds, which indicate the approximation is
+sufficiently accurate when this condition is met. This
+rule is more robust than \code{approx_rule = "n"} when weights are
+unbalanced.
+}
+
+\section{Approximation Error}{
+
+The \code{neff_cut} parameter directly controls the tolerance for
+the approximation error.
+\strong{Edgeworth Approximation:} This provides an
+\emph{approximation} of the error, which directly relates to the
+\eqn{n_{\mathrm{eff}}} criterion used in this function:
+\deqn{\sup_{t \in \mathbb{R}} |F_n^w(t) - \Phi(t)| \approx \frac{||\phi^{(3)}||_{\infty}}{20}\frac{||w||_{4}^{4}}{||w||_{2}^{4}} \approx \frac{0.028}{n_{\mathrm{eff}}}}
+
+The default \code{neff_cut = 12} is chosen based on this, as it
+corresponds to an approximate maximum error of
+\eqn{0.028 / 12 \approx 0.0023}.
+If you change \code{neff_cut}, you are changing this error tolerance.
+}
+
+\section{Output p-value}{
+
+The final output depends on the \code{input_p} argument:
+\itemize{
+\item If \code{input_p} is \code{"greater"} or \code{"less"}, the
+input \eqn{p_i} are one-sided. The function computes the
+one-sided \emph{p}-value \eqn{sp = P(S \leq s_{\mathrm{obs}})} and
+returns a \strong{symmetrized, two-sided \emph{p}-value}:
+\eqn{p_{2s} = 2 \min(sp, 1-sp)}.
+\item If \code{input_p} is \code{"two.sided"}, the input \eqn{p_i}
+are two-sided. The function returns \eqn{sp = P(S \leq s_{\mathrm{obs}})}
+\strong{directly, without symmetrization}. Note that summing two-sided
+\emph{p}-values is not a standard application of Edgington's method.
+}
+}
+
 \examples{
     # Simulating estimates and standard errors
     n <- 15

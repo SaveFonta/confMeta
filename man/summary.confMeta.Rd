@@ -6,6 +6,11 @@
 \usage{
 \method{summary}{confMeta}(object, ...)
 }
+\arguments{
+\item{object}{A \code{confMeta} object, as returned by \code{\link[=confMeta]{confMeta()}}.}
+
+\item{...}{Additional arguments (currently ignored).}
+}
 \value{
 A data frame where each row corresponds to a method:
 \itemize{
@@ -30,14 +35,4 @@ results from the comparison methods.
 When multiple \code{confMeta} objects are supplied (e.g. with different
 combination functions), their summaries are stacked in a single table.
 The comparison methods are taken from the first object.
-}
-\examples{
-# Single confMeta object
-cm1 <- confMeta(estimates, SEs, fun = p_edgington, fun_name = "Edgington")
-summary(cm1)
-
-# Multiple confMeta objects (different combination functions on the same data)
-cm2 <- confMeta(estimates, SEs, fun = p_other, fun_name = "Other method")
-summary(cm1, cm2)
-
 }
