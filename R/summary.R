@@ -9,6 +9,12 @@
 #' combination functions), their summaries are stacked in a single table.
 #' The comparison methods are taken from the first object.
 #'
+#'
+#'
+#' @param object A `confMeta` object, as returned by [confMeta()].
+#' @param ... Additional arguments (currently ignored).
+#' 
+#' 
 #' @return
 #' A data frame where each row corresponds to a method:
 #'
@@ -23,14 +29,6 @@
 #'   `confMeta` object)  
 #' - `p_0` – p-value at \eqn{\mu = 0}
 #'
-#' @examples
-#' # Single confMeta object
-#' cm1 <- confMeta(estimates, SEs, fun = p_edgington, fun_name = "Edgington")
-#' summary(cm1)
-#'
-#' # Multiple confMeta objects (different combination functions on the same data)
-#' cm2 <- confMeta(estimates, SEs, fun = p_other, fun_name = "Other method")
-#' summary(cm1, cm2)
 #'
 #' @export
 
