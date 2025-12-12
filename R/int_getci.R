@@ -31,7 +31,7 @@ get_ci <- function(
       # cause ordering was not easy to handle. 
       #
       #NOW: build a separate x-grid just for optimization; do NOT touch SEs/w
-      x_grid <- sort(unique(orig_est)) 
+      x_grid <- sort(unique(zapsmall(orig_est))) #zapsmall deletes machine precision difference in number, I got once an error where two numbers where treated as the same even though machine precision different
       
       #NOTE--> we need this grid for the optimization (i.e. finding roots of f - alfa (the CI limits) and
       #its maxima i.e. estimate).
