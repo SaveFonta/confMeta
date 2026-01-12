@@ -144,7 +144,8 @@ The boundaries of the confidence intervals returned in element
 in element 'p_fun' is equal to 1-\code{conf_level}.
 
 \strong{Note:} due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not anymore the REML.
-Also, the HK method uses the Ad hoc  variance correction (Knapp and Hartung, 2003) if HK standard error is smaller than standard error from classic random effects meta-analysis
+Also, the HK method uses the adhoc.hakn.ci = "IQWiG6"	by default, i.e. use variance correction if HK confidence interval
+is narrower than CI from classic random effects model with DerSimonian-Laird estimator (IQWiG, 2022)
 }
 
 \examples{

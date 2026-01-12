@@ -113,8 +113,10 @@
 #'in element 'p_fun' is equal to 1-`conf_level`.
 #' 
 #' **Note:** due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not anymore the REML.
-#' Also, the HK method uses the Ad hoc  variance correction (Knapp and Hartung, 2003) if HK standard error is smaller than standard error from classic random effects meta-analysis 
-#'
+#' Also, the HK method uses the adhoc.hakn.ci = "IQWiG6"	by default, i.e. use variance correction if HK confidence interval
+#' is narrower than CI from classic random effects model with DerSimonian-Laird estimator (IQWiG, 2022)
+#' 
+#' 
 #' @examples
 #'     # Simulate effect estimates and standard errors
 #'     set.seed(42)
@@ -455,7 +457,7 @@ get_obj_fe <- function(estimates, SEs, conf_level) {
 get_obj_hk <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "PM", method.random.ci = "HK", adhoc.hakn.ci = "se", #[MOD]--> "hakn = TRUE" is deprecated
+        level = conf_level, method.tau = "PM", method.random.ci = "HK", adhoc.hakn.ci = "IQWiG6", #[MOD]--> "hakn = TRUE" is deprecated
         common = FALSE, random = TRUE
     )
 } # IMPORTANT --> reading the documentation of metagen we have that method.tau = gs("method.tau"), this mean that by default it will
