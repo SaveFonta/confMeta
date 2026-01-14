@@ -86,6 +86,9 @@ other methods are random effects (REML), Hartung & Knapp, and
 Henmi & Copas.
 \item \code{comparison_p_0}: The same as in element \code{p_0} but for the comparison
 methods (random effects, Hartung & Knapp, Henmi & Copas).
+#' - \code{heterogeneity}: A data frame containing heterogeneity statistics
+(Cochran's Q, p-value for Q, I-squared, Tau-squared) calculated
+using REML estimator.
 }
 }
 \description{

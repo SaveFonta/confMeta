@@ -64,6 +64,9 @@
 #'   Henmi & Copas.
 #' - `comparison_p_0`: The same as in element `p_0` but for the comparison
 #'   methods (random effects, Hartung & Knapp, Henmi & Copas).
+#'   #' - `heterogeneity`: A data frame containing heterogeneity statistics 
+#'    (Cochran's Q, p-value for Q, I-squared, Tau-squared) calculated 
+#'    using REML estimator. 
 #'     
 #' @details
 #' Additional details are provided in the sections below.
@@ -257,6 +260,21 @@ new_confMeta <- function(
     conf_level = conf_level
   )
   
+  
+  metagen_obj <- metagen_wrap(estimates, SEs)
+  
+  
+  heterogeneity <- data.frame(
+    Q = metagen_obj$Q,
+    p_Q = metagen_obj$pval.Q,
+    I2 = metagen_obj$I2,
+    Tau = metagen_obj$tau,
+    I2_CI = paste0("[", round(metagen_obj$lower.I2, 2), "; ", round(metagen_obj$upper.I2, 2), "]"),
+    stringsAsFactors = FALSE
+  )
+  
+  
+  
   # Return object
   structure(
     list(
@@ -275,7 +293,8 @@ new_confMeta <- function(
       aucc = joint_cis$aucc,
       aucc_ratio = joint_cis$aucc_ratio,
       comparison_cis = comparison$CI,
-      comparison_p_0 = comparison$p_0
+      comparison_p_0 = comparison$p_0,
+      heterogeneity = heterogeneity
     ),
     class = "confMeta"
   )
@@ -346,7 +365,8 @@ validate_confMeta <- function(confMeta) {
     "aucc_ratio",
     "comparison_cis",
     "comparison_p_0",
-    "w"   # [MOD]
+    "w",   # [MOD]
+    "heterogeneity"  # [MOD] 
   )
   
   ok <- cm_elements %in% names(confMeta)
@@ -464,6 +484,7 @@ get_obj_hk <- function(estimates, SEs, conf_level) {
 # try to find a method.tau in the env, that can be actually modified using settings.meta(method.tau = "PM"), even though
 # it can be useful, this would mean that at the beginning of every confMeta session, we should set the method, and it is not
 # always practical and straightforward to new users of the package. So I decided to force it to PM for the moment.
+# by default when loading the package, the general setting is REML (can see this using meta::settings.meta()$method.tau)
 
 #I also added the ad.hoc correction
 
@@ -897,3 +918,22 @@ check_prob <- function(x, val = FALSE) {
     }
     invisible(NULL)
 }
+
+
+
+################################################################################
+# Compute general metagen object                                               #
+################################################################################
+
+# with this function we compute a general metagen object. If need to add other statistics computed by metagen (since it computes
+#everything you can think of in meta analysis), just extract from this (NB: here you can easily change the default option used in metagen)
+
+
+metagen_wrap <- function (estimates, SEs){
+ meta::metagen(
+    TE = estimates, 
+    seTE = SEs, 
+    data = data.frame(estimates, SEs)
+  )
+}
+
