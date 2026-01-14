@@ -269,7 +269,8 @@ new_confMeta <- function(
     p_Q = metagen_obj$pval.Q,
     I2 = metagen_obj$I2,
     Tau = metagen_obj$tau,
-    I2_CI = paste0("[", round(metagen_obj$lower.I2, 2), "; ", round(metagen_obj$upper.I2, 2), "]"),
+    I2_lower = metagen_obj$lower.I2,
+    I2_upper <- metagen_obj$upper.I2,
     stringsAsFactors = FALSE
   )
   
