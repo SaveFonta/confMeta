@@ -60,11 +60,11 @@
 #' - `p_0`: The value of the \eqn{p}-value at \eqn{\mu = 0}.
 #' - `comparison_cis`: Combined confidence intervals calculated with other
 #'   methods. These can be used for comparison purposes. Currently, these
-#'   other methods are random effects (REML), Hartung & Knapp, and
+#'   other methods are random effects (IV), Hartung & Knapp, and
 #'   Henmi & Copas.
 #' - `comparison_p_0`: The same as in element `p_0` but for the comparison
 #'   methods (random effects, Hartung & Knapp, Henmi & Copas).
-#'   #' - `heterogeneity`: A data frame containing heterogeneity statistics 
+#' - `heterogeneity`: A data frame containing heterogeneity statistics 
 #'    (Cochran's Q, p-value for Q, I-squared, Tau-squared) calculated 
 #'    using REML estimator. 
 #'     
@@ -164,6 +164,9 @@ confMeta <- function(
     fun,
     fun_name = NULL,
     w = NULL,   # [MOD] 
+    MH = FALSE, 
+    table_2x2 = NULL,
+    measure = NULL,
     ...
 ) {
   
@@ -201,6 +204,25 @@ confMeta <- function(
     w = w #[MOD]
   )
   
+  
+  # Add input checks for MH
+  if (MH) {
+    if (is.null(table_2x2)) {
+      stop("When MH = TRUE, 'table_2x2' must be provided.")
+    }
+    if (is.null(measure)) {
+      stop("When MH = TRUE, 'measure' must be provided.")
+    }
+    # Check table_2x2 structure
+    required_cols <- c("ai", "bi", "ci", "di", "n1i", "n2i")
+    missing_cols <- setdiff(required_cols, names(table_2x2))
+    if (length(missing_cols) > 0) {
+      stop("table_2x2 must contain columns: ", 
+           paste(missing_cols, collapse = ", "))
+    }
+  }
+  
+  
   # Make the p-value function
   p_fun <- make_p_fun(
     fun = fun,
@@ -214,12 +236,17 @@ confMeta <- function(
     study_names = study_names,
     conf_level = conf_level,
     p_fun = p_fun,
-    fun_name = fun_name
+    fun_name = fun_name,
+    MH = MH, 
+    table_2x2 = table_2x2,
+    measure = measure
   )
 }
 
 # Constructor function
 #' @importFrom stats qnorm
+#' @importFrom meta metagen metabin
+
 new_confMeta <- function(
     estimates = double(),
     SEs = double(),
@@ -227,7 +254,10 @@ new_confMeta <- function(
     study_names = character(),
     conf_level = double(1L),
     p_fun,
-    fun_name
+    fun_name,
+    MH = FALSE, 
+    table_2x2 = NULL,
+    measure = NULL
 ) {
 
   # Calculate individual CIs (classic Wald type)
@@ -260,6 +290,8 @@ new_confMeta <- function(
     conf_level = conf_level
   )
   
+  # overwrite the FE method if MH = TRUE 
+  if (MH == TRUE) comparison <- overwrite_FE (comparison = comparison, table_2x2 = table_2x2, measure = measure, conf_level = conf_level) 
   
   metagen_obj <- metagen_wrap(estimates, SEs)
   
@@ -270,7 +302,7 @@ new_confMeta <- function(
     I2 = metagen_obj$I2,
     Tau = metagen_obj$tau,
     I2_lower = metagen_obj$lower.I2,
-    I2_upper <- metagen_obj$upper.I2,
+    I2_upper = metagen_obj$upper.I2,
     stringsAsFactors = FALSE
   )
   
@@ -642,6 +674,67 @@ get_stats_others <- function(method, estimates, SEs, conf_level) {
     list("CI" = cis, "p_0" = p)
 }
 
+
+# function to overwrite the FE wit MH if 2x2 table provided
+overwrite_FE <- function(comparison, table_2x2, measure, conf_level = 0.95) {
+  tryCatch({  
+    # alternative implementation with rma.mh, problem --> doesnt handle 0 cells properly
+    #MH_fe <- metafor::rma.mh(
+    #  ai = table_2x2$ai,
+     # bi = table_2x2$bi,
+    #  ci = table_2x2$ci,
+    #  di = table_2x2$di,
+    #  n1i = table_2x2$n1i,
+    #  n2i = table_2x2$n2i,
+    #  measure = measure,
+    #  level = conf_level * 100  # rma.mh wants percentage
+    #)
+    #comparison$CI["Fixed effect", "lower"] <- MH_fe$ci.lb
+    #comparison$CI["Fixed effect", "upper"] <- MH_fe$ci.ub
+    #comparison$p_0["Fixed effect", "y"] <- MH_fe$pval 
+    
+    MH_fe <- metabin(
+      event.e =  table_2x2$ai,           # events in experimental group
+      n.e = table_2x2$n1i,              # Number of obs in experimental group 
+      event.c = table_2x2$ci,          # events in control group   
+      n.c = table_2x2$n2i,              #  obs in control group 
+      sm = measure,              # Summary Measure
+      method = "MH",
+      allstudies = TRUE # include studies with zero or all events in both groups 
+      )
+    
+    comparison$CI["Fixed effect", "lower"] <- MH_fe$lower.common
+    comparison$CI["Fixed effect", "upper"] <- MH_fe$upper.common
+    comparison$p_0["Fixed effect", "y"] <- MH_fe$pval.common 
+ 
+    comparison
+  }, error = function(e) {
+    warning("Mantel-Haenszel pooling failed: ", e$message, 
+            "\nFalling back to inverse-variance FE method.")
+    comparison  # Return unchanged
+  })
+}
+
+
+
+
+################################################################################
+# Compute general metagen object                                               #
+################################################################################
+
+# with this function we compute a general metagen object. If one need to add other statistics computed by metagen (since it computes
+#everything you can think of in meta analysis), just extract from this (NB: here you can easily change the default options used in metagen to estimate tau in different ways)
+
+
+metagen_wrap <- function (estimates, SEs){
+  meta::metagen(
+    TE = estimates, 
+    seTE = SEs, 
+    data = data.frame(estimates, SEs)
+  )
+}
+
+
 # ==============================================================================
 # Remove unnecessary arguments from ... ========================================
 # ==============================================================================
@@ -922,19 +1015,4 @@ check_prob <- function(x, val = FALSE) {
 
 
 
-################################################################################
-# Compute general metagen object                                               #
-################################################################################
-
-# with this function we compute a general metagen object. If need to add other statistics computed by metagen (since it computes
-#everything you can think of in meta analysis), just extract from this (NB: here you can easily change the default option used in metagen)
-
-
-metagen_wrap <- function (estimates, SEs){
- meta::metagen(
-    TE = estimates, 
-    seTE = SEs, 
-    data = data.frame(estimates, SEs)
-  )
-}
 
