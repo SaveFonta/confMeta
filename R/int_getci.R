@@ -451,6 +451,7 @@ find_upper <- function(estimates_max, SEs_max, f) {
 # Fix the arguments (estimates, SEs, w, mu) in p_fun,  Outputs a new function that has 
 # only the argument mu, then SUBSTRACT ALPHA
 
+#Note, previously do.call was used. Check this: https://stackoverflow.com/questions/17629499/do-call-20-slower-than-a-normal-call-in-r
 make_function <- function(
     estimates,
     SEs,
@@ -458,11 +459,15 @@ make_function <- function(
     alpha,
     p_fun
 ) {
-  function(mu) {
-    args <- list(estimates = estimates, SEs = SEs, mu = mu)
-    if (!is.null(w)) args$w <- w
-    do.call(p_fun, args) - alpha
-
+  # Pre-check if w is needed 
+  if (!is.null(w)) {
+    function(mu) {
+      p_fun(estimates = estimates, SEs = SEs, w = w, mu = mu) - alpha
+    }
+  } else {
+    function(mu) {
+      p_fun(estimates = estimates, SEs = SEs, mu = mu) - alpha
+    }
   }
 }
 
