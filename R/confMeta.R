@@ -102,7 +102,7 @@
 #' @section Confidence intervals:
 #'
 #' The `individual_cis` are calculated as
-#' \deqn{x_i \pm \Phi^{-1}(\alpha) \cdot \sigma_i}
+#' \deqn{x_i \pm \Phi^{-1}(1 - \alpha/2) \cdot \sigma_i}
 #'
 #' where \eqn{x_i} corresponds to the elements of vector
 #' `estimates`, \eqn{\Phi^{-1}} is the quantile function of
@@ -293,7 +293,7 @@ new_confMeta <- function(
   # overwrite the FE method if MH = TRUE 
   if (MH == TRUE) comparison <- overwrite_FE (comparison = comparison, table_2x2 = table_2x2, measure = measure, conf_level = conf_level) 
   
-  metagen_obj <- metagen_wrap(estimates, SEs)
+  metagen_obj <- metagen_wrap(estimates, SEs, conf_level = conf_level)
   
   
   heterogeneity <- data.frame(
@@ -693,14 +693,15 @@ overwrite_FE <- function(comparison, table_2x2, measure, conf_level = 0.95) {
     #comparison$CI["Fixed effect", "upper"] <- MH_fe$ci.ub
     #comparison$p_0["Fixed effect", "y"] <- MH_fe$pval 
     
-    MH_fe <- metabin(
+    MH_fe <- meta::metabin(
       event.e =  table_2x2$ai,           # events in experimental group
       n.e = table_2x2$n1i,              # Number of obs in experimental group 
       event.c = table_2x2$ci,          # events in control group   
       n.c = table_2x2$n2i,              #  obs in control group 
       sm = measure,              # Summary Measure
       method = "MH",
-      allstudies = TRUE # include studies with zero or all events in both groups 
+      allstudies = TRUE, # include studies with zero or all events in both groups 
+      level = conf_level
       )
     
     comparison$CI["Fixed effect", "lower"] <- MH_fe$lower.common
@@ -726,11 +727,12 @@ overwrite_FE <- function(comparison, table_2x2, measure, conf_level = 0.95) {
 #everything you can think of in meta analysis), just extract from this (NB: here you can easily change the default options used in metagen to estimate tau in different ways)
 
 
-metagen_wrap <- function (estimates, SEs){
+metagen_wrap <- function(estimates, SEs, conf_level = 0.95) {
   meta::metagen(
-    TE = estimates, 
-    seTE = SEs, 
-    data = data.frame(estimates, SEs)
+    TE = estimates, seTE = SEs,
+    level = conf_level,
+    method.tau = "REML",
+    random = TRUE, common = FALSE
   )
 }
 
