@@ -1,11 +1,11 @@
 #' @title Visualizations of `confMeta` objects
 #'
 #' @description Plot one or more `confMeta` objects. Currently, this function
-#'     can create two types of plots, the *p*-value function as well as the
+#'     can create two types of plots, the *p*-value function and the
 #'     forest plot. This allows to compare different *p*-value functions with
 #'     each other.
 #'
-#'Optionally, a Bayesian meta-analysis object created with the
+#' Optionally, a Bayesian meta-analysis object created with the
 #' [bayesmeta::bayesmeta()] function can be supplied via the `bayesmeta` argument.
 #' When provided, its posterior summary is displayed as an additional diamond
 #' at the bottom of the forest plot for comparison with the frequentist methods
@@ -49,18 +49,18 @@
 #'     These two methods are mutually exclusive, as only one baseline
 #'     meta-analysis model (fixed or random effects) can be displayed in
 #'     a single plot. Defaults to `c("re", "hk", "hc")`.
-#' @param xlim Either NULL (default) or a numeric vector of length 2 which
-#'     indicates the extent of the x-axis that should be shown.
+#' @param xlim Numeric vector of length 2. Global limits for the x-axis. 
+#'   If `NULL`, limits are calculated automatically.
+#' @param xlim_p Numeric vector of length 2. Specific x-axis limits for the 
+#'   p-value plot. Overrides `xlim`.
+#' @param xlim_forest Numeric vector of length 2. Specific x-axis limits for 
+#'   the forest plot. Overrides `xlim`.
+#' @param same_xlim Logical. If `TRUE`, forces the p-value plot to use the 
+#'   same x-axis limits as the forest plot. Defaults to `FALSE`.
 #' @param xlab Either NULL (default) or a character vector of length 1 which
 #'     is used as the label for the x-axis.
-#'
-#' @param xbreaks Numeric value of length 1. Defines the spacing of the tick
-#'     marks along the x-axis, expressed in the same units as the effect size.
-#'     For example, `xbreaks = 0.5` will show tick marks at
-#'     `..., -1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5, ...`.  
-#'     Defaults to `0.5`. This argument is used in both the *p*-value function
-#'     plot and the forest plot to control the resolution of the x-axis ticks.
-#'     
+#' @param  n_breaks approximate number of tick marks to display 
+#'   on the x-axis. Defaults to `7`
 #' @param bayesmeta Either `NULL` (default) or an object of class `"bayesmeta"`,
 #'     typically created using [bayesmeta::bayesmeta()]. When provided, the
 #'     posterior median (or mean, depending on the `mu_estimate` setting) and
@@ -70,6 +70,14 @@
 #'     function plot.
 #' @return An object of class `ggplot` containing the specified plot(s).
 #'
+#'
+#'
+#'@note
+#' The function extract esplicitly the 95% credible intervals from the 'bayesmeta' object
+#' If the bayesian model was fit using a different credible level, the function will crash
+#'
+#'
+
 #' @importFrom patchwork wrap_plots
 #'
 #' @export
@@ -84,8 +92,11 @@ autoplot.confMeta <- function(
     # drapery_ma = c("fe"),
     reference_methods = c("re", "hk", "hc"),
     xlim = NULL,
+    xlim_p = NULL,
+    xlim_forest = NULL,
+    same_xlim = FALSE,
     xlab = NULL,
-    xbreaks = 0.5,
+    n_breaks = 7,
     bayesmeta = NULL
 ) {
 
@@ -136,100 +147,121 @@ autoplot.confMeta <- function(
     check_class(x = v_space, "numeric")
 
     # if xlim not specified, builds a range that covers all CIs and add 5% of margin
-    if (!is.null(xlim)) {
-        check_xlim(x = xlim)
+    # I added the possibility to handle xlim_p and xlim_forest divvertently!
+    
+    
+    # xlim for p plot:
+    if (!is.null(xlim_p)) {
+        check_xlim(x = xlim_p)
+    } else if (!is.null(xlim)) { #goes to the global xlim if specified
+      xlim_p <- xlim
+      check_xlim(xlim_p)
     } else {
-        candidates <- unname(
+      candidates_p <- unname(
             do.call(
                 "c",
-                lapply(
-                    cms,
-                    function(x) {
-                        with(x, c(individual_cis, joint_cis, comparison_cis))
+                lapply(cms, function(x) {
+                  
+                  comp <- x$comparison_cis
+                  
+                  # For the p value plot, we only care about FE or RE. So we don't consider the other comparison method
+                  keep <- rownames(comp) %in% c("Fixed effect", "Random effects", "fe", "re")
+                  comp_filtered <- comp[keep, , drop = FALSE]
+                  
+                  with(x, c(individual_cis, joint_cis, comp_filtered))
                     }
-                )
-            )
-        )
-        candidates <- candidates[is.finite(candidates)]
+                )))
+        
+        candidates_p <- candidates_p[is.finite(candidates_p)]
+        
         ext_perc <- 5
-        lower <- min(candidates)
-        upper <- max(candidates)
-        margin <- (upper - lower) * ext_perc / 100
-        xlim <- c(lower - margin, upper + margin)
+        lower_p <- min(candidates_p)
+        upper_p <- max(candidates_p)
+        margin_p <- (upper_p - lower_p) * ext_perc / 100
+        xlim_p <- c(lower_p - margin_p, upper_p + margin_p)
     }
-
-    # generate plots, but don't run yer, just save them using "quote", to launch use "eval"
-    expr <- list(
-        p = quote({
-            pplot <- ggPvalueFunction(
-                cms = cms,
-                drapery = drapery,
-                xlim = xlim,
-                xlab = xlab,
-                reference_methods = reference_methods,
-                xbreaks
-            )
-        }),
-        forest = quote({
-            fplot <- ForestPlot(
-                cms = cms,
-                diamond_height = diamond_height,
-                v_space = v_space,
-                xlim = xlim,
-                show_studies = show_studies,
-                scale_diamonds = scale_diamonds,
-                reference_methods = reference_methods,
-                xlab = xlab,
-                xbreaks
-            )
-        })
-    )
-    expr <- expr[names(expr) %in% type]
-
-    # put all the graphics parameters in a list
-    pars <- list(
-        type = type,
-        diamond_height = diamond_height,
-        v_space = v_space,
-        scale_diamonds = scale_diamonds,
-        show_studies = show_studies,
-        drapery = drapery,
-        reference_methods = reference_methods,
-        xlim = xlim,
-        xlab = xlab
-    )
-
-      # PLOT!
-    plots <- lapply(
-        expr,
-        function(x, cms, pars) eval(x),
-        cms = cms,
-        pars = pars
-    )
     
     
-    # If a bayesmeta object is provided, add its diamond to the forest plot
-    if (!is.null(bayesmeta)) {
-      stopifnot(inherits(bayesmeta, "bayesmeta"))
+    # xlim for f plot:
+    if (!is.null(xlim_forest)) {
       
-      # Add the Bayesian diamond only if the forest plot is part of 'type'
-      if ("forest" %in% type) {
-        plots[["forest"]] <- add_bayes_forest(
-          p  = plots[["forest"]],   
-          bm = bayesmeta,
-          color = "black",
-          label = "Bayesmeta"
-        )
+      check_xlim(xlim_forest) 
+    } else if (!is.null(xlim)) {
+      xlim_forest <- xlim     
+      check_xlim(xlim_forest)
+      
+    } else {
+      candidates_f <- unname(do.call("c", lapply(cms, function(x) {
+        with(x, c(individual_cis, joint_cis, comparison_cis))
+      })))
+      
+      candidates_f <- candidates_f[is.finite(candidates_f)]
+      
+      if (length(candidates_f) == 0) {
+        xlim_forest <- c(-1, 1)
+      } else {
+        diff_f <- max(candidates_f) - min(candidates_f)
+        margin_f <- if(diff_f == 0) 0.5 else diff_f * 0.05
+        xlim_forest <- c(min(candidates_f) - margin_f, max(candidates_f) + margin_f)
       }
     }
     
+    
+    # if you want to have same x lim, set the x lim_p (which can be different since we excluded some methods) = lim_f
+    if (same_xlim) {
+      xlim_p = xlim_forest
+    }
 
-    if (length(plots) < 2L) {
-        plots[[1L]]
+    plots <- list()
+    if ("p" %in% type) {
+      plots[["p"]] <- ggPvalueFunction(
+        cms=cms, 
+        drapery = drapery, 
+        xlim = xlim_p,
+        xlab = xlab,
+        reference_methods = reference_methods, 
+         n_breaks =  n_breaks
+      )
+    }
+    
+    if ("forest" %in% type) {
+      plots[["forest"]] <- ForestPlot(
+        cms = cms, 
+        diamond_height = diamond_height, 
+        v_space = v_space, 
+        xlim = xlim_forest, 
+        show_studies = show_studies, 
+        scale_diamonds = scale_diamonds, 
+        reference_methods = reference_methods, 
+        xlab = xlab, 
+         n_breaks =  n_breaks
+      )
+    }
+    
+    
+    # Add Bayesmeta if requested
+    if (!is.null(bayesmeta)) {
+      if (!inherits(bayesmeta, "bayesmeta")) stop("bayesmeta argument MUST be of class 'bayesmeta'")
+           if ("forest" %in% type) {
+            plots [["forest"]] <- add_bayes_forest(
+             p = plots[["forest"]], 
+             bm = bayesmeta, 
+             color = "black", 
+              label = "Bayesmeta"
+               )
+                }
+    }
+    
+    # OUTPUT
+    if (length(plots) == 0) {
+      return(NULL)
+    } else if (length(plots) == 1L) {
+      return(plots[[1L]])
     } else {
-        patchwork::wrap_plots(plots, ncol = 1L) #put them vertically if there are 2 plots
+      return(patchwork::wrap_plots(plots, ncol = 1L)) #put them vertically if there are 2 plots
     }
 }
+    
 
 # ==============================================================================
 # Reexport autoplot function
@@ -380,13 +412,12 @@ ggPvalueFunction <- function(
     drapery,
     xlab,
     reference_methods,
-    xbreaks
+     n_breaks
 ) {
-
+ 
   # Set some constants that are equal for all grid rows
   #use const as a list for containing stuff, muSeq is for creating the grid of mu values,
-  # I added that also w is inside const for cleaner code
-  
+
   const <- list(
     estimates  = cms[[1L]]$estimates,
     SEs        = cms[[1L]]$SEs,
@@ -400,6 +431,7 @@ ggPvalueFunction <- function(
 
     # Get the function names (for legend)
     fun_names <- vapply(cms, "[[", i = "fun_name", character(1L))
+    
     # Add the reference methods and make factor levels (fe vs re)
     fac_levels <- if ("fe" %in% reference_methods) {
         c(map_ref_methods("fe"), fun_names)
@@ -409,7 +441,7 @@ ggPvalueFunction <- function(
 
     # Calculate the p-values and CIs
     data <- lapply(seq_along(cms), function(x) {
-
+        
         cm <- cms[[x]]
         fun <- cm$p_fun
         fun_name <- cm$fun_name
@@ -432,7 +464,7 @@ ggPvalueFunction <- function(
         # (!!) here we call just those arguments, cause the others are already saved inside p_fun as default parameters 
         #thanks to make_p_fun() (e.g. heterogeneity, approx, tau2, neff...)
         #
-        #just remember that w in this closure is by default (1,...1) so if you have it and don't call it can break
+        #just remember that w in this closure is by default (1,...1) so this is extremely necessary
         #############################################################################################à##################
         
         
@@ -561,17 +593,13 @@ ggPvalueFunction <- function(
       ggplot2::geom_vline(xintercept = 0, linetype = "solid") #line at mu = 0
     
     
-    # DEFINE THE axis scale! NOTE: in previous versione the break was of 1, but I think with this break of 0.5 is 
-    # easier to read the graph 
+    # DEFINE THE axis scale!
+    # Changed completely the logic since sometimes the x axis was problematic in scaling, now pretty_breaks handles everything!
     
     p <- p +
       ggplot2::scale_x_continuous(
         limits = xlim,
-        breaks = seq(
-          from = floor(xlim[1] * 2) / 2,
-          to   = ceiling(xlim[2] * 2) / 2,
-          by   = xbreaks
-        ),
+        breaks = scales::pretty_breaks(n = 7),  #7 number is just arbitrary
         minor_breaks = NULL
       )
     
@@ -603,7 +631,7 @@ ggPvalueFunction <- function(
         # Vertical line at 0
         p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "solid") +
             ggplot2::geom_point(
-                # Points at (x = 0, y = p_0)
+                # Points at (x = 0, y = p_0) (it is the H0, put a point there)
                 data = lines[!is.na(lines$y0), ],
                 ggplot2::aes(x = 0, y = y0, color = group),
                 alpha = transparency
@@ -613,7 +641,7 @@ ggPvalueFunction <- function(
         ggplot2::geom_hline(yintercept = 0, linetype = "solid") + #horiz line at y=0
         ggplot2::geom_line(alpha = transparency) +
         ggplot2::scale_y_continuous(
-            name = "p-value",
+            name = "p-value", #left axis 
             breaks = breaks_y1,
             limits = c(0, 1),
             expand = c(0, 0),
@@ -648,7 +676,7 @@ ggPvalueFunction <- function(
             legend.position = "bottom"
         )
 
-    # Add axis/legend labels
+    # Add axis/legend label
     xlab <- if (is.null(xlab)) {
         bquote(mu)
     } else {
@@ -727,7 +755,7 @@ map_ref_methods <- function(abbrevs) {
 # forest plot
 # ==============================================================================
 
-#' @importFrom ggplot2 ggplot xlim geom_vline geom_errorbarh aes geom_point
+#' @importFrom ggplot2 ggplot xlim geom_vline geom_errorbar aes geom_point
 #' @importFrom ggplot2 geom_polygon theme_minimal theme element_blank
 #' @importFrom ggplot2 element_line scale_y_continuous labs scale_fill_discrete
 #' @importFrom ggplot2 annotate
@@ -741,11 +769,10 @@ ForestPlot <- function(
     reference_methods,
     xlim,
     xlab,
-    xbreaks
+     n_breaks
 ) {
 
-  
-    # Make a data frame for the single studies
+      # Make a data frame for the single studies
     cm <- cms[[1L]]
     studyCIs <- data.frame(
         lower = cm$individual_cis[, 1L],
@@ -855,17 +882,13 @@ ForestPlot <- function(
     p <- ggplot2::ggplot()
     
     
-    # DEFINE THE axis scale! NOTE: in previous versione the break was of 1, but I think with this break of 0.5 is 
-    # easier to read the graph 
+    # DEFINE THE axis scale! smartly 
+    
     if (!is.null(xlim)) {
       p <- p +
         ggplot2::scale_x_continuous(
           limits = xlim,
-          breaks = seq(
-            from = floor(xlim[1] / xbreaks) * xbreaks,
-            to   = ceiling(xlim[2] / xbreaks) * xbreaks,
-            by   = xbreaks
-          ),
+          breaks = scales::pretty_breaks(n = n_breaks),
           minor_breaks = NULL
         )
       
@@ -876,18 +899,15 @@ ForestPlot <- function(
     } else {
       p <- p +
         ggplot2::scale_x_continuous(
-          breaks = seq(
-            from = floor(xlim[1] * 2) / 2,   # start at the nearest multiple of 0.5 below xlim[1]
-            to   = ceiling(xlim[2] * 2) / 2, # end at the nearest multiple of 0.5 above xlim[2]
-            by   = xbreaks                       # spacing between ticks
-          ),
+          breaks = scales::pretty_breaks(n = n_breaks),
           minor_breaks = NULL
         )
     }
     
     if (show_studies) {
         p <- p +
-            ggplot2::geom_errorbarh(
+            ggplot2::geom_errorbar(
+                orientation = "y",
                 data = studyCIs,
                 ggplot2::aes(
                     y = y,
@@ -1237,6 +1257,9 @@ add_bayes_forest <- function(p, bm, color = "black", label = "Bayesmeta",
   # Extract summary from the bayesmeta object
   s <- bm$summary
   mu_est <- s[mu_estimate, "mu"]
+  
+  # IMPORTAN NOTE --> bayesmeta object only works for 95% predictive intervals! Not different from those 
+
   lower  <- s["95% lower", "mu"]
   upper  <- s["95% upper", "mu"]
   
@@ -1246,13 +1269,19 @@ add_bayes_forest <- function(p, bm, color = "black", label = "Bayesmeta",
   y_labels <- gb$layout$panel_params[[1]]$y$get_labels()
   
   # Distance between rows (to find spacing for new diamond)
-  dy <- median(diff(sort(y_breaks)))
-  y_bayes <- min(y_breaks) - dy
+  dy <- median(diff(sort(y_breaks))) #gap size between rows
+  y_bayes <- min(y_breaks) - dy    #new position, one break below bottom
   
   # Extract diamond layer info to get height and line width
-  diamond_layer <- gb$data[[4]]  # polygon layer (same assumption)
+  
+  
+  # I could find a smarter solutioN ...
+  diamond_layer <- gb$data[[4]]  # polygon layer 
   height <- (diamond_layer[4, 2] - diamond_layer[2, 2]) / 2
+  
   linewidth <- diamond_layer$linewidth[1]
+  
+  
   
   # Define polygon for the Bayesmeta diamond
   diamond <- data.frame(
