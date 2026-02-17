@@ -94,7 +94,7 @@ autoplot.confMeta <- function(
     xlim = NULL,
     xlim_p = NULL,
     xlim_forest = NULL,
-    same_xlim = FALSE,
+    same_xlim = TRUE,
     xlab = NULL,
     n_breaks = 7,
     bayesmeta = NULL
@@ -192,7 +192,17 @@ autoplot.confMeta <- function(
       
     } else {
       candidates_f <- unname(do.call("c", lapply(cms, function(x) {
-        with(x, c(individual_cis, joint_cis, comparison_cis))
+        
+        comp <- x$comparison_cis
+        
+        # create x axis only on the actual ref methods
+        allowed_methods <- map_ref_methods (reference_methods)
+        
+        keep <- rownames(comp)%in%allowed_methods
+        comp_filtered <- comp[keep, , drop = FALSE]
+        
+        
+        with(x, c(individual_cis, joint_cis, comp_filtered))
       })))
       
       candidates_f <- candidates_f[is.finite(candidates_f)]
@@ -598,10 +608,11 @@ ggPvalueFunction <- function(
     
     p <- p +
       ggplot2::scale_x_continuous(
-        limits = xlim,
+        # limits = xlim, old version
         breaks = scales::pretty_breaks(n = 7),  #7 number is just arbitrary
         minor_breaks = NULL
-      )
+      ) +
+      ggplot2::coord_cartesian(xlim = xlim, ylim = c(0, 1), expand = FALSE) # this allows us to ZOOM in the plot, not cut it 
     
     #now add the plot for baseline method
     if (!drapery) { #only vertical lines if drapery FALSE
@@ -643,8 +654,8 @@ ggPvalueFunction <- function(
         ggplot2::scale_y_continuous(
             name = "p-value", #left axis 
             breaks = breaks_y1,
-            limits = c(0, 1),
-            expand = c(0, 0),
+            #limits = c(0, 1), now there should be coord_cartesian
+            #expand = c(0, 0),
             sec.axis = ggplot2::sec_axis(
                 transform = trans,
                 name = "Confidence level [%]",
@@ -792,12 +803,10 @@ ForestPlot <- function(
         scale_diamonds = scale_diamonds
     )
 
-    # Get the dataframe for the polygons of the old methods
+    # RETRIEVE (not recompute) the dataframe for the polygons of the old methods
     old_methods_cis <- get_CI_old_methods(
-        estimates = cm$estimates,
-        SEs = cm$SEs,
-        conf_level = cm$conf_level,
-        diamond_height = diamond_height
+      cm = cm,
+      diamond_height = diamond_height
     )
 
     ###########################################################################
@@ -887,10 +896,11 @@ ForestPlot <- function(
     if (!is.null(xlim)) {
       p <- p +
         ggplot2::scale_x_continuous(
-          limits = xlim,
+          # limits = xlim,
           breaks = scales::pretty_breaks(n = n_breaks),
           minor_breaks = NULL
-        )
+        ) + 
+        ggplot2::coord_cartesian(xlim = xlim, clip = "on", expand = FALSE) # 
       
       # vertical line at 0
       if (0 > xlim[1L] && 0 < xlim[2L]) {
@@ -1049,46 +1059,62 @@ get_CI_new_methods <- function(
 
 
 get_CI_old_methods <- function(
-    estimates,
-    SEs,
-    conf_level,
-    diamond_height
-) {
+    cm,              
+    diamond_height) 
+  {
 
 
-    # calculate CIs, p_0 for other methods
-    methods <- get_method_names()
-    cis <- get_stats_others(
-        method = names(methods),
-        estimates = estimates,
-        SEs = SEs,
-        conf_level = conf_level
-    )
-    # get the estimates
-    ests <- with(cis, rowMeans(CI))
-
+    # in previous version, there was a call to get_stats_others, and the CI comparison were recomputed. 
+    #Now i just extract them 
+  
+   cis <- cm$comparison_cis
+   p_0_vals <- cm$comparison_p_0
+   
+   
+   #DIAMOND IS:
+   # Left Corner: (Lower, 0)
+   # Bottom Corner: (Est, -H/2) 
+   # Right Corner: (Upper, 0)
+   # Top Corner: (Est, +H/2)
+   
+  # get the estimates (center of CI)
+   ests <- rowMeans(cis)
+   
     # Create df
-    t_ci <- t(cis$CI)
-    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L, ], ests)
-    x <- c(t_ci)
+    t_ci <- t(cis) #row1 = contains all Lower bounds, row2 all lower bounds
+    
+    
+    t_ci <- rbind(t_ci[1L, ], ests, t_ci[2L, ], ests) 
+    
+    # t_ci has:
+    #Row 1: Lower bounds (Left corner x)
+    #Row 2: Estimates (Bottom corner x)
+    #Row 3: Upper bounds (Right corner x)
+    #Row 4: Estimates (Top corner x)
+    
+    x <- c(t_ci) #flatten columnwise st we obtain:: Lower1, Est1, Upper1, Est1, Lower2, Est2, Upper2, Est2 ...
+    
+    #create y coordinates 
     y <- rep(
         c(0, -diamond_height / 2, 0, diamond_height / 2),
         times = length(ests)
     )
+    
+    method_names <- rownames(cis)
 
     CIs <- data.frame(
         x = x,
         y = y,
         id = 1L,
-        name = rep(rownames(cis$CI), each = 4L),
+        name = rep(method_names, each = 4L),
         color = 0L,
         row.names = NULL,
         stringsAsFactors = FALSE
     )
 
     p_0 <- data.frame(
-        name = rownames(cis$CI),
-        p_0 = cis$p_0[, 2L],
+        name = method_names,
+        p_0 = p_0_vals[, 2L],
         row.names = NULL,
         stringsAsFactors = FALSE
     )

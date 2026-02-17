@@ -29,8 +29,19 @@
 #'     the same length as `estimates` and `SEs`, finite, and non-negative. 
 #'     If `NULL` (the default), equal weights are assumed. Used by weighted 
 #'     p-value combination functions such as the weighted Edgington method.
+#' @param MH Logical. If `TRUE`, the fixed-effect comparison method will use 
+#'      Mantel-Haenszel pooling instead of the standard inverse-variance method. 
+#'      Requires `table_2x2` and `measure` to be provided. Default is `FALSE`.
+#' @param table_2x2 A data frame containing the 2x2 contingency table data for 
+#'      Mantel-Haenszel pooling. Required if `MH = TRUE`. Must contain columns: 
+#'      `ai` (events in experimental), `bi` (non-events in experimental), 
+#'      `ci` (events in control), `di` (non-events in control), 
+#'      `n1i` (total experimental), and `n2i` (total control).
+#' @param measure A character string indicating the effect measure to be used 
+#'      for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if 
+#'      `MH = TRUE`.
 #' @param ... Additional arguments passed to `fun`. See the Details
-#'     section.
+#'      section.
 #' @return
 #' An S3 object of class `confMeta` containing the following elements:
 #'
@@ -67,6 +78,7 @@
 #' - `heterogeneity`: A data frame containing heterogeneity statistics 
 #'    (Cochran's Q, p-value for Q, I-squared, Tau-squared) calculated 
 #'    using REML estimator. 
+#' - `table_2x2`: The 2x2 table data frame (if provided), otherwise `NULL`.
 #'     
 #' @details
 #' Additional details are provided in the sections below.
@@ -135,16 +147,17 @@
 #'         SEs = SEs,
 #'         conf_level = conf_level,
 #'         fun = p_edgington,
-#'         fun_name = "Edgington  (one-sided input)",
+#'         fun_name = "Edgington",
 #'         input_p = "one.sided"
 #'     )
 #'     cm2 <- confMeta(
 #'         estimates = estimates,
 #'         SEs = SEs,
 #'         conf_level = conf_level,
-#'         fun = p_edgington,
-#'         fun_name = "Edgington (two-sided input)",
-#'         input_p = "two.sided"
+#'         fun = p_edgington_w,
+#'         w = 1/SEs,
+#'         fun_name = "Edgington (1/SE)",
+#'         input_p = "one.sided"
 #'     )
 #'     
 #'     #get a summary of the objects
@@ -213,6 +226,12 @@ confMeta <- function(
     if (is.null(measure)) {
       stop("When MH = TRUE, 'measure' must be provided.")
     }
+    # Force data.frame, otw matrix can break this
+    if (!is.data.frame(table_2x2)) {
+      table_2x2 <- as.data.frame(table_2x2)
+    }
+    
+    
     # Check table_2x2 structure
     required_cols <- c("ai", "bi", "ci", "di", "n1i", "n2i")
     missing_cols <- setdiff(required_cols, names(table_2x2))
@@ -327,7 +346,8 @@ new_confMeta <- function(
       aucc_ratio = joint_cis$aucc_ratio,
       comparison_cis = comparison$CI,
       comparison_p_0 = comparison$p_0,
-      heterogeneity = heterogeneity
+      heterogeneity = heterogeneity,
+      table_2x2 = table_2x2
     ),
     class = "confMeta"
   )
@@ -398,8 +418,9 @@ validate_confMeta <- function(confMeta) {
     "aucc_ratio",
     "comparison_cis",
     "comparison_p_0",
-    "w",   # [MOD]
-    "heterogeneity"  # [MOD] 
+    "w",   
+    "heterogeneity",
+    "table_2x2"  
   )
   
   ok <- cm_elements %in% names(confMeta)
@@ -476,6 +497,10 @@ validate_confMeta <- function(confMeta) {
       check_length_1(x = fun_name)
       check_length_1(x = aucc)
       check_length_1(x = aucc_ratio)
+      
+      if (!is.null(table_2x2)) {
+        check_class(x = table_2x2, class = "data.frame", val = TRUE)
+      }
       
       invisible(NULL)
     }
@@ -703,6 +728,9 @@ overwrite_FE <- function(comparison, table_2x2, measure, conf_level = 0.95) {
       allstudies = TRUE, # include studies with zero or all events in both groups 
       level = conf_level
       )
+    
+    # NOTE FOR THE FUTURE --> In a revision, I was scared that I needed to add backtransf = TRUE, but backtranf is just related to
+    #printouts and plots, so CIs are reported in the right scale
     
     comparison$CI["Fixed effect", "lower"] <- MH_fe$lower.common
     comparison$CI["Fixed effect", "upper"] <- MH_fe$upper.common
