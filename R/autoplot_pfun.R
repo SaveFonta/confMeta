@@ -97,7 +97,8 @@ autoplot.confMeta <- function(
     same_xlim = TRUE,
     xlab = NULL,
     n_breaks = 7,
-    bayesmeta = NULL
+    bayesmeta = NULL,
+    n_points = 1000
 ) {
 
     # Check validity of reference methods
@@ -230,7 +231,8 @@ autoplot.confMeta <- function(
         xlim = xlim_p,
         xlab = xlab,
         reference_methods = reference_methods, 
-         n_breaks =  n_breaks
+         n_breaks =  n_breaks,
+        n_points = n_points
       )
     }
     
@@ -422,7 +424,8 @@ ggPvalueFunction <- function(
     drapery,
     xlab,
     reference_methods,
-     n_breaks
+     n_breaks, 
+    n_points = n_points
 ) {
  
   # Set some constants that are equal for all grid rows
@@ -434,7 +437,7 @@ ggPvalueFunction <- function(
     conf_level = cms[[1L]]$conf_level,
     eps = 0.0025,
     eb_height = 0.025,
-    muSeq = seq(xlim[1], xlim[2], length.out = 1e4)
+    muSeq = seq(xlim[1], xlim[2], length.out = n_points)
   )
   
   
