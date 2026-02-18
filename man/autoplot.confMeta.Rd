@@ -14,9 +14,13 @@
   drapery = TRUE,
   reference_methods = c("re", "hk", "hc"),
   xlim = NULL,
+  xlim_p = NULL,
+  xlim_forest = NULL,
+  same_xlim = TRUE,
   xlab = NULL,
-  xbreaks = 0.5,
-  bayesmeta = NULL
+  n_breaks = 7,
+  bayesmeta = NULL,
+  n_points = 1000
 )
 }
 \arguments{
@@ -67,18 +71,23 @@ meta-analysis model (fixed or random effects) can be displayed in
 a single plot. Defaults to `c("re", "hk", "hc")`.
 }\if{html}{\out{</div>}}}
 
-\item{xlim}{Either NULL (default) or a numeric vector of length 2 which
-indicates the extent of the x-axis that should be shown.}
+\item{xlim}{Numeric vector of length 2. Global limits for the x-axis.
+If \code{NULL}, limits are calculated automatically.}
+
+\item{xlim_p}{Numeric vector of length 2. Specific x-axis limits for the
+p-value plot. Overrides \code{xlim}.}
+
+\item{xlim_forest}{Numeric vector of length 2. Specific x-axis limits for
+the forest plot. Overrides \code{xlim}.}
+
+\item{same_xlim}{Logical. If \code{TRUE}, forces the p-value plot to use the
+same x-axis limits as the forest plot. Defaults to \code{FALSE}.}
 
 \item{xlab}{Either NULL (default) or a character vector of length 1 which
 is used as the label for the x-axis.}
 
-\item{xbreaks}{Numeric value of length 1. Defines the spacing of the tick
-marks along the x-axis, expressed in the same units as the effect size.
-For example, \code{xbreaks = 0.5} will show tick marks at
-\verb{..., -1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5, ...}.
-Defaults to \code{0.5}. This argument is used in both the \emph{p}-value function
-plot and the forest plot to control the resolution of the x-axis ticks.}
+\item{n_breaks}{approximate number of tick marks to display
+on the x-axis. Defaults to \code{7}}
 
 \item{bayesmeta}{Either \code{NULL} (default) or an object of class \code{"bayesmeta"},
 typically created using \code{\link[bayesmeta:bayesmeta]{bayesmeta::bayesmeta()}}. When provided, the
@@ -87,13 +96,16 @@ posterior median (or mean, depending on the \code{mu_estimate} setting) and
 bottom of the forest plot for direct comparison with the frequentist
 confidence intervals. This argument has no effect on the \emph{p}-value
 function plot.}
+
+\item{n_points}{Number of points used to create the p value plot. n_points = 10000 gives high resolution
+default is 1000 for efficiency.}
 }
 \value{
 An object of class \code{ggplot} containing the specified plot(s).
 }
 \description{
 Plot one or more \code{confMeta} objects. Currently, this function
-can create two types of plots, the \emph{p}-value function as well as the
+can create two types of plots, the \emph{p}-value function and the
 forest plot. This allows to compare different \emph{p}-value functions with
 each other.
 
@@ -101,4 +113,8 @@ Optionally, a Bayesian meta-analysis object created with the
 \code{\link[bayesmeta:bayesmeta]{bayesmeta::bayesmeta()}} function can be supplied via the \code{bayesmeta} argument.
 When provided, its posterior summary is displayed as an additional diamond
 at the bottom of the forest plot for comparison with the frequentist methods
+}
+\note{
+The function extract esplicitly the 95\% credible intervals from the 'bayesmeta' object
+If the bayesian model was fit using a different credible level, the function will crash
 }

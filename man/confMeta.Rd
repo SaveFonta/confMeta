@@ -12,6 +12,9 @@ confMeta(
   fun,
   fun_name = NULL,
   w = NULL,
+  MH = FALSE,
+  table_2x2 = NULL,
+  measure = NULL,
   ...
 )
 }
@@ -50,6 +53,20 @@ the same length as \code{estimates} and \code{SEs}, finite, and non-negative.
 If \code{NULL} (the default), equal weights are assumed. Used by weighted
 p-value combination functions such as the weighted Edgington method.}
 
+\item{MH}{Logical. If \code{TRUE}, the fixed-effect comparison method will use
+Mantel-Haenszel pooling instead of the standard inverse-variance method.
+Requires \code{table_2x2} and \code{measure} to be provided. Default is \code{FALSE}.}
+
+\item{table_2x2}{A data frame containing the 2x2 contingency table data for
+Mantel-Haenszel pooling. Required if \code{MH = TRUE}. Must contain columns:
+\code{ai} (events in experimental), \code{bi} (non-events in experimental),
+\code{ci} (events in control), \code{di} (non-events in control),
+\code{n1i} (total experimental), and \code{n2i} (total control).}
+
+\item{measure}{A character string indicating the effect measure to be used
+for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if
+\code{MH = TRUE}.}
+
 \item{...}{Additional arguments passed to \code{fun}. See the Details
 section.}
 }
@@ -82,13 +99,14 @@ refers to the mean \eqn{\mu} and column \code{y} contains the corresponding
 \item \code{p_0}: The value of the \eqn{p}-value at \eqn{\mu = 0}.
 \item \code{comparison_cis}: Combined confidence intervals calculated with other
 methods. These can be used for comparison purposes. Currently, these
-other methods are random effects (REML), Hartung & Knapp, and
+other methods are random effects (IV), Hartung & Knapp, and
 Henmi & Copas.
 \item \code{comparison_p_0}: The same as in element \code{p_0} but for the comparison
 methods (random effects, Hartung & Knapp, Henmi & Copas).
-#' - \code{heterogeneity}: A data frame containing heterogeneity statistics
+\item \code{heterogeneity}: A data frame containing heterogeneity statistics
 (Cochran's Q, p-value for Q, I-squared, Tau-squared) calculated
 using REML estimator.
+\item \code{table_2x2}: The 2x2 table data frame (if provided), otherwise \code{NULL}.
 }
 }
 \description{
@@ -133,7 +151,7 @@ on weights will ignore \code{w}.
 
 
 The \code{individual_cis} are calculated as
-\deqn{x_i \pm \Phi^{-1}(\alpha) \cdot \sigma_i}
+\deqn{x_i \pm \Phi^{-1}(1 - \alpha/2) \cdot \sigma_i}
 
 where \eqn{x_i} corresponds to the elements of vector
 \code{estimates}, \eqn{\Phi^{-1}} is the quantile function of
@@ -166,16 +184,17 @@ is narrower than CI from classic random effects model with DerSimonian-Laird est
         SEs = SEs,
         conf_level = conf_level,
         fun = p_edgington,
-        fun_name = "Edgington  (one-sided input)",
+        fun_name = "Edgington",
         input_p = "one.sided"
     )
     cm2 <- confMeta(
         estimates = estimates,
         SEs = SEs,
         conf_level = conf_level,
-        fun = p_edgington,
-        fun_name = "Edgington (two-sided input)",
-        input_p = "two.sided"
+        fun = p_edgington_w,
+        w = 1/SEs,
+        fun_name = "Edgington (1/SE)",
+        input_p = "one.sided"
     )
     
     #get a summary of the objects

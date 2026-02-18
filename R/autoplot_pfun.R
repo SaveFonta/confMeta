@@ -68,6 +68,8 @@
 #'     bottom of the forest plot for direct comparison with the frequentist
 #'     confidence intervals. This argument has no effect on the *p*-value
 #'     function plot.
+#' @param n_points Number of points used to create the p value plot. n_points = 10000 gives high resolution
+#' default is 1000 for efficiency.
 #' @return An object of class `ggplot` containing the specified plot(s).
 #'
 #'
