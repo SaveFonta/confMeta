@@ -1,7 +1,5 @@
 #' @title Weighted Edgington’s method
-#' @rdname p_value_functions
-#' @order 8
-#'
+#' @family p-value combination functions
 #'@export
 #'
 #' @description
@@ -13,30 +11,13 @@
 #' If all weights are equal, this reduces to the classical Edgington
 #' procedure, where the null distribution is given by the Irwin–Hall distribution.
 #'
-#' @param estimates Numeric vector of study-level effect estimates.
-#' @param SEs Numeric vector of corresponding standard errors.
-#' @param mu Numeric scalar or vector of null values for the overall effect
-#'     (default: 0). The function is vectorized over \code{mu}.
-#' @param alternative Either \code{"two.sided"} (default), or \code{"one.sided"}.
-#'     **Currently has no effect on the output**: all results are converted
-#'     to two-sided combined \emph{p}-values, regardless of the argument.
-#'     The argument is included only for consistency with other functions (since this function is a blueprint of p_edgington)
-#'     and for input validation.
+#'
+#' @inheritParams p_tippett
+#' @param w Numeric vector of nonnegative weights, same length as \code{estimates}.
+#'     Defaults to equal weights.
 #' @param approx Logical (default \code{TRUE}). If \code{TRUE}, use a normal
 #'     approximation for the weighted sum when the condition defined by \code{approx_rule}
 #'     is met
-#' @param input_p Type of study-level \emph{p}-values used in the combination:
-#'     \code{"greater"}, \code{"less"}, or \code{"two.sided"}.
-#'     If \code{"greater"} or \code{"less"}, one-sided \emph{p}-values are
-#'     first computed, then symmetrized to two-sided in the output.
-#' @param w Numeric vector of nonnegative weights, same length as \code{estimates}.
-#'     Defaults to equal weights.
-#' @param heterogeneity Character string: \code{"none"} (default),
-#'     \code{"additive"}, or \code{"multiplicative"}. Determines whether
-#'     standard errors are adjusted for between-study heterogeneity using
-#'     \code{tau2} or \code{phi}.
-#' @param phi Multiplicative heterogeneity parameter (if applicable).
-#' @param tau2 Additive heterogeneity parameter (if applicable).
 #' @param approx_rule Rule for normal approximation: \code{"n"} 
 #'     uses the number of studies; \code{"neff"} (default) uses the effective sample
 #'     size criterion (see Details).
@@ -44,11 +25,9 @@
 #'     normal approximation is used when \eqn{n \geq 12}. If
 #'     \code{approx_rule="neff"}, normal approximation is used when
 #'     \eqn{\|w\|_2^4 / \|w\|_4^4 \geq 12}.
-#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE},
-#'     perform input validation.
 #'
 #' @details
-#' The weighted Edgington statistic is defined as
+#' The weighted Edgington statistic is defined for \eqn{k} studies as
 #' \deqn{S = \sum_{i=1}^k w_i p_i,}
 #' where \eqn{w_i} are positive study weights and \eqn{p_i} are individual
 #' study \emph{p}-values. Under the global null hypothesis, each \eqn{p_i}
@@ -60,6 +39,7 @@
 #' \itemize{
 #'   \item **Exact Method:** The function uses the exact Barrow-Smith
 #'     inclusion-exclusion formula to compute the CDF.
+#'     \deqn{F(t) = \frac{1}{n! \prod_{i=1}^n w_i} \sum_{v \in \{0,1\}^n} (-1)^{\sum v_j} (t - w^T v)^n \mathbf{I}_{\{t - w^T v \ge 0\}}}
 #'     This method is computationally intensive and is infeasible for `n > 18`
 #'     studies, at which point the function will stop with an error if
 #'     `approx = FALSE` is used.
@@ -105,30 +85,14 @@
 #' 
 #' 
 #'
-#' @section Output p-value:
-#' The final output depends on the \code{input_p} argument:
-#' \itemize{
-#'   \item If \code{input_p} is \code{"greater"} or \code{"less"}, the
-#'     input \eqn{p_i} are one-sided. The function computes the
-#'     one-sided \emph{p}-value \eqn{sp = P(S \leq s_{\mathrm{obs}})} and
-#'     returns a **symmetrized, two-sided \emph{p}-value**:
-#'     \eqn{p_{2s} = 2 \min(sp, 1-sp)}.
-#'   \item If \code{input_p} is \code{"two.sided"}, the input \eqn{p_i}
-#'     are two-sided. The function returns \eqn{sp = P(S \leq s_{\mathrm{obs}})}
-#'     **directly, without symmetrization**. Note that summing two-sided
-#'     \emph{p}-values is not a standard application of Edgington's method.
-#' }
+#' @inheritSection p_tippett Output p-value
 #'
-#' @return A numeric vector of combined \emph{p}-values corresponding
-#'   to each value of \code{mu}. Note that the output is only
-#'   symmetrized to a two-sided \emph{p}-value if \code{input_p} is
-#'   \code{"greater"} or \code{"less"}.
+#' @inherit p_tippett return
 #'   
 #'   
 #'   
 #'   
-#'   
-#'    @references
+#' @references
 #' D. L. Barrow and P. W. Smith. Spline notation applied to a volume
 #' problem. *The American Mathematical Monthly*, 86(1):50-51, 1979.
 #'
@@ -141,7 +105,25 @@
 #' B. D. Ripley. *Stochastic Simulation*. John Wiley & Sons, Hoboken,
 #' NJ, 1987.
 #' 
-#' Add others on p value functions
+#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025.
+#' 
+#' 
+#' @examples
+#' n <- 10
+#' estimates <- rnorm(n)
+#' SEs <- rgamma(n, 5, 5)
+#' weights <- 1/SEs
+#' 
+#' p_edgington_w(
+#'     estimates = estimates,
+#'     SEs = SEs,
+#'     mu = 0,
+#'     output_p = "two.sided",
+#'     input_p = "greater",
+#'     w = weights,
+#'     approx = TRUE,
+#'     approx_rule = "neff"
+#' )
 
 
 
@@ -150,16 +132,16 @@
 
 
 p_edgington_w <- function(
-    estimates, SEs, mu = 0,
-    alternative = "two.sided",        
-    approx = TRUE,
-    input_p = "greater",              
-    w = rep(1, length(estimates)),
+    estimates, SEs, mu = 0, 
     heterogeneity = "none",           
     phi = NULL, tau2 = NULL,
+    check_inputs = TRUE,
+    input_p = "greater",              
+    output_p = "two.sided",
+    w = rep(1, length(estimates)),
+    approx = TRUE,
     approx_rule = "neff",                
-    neff_cut = 12,
-    check_inputs = TRUE
+    neff_cut = 12
 ){
   # -------------------------
   # Input checks
@@ -168,8 +150,9 @@ p_edgington_w <- function(
     check_inputs_p_value(estimates = estimates, SEs = SEs, 
                                     mu = mu, heterogeneity = heterogeneity, 
                                     phi = phi, tau2 = tau2)
-    check_alternative_arg_edg(alternative = alternative)
-  }
+    check_output_p_arg(output_p = output_p)
+    check_w_arg(w = w, estimates = estimates)
+    }
   
   # Recycle SEs if only one provided
   if (length(SEs) == 1L) {
@@ -198,16 +181,20 @@ p_edgington_w <- function(
               stop("input_p must be 'greater','less','two.sided'")
   )
   
+  p <- as.matrix(p)
+  
   #p is a matrix with --> each row a different study
   #each column p value associated to a different mu
 
-    # Case 1: unweighted → Irwin–Hall distribution
+    # Case 1: unweighted -> Irwin–Hall distribution (classic edgington)
   if (all(w == 1)) {
     sp <- pirwinhall(q = colSums(p), n = n, approx = approx)
   } else {
     # Case 2: weighted version
     # Decide whether to use normal approximation
     use_normal <- FALSE
+    neff <- NA_real_
+    
     if (approx) {
       if (approx_rule == "n") {
         use_normal <- (n >= neff_cut)
@@ -272,28 +259,32 @@ p_edgington_w <- function(
       wTv      <- as.numeric(vertices %*% w) #it is w'v where v are the vertices generated
       denom    <- factorial(n) * prod(w)
       
-      cdf_weighted_uniform <- function(ew){
-        if (ew <= 0) return(0)  #since P(T<=0) = 0 cause T is always positive since it is a sum of weighted U(0,1) w positive weights
-        S <- sum(w) # since the weigthed sum T has support [0, sum(weights)], this mean sum of weights is the max possible value
-        if (ew >= S) return(1) #since P(T<=S) = 1
-        idx <- which(wTv <= ew) #identify which sum respect the condition of the Indicator in the formula
-        if (length(idx) == 0) return(0)
-        dif <- ew - wTv[idx] 
-        sum(signv[idx] * dif^n) / denom
-      }
       
       ew_all <- as.numeric(colSums(p * w))
-      sp <- vapply(ew_all, cdf_weighted_uniform, numeric(1))
+      sp <- vapply(ew_all, function(x) cdf_weighted_uniform(x, w, wTv, signv, n, denom), numeric(1))
     }
   }
   
-  # Final output: by default, convert to two-sided p-values
-  # If input_p == "two.sided", p_i are already symmetric and no change is applied
-  if (input_p != "two.sided") {
-    sp <- 2*pmin(sp, 1 - sp)
+  # Final output: 
+  # we need output_p == two sided (default). Basically we combine one sided p values and double them to spit out a two sided p value 
+  # If input_p == "two.sided", p_i are already symmetric and no change is applied (even though it is not standard use of Edgington having two sided p vals as inputs)
+  if (output_p == "two.sided" && input_p != "two.sided") {
+    sp <- 2 * pmin(sp, 1 - sp)
   }
   return(sp)
 }
 
 
+
+
+
+cdf_weighted_uniform <- function(ew, w, wTv, signv, n, denom){
+  if (ew <= 0) return(0)  #since P(T<=0) = 0 cause T is always positive since it is a sum of weighted U(0,1) w positive weights
+  S <- sum(w) # since the weigthed sum T has support [0, sum(weights)], this mean sum of weights is the max possible value
+  if (ew >= S) return(1) #since P(T<=S) = 1
+  idx <- which(wTv <= ew) #identify which sum respect the condition of the Indicator in the formula
+  if (length(idx) == 0) return(0)
+  dif <- ew - wTv[idx] 
+  sum(signv[idx] * dif^n) / denom
+}
 

@@ -278,7 +278,7 @@ check_phiTau2_arg <- function(heterogeneity, phi, tau2) {
     }
 }
 
-# Checks the alternative argument
+# Checks the alternative argument --> To delete ???
 check_alternative_arg_hmean <- function(alternative) {
     if (
         length(alternative) != 1L ||
@@ -293,7 +293,7 @@ check_alternative_arg_hmean <- function(alternative) {
         )
 }
 
-# Checks the alternative argument
+# Checks the alternative argument --> To delete ???
 check_alternative_arg_edg <- function(alternative) {
     if (
         length(alternative) != 1L ||
@@ -308,7 +308,7 @@ check_alternative_arg_edg <- function(alternative) {
         )
 }
 
-# Checks the alternative argument
+# Checks the alternative argument --> To delete ???
 check_alternative_arg_pearson <- function(alternative) {
     if (
         length(alternative) != 1L ||
@@ -323,7 +323,7 @@ check_alternative_arg_pearson <- function(alternative) {
         )
 }
 
-# Checks the alternative argument
+# Checks the alternative argument --> To delete ???
 check_alternative_arg_ktr <- function(alternative) {
     if (
         length(alternative) != 1L ||
@@ -336,6 +336,23 @@ check_alternative_arg_ktr <- function(alternative) {
             ),
             call. = FALSE
         )
+}
+
+
+# This is is the unified output_p (once called alternative) checker (from Saverio):
+check_output_p_arg <- function(output_p) {
+  if (
+    length(output_p) != 1L ||
+    !(output_p %in% c("one.sided", "two.sided"))
+  ) {
+    stop(
+      paste0(
+        "Argument 'output_p' must be one of ",
+        "c('one.sided', 'two.sided')."
+      ),
+      call. = FALSE
+    )
+  }
 }
 
 ## Check the distribution argument used in hMeanChiSqMu()

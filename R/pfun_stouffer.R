@@ -1,29 +1,53 @@
-#' @rdname p_value_functions
-#' @order 7
+#' @title Stouffer's method
+#' @family p-value combination functions
+#'
+#' @description
+#' Stouffer's method for combining \emph{p}-values across studies
+#'
+#' @param estimates Numeric vector of study-level effect estimates.
+#' @param SEs Numeric vector of corresponding standard errors.
+#' @param mu Numeric **scalar or vector** of null values for the overall effect
+#'      (default: 0). 
+#' @param heterogeneity Character string: \code{"none"} (default),
+#'      \code{"additive"}, or \code{"multiplicative"}. Determines whether
+#'      standard errors are adjusted for between-study heterogeneity using
+#'      \code{tau2} or \code{phi}.
+#' @param phi Multiplicative heterogeneity parameter (if applicable).
+#' @param tau2 Additive heterogeneity parameter (if applicable).
+#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE},
+#'      perform input validation.
+#' @param alternative ???
+#' @param w Numeric vector of weights. ???
+#' 
+#' @details
+#' Explain how it is computed ???
+#'
+#' @inherit p_tippett return
 #'
 #' @importFrom stats pnorm
-#'
 #' @export
 #'
+#'
+#'
+#' @references
+#' Stouffer SA, et al. *The American Soldier*. Princeton University Press, 1949.
+#'   
+#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025. 
+#'  
 #' @examples
-#' # Using weighted Stouffer's method to calculate the combined p-value for
-#' # each of the means with multiplicative adjustement for SEs
-#' p_stouffer(
-#'     estimates = estimates,
-#'     SEs = SEs,
-#'     mu = mu,
-#'     heterogeneity = "multiplicative",
-#'     phi = phi
-#' )
+#' estimates <- c(0.1, 0.2, 0.3)
+#' SEs <- c(0.05, 0.05, 0.1)
+#' p_stouffer(estimates, SEs, mu = 0, heterogeneity = "none")
+
 p_stouffer <- function(
     estimates,
     SEs,
     mu = 0,
+    heterogeneity = "none",
     phi = NULL,
     tau2 = NULL,
-    heterogeneity = "none",
-    alternative = "two.sided",
     check_inputs = TRUE,
+    alternative = "two.sided",
     w = NULL) {
     # check inputs
     if (check_inputs) {

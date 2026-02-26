@@ -1,0 +1,37 @@
+#' @title Overview of p-value combination functions
+#' @name p_value_functions
+#' 
+#' @description
+#' The `p_value_functions` family is useful to combine 
+#' individual study effect estimates and standard errors into a single 
+#' meta-analytical \emph{p}-value function. These functions are the 
+#' building blocks for the \code{\link{confMeta}} function.
+#' 
+#' @details
+#' **Vectorization over mu:**
+#' All of the \emph{p}-value functions in this package are vectorized over the 
+#' \code{mu} argument. This means that you can pass a sequence of null values 
+#' (e.g., \code{seq(-2, 2, length.out = 1000)}) and the function will 
+#' evaluate the combined \emph{p}-value for every point. This is specifically 
+#' designed to construct \emph{p}-value functions 
+#' and invert the tests to find confidence intervals at any desired level.
+#' 
+#' 
+#' **Available Methods:**
+#' \itemize{
+#'   \item \code{\link{p_edgington}}: Classical Edgington method (Sum of \emph{p}-values).
+#'   \item \code{\link{p_edgington_w}}: Weighted Edgington method.
+#'   \item \code{\link{p_fisher}}: Fisher's method (Log-product of \emph{p}-values).
+#'   \item \code{\link{p_pearson}}: Pearson's method (Log-product of complements).
+#'   \item \code{\link{p_tippett}}: Tippett's method (Minimum \emph{p}-value).
+#'   \item \code{\link{p_wilkinson}}: Wilkinson's method (Maximum \emph{p}-value).
+#'   \item \code{\link{p_stouffer}}: Stouffer's method.
+#'   \item \code{\link{p_hmean}}: Harmonic mean method. 
+#' }
+#' 
+#' @references 
+#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for 
+#' meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025.
+#' 
+#' @seealso \code{\link{confMeta}}
+NULL

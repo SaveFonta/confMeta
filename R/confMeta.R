@@ -148,7 +148,7 @@
 #'         conf_level = conf_level,
 #'         fun = p_edgington,
 #'         fun_name = "Edgington",
-#'         input_p = "one.sided"
+#'         input_p = "greater"
 #'     )
 #'     cm2 <- confMeta(
 #'         estimates = estimates,
@@ -157,7 +157,7 @@
 #'         fun = p_edgington_w,
 #'         w = 1/SEs,
 #'         fun_name = "Edgington (1/SE)",
-#'         input_p = "one.sided"
+#'         input_p = "greater"
 #'     )
 #'     
 #'     #get a summary of the objects

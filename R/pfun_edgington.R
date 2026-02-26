@@ -1,72 +1,85 @@
-#' @title \emph{p}-value functions
-#' @rdname p_value_functions
-#' @order 1
-#'
-#' 
-#'
-#' @template estimates
-#' @template SEs
-#' @template mu
-#' @template heterogeneity
-#' @template phi
-#' @template tau2
-#' @template alternative
-#' @template check_inputs
-#' @param approx Must be either TRUE (default) or FALSE. If TRUE, the p-value is
-#'     computed using the normal approximation of the Irwin-Hall distribution
-#'     whenever \code{length(estimates) >= 12}. This avoids issues that can lead
-#'     to overflow of the double precision floating point numbers R uses for
-#'     numeric vectors.
-#' @param input_p Either \code{"two.sided"}, \code{"less"}, or \code{"greater"}
-#'     (default). Specifies whether two-sided or one-sided p-values are used as
-#'     inputs for a p-value combination method.
+#' @title Edgington's method
+#' @family p-value combination functions
+#' @export
 #'
 #' @description
-#'     These functions combine individual effect estimates and the corresponding
-#'     standard errors into a single \emph{p}-value. Under the hood, all of the
-#'     functions transform the estimates and standard errors into \emph{z}, and
-#'     subsequently into \emph{p}-values. The resulting \emph{p}-values are
-#'     combined into the chosen statistic and an appropriate distribution is
-#'     used to derive the combined \emph{p}-value.
+#' Edgington’s method for combining \emph{p}-values across studies. 
+#' The method forms a sum of individual study \emph{p}-values and evaluates 
+#' it against the exact or approximate null distribution.
 #'
-#'     All of the \emph{p}-value functions are vectorized over the \code{mu}
-#'     argument.
+#' Under the global null hypothesis, the null distribution of the sum is given 
+#' by the Irwin–Hall distribution. For a weighted generalization of this 
+#' procedure, see \code{\link{p_edgington_w}}. 
 #'
-#' @return The corresponding p-values given \eqn{mu} under the null-hypothesis.
+#' @inheritParams p_tippett
+#' @param approx Logical (default \code{TRUE}). If \code{TRUE}, use a normal
+#'     approximation for the sum of \emph{p}-values when \eqn{n \geq 12} to 
+#'     avoid numerical overflow issues.
 #'
-#' @note Add references to p-value statistics.
+#' @details
+#' The classical Edgington statistic is defined for \eqn{k} studies as
+#' \deqn{S = \sum_{i=1}^k p_i,}
+#' where \eqn{p_i} are individual study \emph{p}-values. Under the global null 
+#' hypothesis, each \eqn{p_i} is assumed to follow a \eqn{Unif(0, 1)} distribution.
+#' 
+#' **Important note on orientation:** Edgington's method is orientation-invariant. 
+#' The combined \emph{p}-value is symmetric with respect to the direction of the 
+#' one-sided \emph{p}-values (controlled by the \code{input_p} argument). 
+#' 
+#' Specifically, computing the Edgington combined \emph{p}-value for the "greater" 
+#' alternative results in 1 minus the Edgington combined \emph{p}-value for 
+#' the "less" alternative.
+#' 
+#' @section Null Distribution and Approximation:
+#' The combined \emph{p}-value, \eqn{p_E}, is the probability of observing a sum 
+#' less than or equal to \eqn{S} under the null hypothesis. This is computed in 
+#' one of two ways:
+#' \itemize{
+#'   \item **Exact Method:** The function uses the exact Irwin-Hall distribution 
+#'     to compute the CDF:
+#'     \deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor s \rfloor} (-1)^j \binom{k}{j} (s - j)^k}
+#'   \item **Normal Approximation:** For a large number of studies (\eqn{n \geq 12}), 
+#'     the sum is approximated by a Normal distribution with:
+#'     \deqn{E[s] = \frac{k}{2}}
+#'     \deqn{Var(s) = \frac{k}{12}}
+#' }
 #'
-#' @importFrom ReplicationSuccess z2p
+#' @inheritSection p_tippett Output p-value
+#'
+#' @inherit p_tippett return
+#'
 #' @importFrom stats pnorm dnorm
 #'
 #' @export
 #'
+#' @references
+#' Edgington ES. An additive method for combining probability values from independent experiments. *The Journal of Psychology*, 80(2):351-363, 1972.
+#' 
+#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025.
+#'
 #' @examples
-#'     # Simulating estimates and standard errors
-#'     n <- 15
-#'     estimates <- rnorm(n)
-#'     SEs <- rgamma(n, 5, 5)
+#' # Simulating estimates and standard errors
+#' n <- 15
+#' estimates <- rnorm(n)
+#' SEs <- rgamma(n, 5, 5)
 #'
-#'     # Calculate the between-study variance tau2
-#'     tau2 <- estimate_tau2(estimates = estimates, SEs = SEs)
-#'     phi <- estimate_phi(estimates = estimates, SEs = SEs)
+#' # Set up a vector of means under the null hypothesis
+#' mu <- seq(
+#'   min(estimates) - 0.5 * max(SEs),
+#'   max(estimates) + 0.5 * max(SEs),
+#'   length.out = 100
+#' )
 #'
-#'     # Set up a vector of means under the null hypothesis
-#'     mu <- seq(
-#'       min(estimates) - 0.5 * max(SEs),
-#'       max(estimates) + 0.5 * max(SEs),
-#'       length.out = 1e5
-#'     )
-#'
-#'     # Using Edgington's method to calculate the combined p-value
-#'     # for each of the means with additive adjustement for SEs
-#'     p_edgington(
-#'         estimates = estimates,
-#'         SEs = SEs,
-#'         mu = mu,
-#'         heterogeneity = "additive",
-#'         tau2 = tau2
-#'     )
+#' # Using Edgington's method to calculate the combined p-value
+#' p_edgington(
+#'     estimates = estimates,
+#'     SEs = SEs,
+#'     mu = mu,
+#'     heterogeneity = "none",
+#'     output_p = "two.sided",
+#'     input_p = "greater",
+#'     approx = TRUE
+#' )
 p_edgington <- function(
     estimates,
     SEs,
@@ -74,10 +87,10 @@ p_edgington <- function(
     heterogeneity = "none",
     phi = NULL,
     tau2 = NULL,
-    alternative = "two.sided",
     check_inputs = TRUE,
-    approx = TRUE,
-    input_p = "greater"
+    input_p = "greater",
+    output_p = "two.sided",
+    approx = TRUE
 ) {
 
     # check inputs
@@ -90,7 +103,7 @@ p_edgington <- function(
             phi = phi,
             tau2 = tau2
         )
-        check_alternative_arg_edg(alternative = alternative)
+      check_output_p_arg(output_p = output_p)
     }
 
     # recycle `se` if needed
@@ -109,19 +122,23 @@ p_edgington <- function(
 
     # get the z-values
     z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
+    
     # convert them to p-values
-    if (input_p == "two.sided") {
-        ## # p <- ReplicationSuccess::z2p(z, "two.sided")
-        p <- 2 * stats::pnorm(abs(z), lower.tail = FALSE) # faster than above
-    } else if (input_p == "greater") {
-        p <- stats::pnorm(q = z, lower.tail = FALSE)
-    } else {
-        p <- stats::pnorm(q = z, lower.tail = TRUE)
-    }
+    p <- switch(input_p,
+                "two.sided" = 2 * stats::pnorm(abs(z), lower.tail = FALSE),
+                "greater"   = stats::pnorm(z, lower.tail = FALSE),
+                "less"      = stats::pnorm(z, lower.tail = TRUE),
+                stop("input_p must be 'greater','less','two.sided'")
+    )
+    
+    p <- as.matrix(p)
+    
     # sum up the p-values and calculate the probability
     sp <- pirwinhall(q = colSums(p), n = n, approx = approx)
-    if (input_p != "two.sided") {
-        sp <- 2*pmin(sp, 1 - sp)
+    
+    # Symmetrize to two-sided ONLY if requested and if inputs weren't already two-sided
+    if (output_p == "two.sided" && input_p != "two.sided") {
+      sp <- 2 * pmin(sp, 1 - sp)
     }
     return(sp)
 }
@@ -139,6 +156,8 @@ p_edgington <- function(
 #     col = c(2, 3),
 #     lty = 1
 # )
+
+## ??? --> maybe delete this overflow example?
 
 ################################################################################
 # Irwin Hall ===================================================================
@@ -160,7 +179,7 @@ pirwinhall <- function(q, n, lower.tail = TRUE, log.p = FALSE, approx = FALSE) {
     # repeat n and x if necessary
     if (repeat_arg) {
         if (l_n == 1L) n <- rep(n, l_q)
-        if (l_q == 1L) x <- rep(x, l_n)
+        if (l_q == 1L) q <- rep(q, l_n) 
     }
 
     # call pirwinhall
@@ -173,6 +192,7 @@ pirwinhall <- function(q, n, lower.tail = TRUE, log.p = FALSE, approx = FALSE) {
     if (!lower.tail) out <- 1 - out
     if (log.p) log(out) else out
 }
+#pirwinhall(q = 2, n = c(3, 5, 50), approx = TRUE)
 
 # this function uses a normal approximation if n >= 12
 # in order to mitigate overflow problems of pirwinhall1
@@ -200,7 +220,7 @@ pirwinhall_approx <- function(q, n) {
 
         # get the indices of elements that use the approximation
         # and of those elements that use regular irwin-hall
-        s_l_n <- seq_len(n)
+        s_l_n <- seq_along(n) #AHA! previous version used to have seq_len(n), but need to use seq_along(n)!! Or seq_len(l_n)
         idx_approx <- s_l_n[norm_approx]
         idx_non_approx <- s_l_n[!norm_approx]
         # create the output vector
@@ -225,6 +245,8 @@ pirwinhall_approx <- function(q, n) {
     # return
     out
 }
+#
+#pirwinhall_approx(q = c(3, 6.0, 25), n = c(6, 12, 50))
 
 # vectorized version of pirwinhall1,
 # needs x and n to be of equal length
@@ -237,6 +259,11 @@ pirwinhall_vec <- function(q, n) {
     }
     out
 }
+#here we can text two SEPARATE cases at once
+# Case 1: q = 1.5, n = 3
+# Case 2: q = 2.0, n = 4
+#pirwinhall_vec(q = c(1.5, 2.0), n = c(3, 4))
+
 
 # function for one x (i.e. length(x) == 1)
 pirwinhall1 <- function(q, n) {
@@ -250,6 +277,20 @@ pirwinhall1 <- function(q, n) {
         sum((-1)^k * choose(n = n, k = k) * (q - k)^n) / factorial(n)
     }
 }
+
+#Example: we want prob that the sum of three Uniforms is <= 1.5
+#pirwinhall1(q = 1.5, n = 3)
+
+
+###################################################################
+
+
+#  ??? --> the functions above here are completely useless! I was thinking to remove them completely even though are nice functions
+# But they are not used at all, since we only need the CDF (pirwinhall)
+
+
+###################################################################
+
 
 ## Density function of Irwin-Hall distribution =================================
 
