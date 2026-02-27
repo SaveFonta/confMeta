@@ -1,32 +1,40 @@
-#' @title Harmonic mean's method
+#' @title Harmonic mean method
 #' @family p-value combination functions
 #' 
 #' @description
-#' Combines study-level results using the harmonic mean of squared \eqn{z}-statistics.#' 
+#' Combines study-level results using the harmonic mean combination method
 #' 
 #' @param estimates Numeric vector of study-level effect estimates.
 #' @param SEs Numeric vector of corresponding standard errors.
-#' @param mu Numeric **scalar or vector** of null values for the overall effect
-#'      (default: 0). 
+#' @param mu Numeric scalar or vector of null values for the overall effect
+#'     (default: 0).
 #' @param heterogeneity Character string: \code{"none"} (default),
-#'      \code{"additive"}, or \code{"multiplicative"}. Determines whether
-#'      standard errors are adjusted for between-study heterogeneity using
-#'      \code{tau2} or \code{phi}.
+#'     \code{"additive"}, or \code{"multiplicative"}. Determines whether
+#'     standard errors are adjusted for between-study heterogeneity using
+#'     \code{tau2} or \code{phi}.
 #' @param phi Multiplicative heterogeneity parameter (if applicable).
 #' @param tau2 Additive heterogeneity parameter (if applicable).
-#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE},
-#'      perform input validation.
-#' @param alternative  ???
+#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE}, perform
+#'     input validation.
+#' @param alternative Character string indicating the alternative hypothesis.
+#'     Can be \code{"none"} (default), \code{"greater"}, \code{"less"}, or
+#'     \code{"two.sided"}. TODO: describe better or drop and only have "none"
 #' @param w Numeric vector of weights (default: equal weights).
-#' @param distr Character string specifying the null distribution: 
-#'      \code{"chisq"} (default) or \code{"f"}.
+#' @param distr Character string specifying the null distribution:
+#'     \code{"chisq"} (default) or \code{"f"}.
 #' 
 #' 
 #' @details
-#' Explain how it is computed ???
-#' 
-#' 
-#' 
+#' The harmonic mean statistic for \eqn{k} studies is defined as
+#' \deqn{x^2 = \frac{\sum_{i=1}^k \sqrt{w_i}}{\sum_{i=1}^k w_i/z_i^2},}
+#' where \eqn{z_i} and \eqn{{w_i}} are individual study *z*-values and weights,
+#' respectively. Under the global null hypothesis, each \eqn{z_i} is assumed to
+#' follow a standard normal distribution. The harmonic mean statistic then
+#' follows a chi-squared distribution with one degree of freedom. The combined
+#' \emph{p}-value is calculated as the probability of observing a value equal or
+#' greater than \eqn{x^2} from this distribution: \deqn{p_H = \Pr(\chi^2_{1} >
+#' x^2)}
+#'
 #' @inherit p_tippett return
 #'
 #' @export
@@ -35,9 +43,13 @@
 #'
 #' @references
 #' 
-#' ???
+#' Held, L. (2020). The harmonic mean chi-squared test to substantiate
+#' scientific findings. *Journal of the Royal Statistical Society: Series C
+#' (Applied Statistics)*, 69:697-708. \doi{10.1111/rssc.12410}
 #' 
-#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025.
+#' Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined *p*-value
+#' functions for meta-analysis. *Research Synthesis Methods*, 16:758-785.
+#' \doi{10.1017/rsm.2025.26}
 #' 
 #'  
 #' @examples

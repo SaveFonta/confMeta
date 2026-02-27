@@ -12,8 +12,8 @@ p_stouffer(
   phi = NULL,
   tau2 = NULL,
   check_inputs = TRUE,
-  alternative = "two.sided",
-  w = NULL
+  w = 1/SEs,
+  output_p = "two.sided"
 )
 }
 \arguments{
@@ -33,12 +33,17 @@ standard errors are adjusted for between-study heterogeneity using
 
 \item{tau2}{Additive heterogeneity parameter (if applicable).}
 
-\item{check_inputs}{Logical (default \code{TRUE}). If \code{TRUE},
-perform input validation.}
+\item{check_inputs}{Logical (default \code{TRUE}). If \code{TRUE}, perform
+input validation.}
 
-\item{alternative}{???}
+\item{w}{Numeric vector of study weights. Defaults to \code{1/SEs} producing
+the same \emph{p}-value as meta-analsis}
 
-\item{w}{Numeric vector of weights. ???}
+\item{output_p}{Character string specifying the nature of the combined
+\emph{p}-value: \code{"two.sided"} (default) or \code{"one.sided"}.
+This controls whether the final combined \emph{p}-value is symmetrized.
+\strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}
+function strictly requires \code{"two.sided"}.}
 }
 \value{
 A numeric vector of combined \emph{p}-values corresponding
@@ -48,7 +53,14 @@ to each value of \code{mu}.
 Stouffer's method for combining \emph{p}-values across studies
 }
 \details{
-Explain how it is computed ???
+Stouffer's \emph{z}-statistic for \eqn{k} studies is defined as
+\deqn{z = \frac{\sum_{i=1}^k w_i z_i}{\sqrt{\sum_{i=1}^k w_i^2}},}
+where \eqn{i_i} and \eqn{{w_i}} are individual study \emph{z}-values and
+weights, respectively. Under the global null hypothesis, each \eqn{z_i} is
+assumed to follow a standard normal distribution. Stouffer's \emph{z}-statistic
+then also follows a standard normal distribution. The combined \emph{p}-value
+is calculated as the probability of observing a value equal or greater than
+\eqn{z} from this distribution: \deqn{p_S = \Pr(Z > z)}
 }
 \examples{
 estimates <- c(0.1, 0.2, 0.3)

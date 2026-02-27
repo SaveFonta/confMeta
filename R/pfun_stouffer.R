@@ -7,20 +7,29 @@
 #' @param estimates Numeric vector of study-level effect estimates.
 #' @param SEs Numeric vector of corresponding standard errors.
 #' @param mu Numeric **scalar or vector** of null values for the overall effect
-#'      (default: 0). 
+#'     (default: 0).
 #' @param heterogeneity Character string: \code{"none"} (default),
-#'      \code{"additive"}, or \code{"multiplicative"}. Determines whether
-#'      standard errors are adjusted for between-study heterogeneity using
-#'      \code{tau2} or \code{phi}.
+#'     \code{"additive"}, or \code{"multiplicative"}. Determines whether
+#'     standard errors are adjusted for between-study heterogeneity using
+#'     \code{tau2} or \code{phi}.
 #' @param phi Multiplicative heterogeneity parameter (if applicable).
 #' @param tau2 Additive heterogeneity parameter (if applicable).
-#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE},
-#'      perform input validation.
-#' @param alternative ???
-#' @param w Numeric vector of weights. ???
-#' 
+#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE}, perform
+#'     input validation.
+#' @param w Numeric vector of study weights. Defaults to \code{1/SEs} producing
+#'     the same *p*-value as meta-analsis
+#'
+#' @inheritParams p_tippett
+#'
 #' @details
-#' Explain how it is computed ???
+#' Stouffer's *z*-statistic for \eqn{k} studies is defined as
+#' \deqn{z = \frac{\sum_{i=1}^k w_i z_i}{\sqrt{\sum_{i=1}^k w_i^2}},}
+#' where \eqn{i_i} and \eqn{{w_i}} are individual study \emph{z}-values and
+#' weights, respectively. Under the global null hypothesis, each \eqn{z_i} is
+#' assumed to follow a standard normal distribution. Stouffer's *z*-statistic
+#' then also follows a standard normal distribution. The combined \emph{p}-value
+#' is calculated as the probability of observing a value equal or greater than
+#' \eqn{z} from this distribution: \deqn{p_S = \Pr(Z > z)}
 #'
 #' @inherit p_tippett return
 #'
@@ -47,8 +56,9 @@ p_stouffer <- function(
     phi = NULL,
     tau2 = NULL,
     check_inputs = TRUE,
-    alternative = "two.sided",
-    w = NULL) {
+    w = 1/SEs,
+    output_p = "two.sided"
+    ) {
     # check inputs
     if (check_inputs) {
         check_inputs_p_value(
@@ -72,25 +82,15 @@ p_stouffer <- function(
         tau2 = tau2
     )
 
-    ## weights
-    if (is.null(w)) {
-        ## default set weights to 1/SEs so that Stouffer's method corresponds to
-        ## meta-analysis
-        w <- 1 / SEs
-    } else {
-        ## custom weights, recycle if needed
-        if (length(w) == 1L) w <- rep(w, length(estimates))
+    ## get the z-values
+    z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
+
+    ## compute weighted Stouffer's p-value
+    zs <- colSums(w * z) / sqrt(sum(w^2))
+    pstouffer <- stats::pnorm(zs, lower.tail = FALSE)
+
+    if (output_p == "two.sided") {
+      pstouffer <- 2 * pmin(pstouffer, 1 - pstouffer)
     }
 
-    # compute weighted Stouffer's p-value
-    z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-    zs <- colSums(w * z) / sqrt(sum(w^2))
-    if (alternative == "two.sided") {
-        pstouffer <- 2 * stats::pnorm(q = abs(zs), lower.tail = FALSE)
-    } else if (alternative == "less") {
-        pstouffer <- stats::pnorm(q = zs, lower.tail = TRUE)
-    } else {
-        pstouffer <- stats::pnorm(q = zs, lower.tail = FALSE)
-    }
-    return(pstouffer)
 }
