@@ -7,7 +7,7 @@
 #'
 #' @param estimates Numeric vector of study-level effect estimates.
 #' @param SEs Numeric vector of corresponding standard errors.
-#' @param mu Numeric **scalar or vector** of null values for the overall effect
+#' @param mu Numeric \strong{scalar or vector} of null values for the overall effect
 #'     (default: 0). 
 #' @param heterogeneity Character string: \code{"none"} (default),
 #'     \code{"additive"}, or \code{"multiplicative"}. Determines whether
@@ -32,11 +32,11 @@
 #' defined directly as:
 #' \deqn{p_T = 1 - (1 - \min\{p_1, \dots, p_k\})^k}
 #'
-#' Under the global null hypothesis, each \eqn{p_i} is assumed to follow a 
-#' \eqn{Unif(0, 1)} distribution. 
+#' Under the global null hypothesis, each \eqn{p_i} is assumed to be 
+#' uniformly distributed on \eqn{[0, 1]}.
 #' 
-#' **Important note on orientation:** Unlike Edgington's method, Tippett's method 
-#' is *not* orientation-invariant. The combined \emph{p}-value depends on 
+#' \strong{Important note on orientation:} Unlike Edgington's method, Tippett's method 
+#' is \emph{not} orientation-invariant. The combined \emph{p}-value depends on 
 #' the direction of the one-sided \emph{p}-values (controlled by the 
 #' \code{input_p} argument). 
 #' 
@@ -50,11 +50,11 @@
 #'   \item If \code{output_p = "two.sided"} (the default) and the inputs are 
 #'     one-sided (\code{input_p} is \code{"greater"} or \code{"less"}), the function 
 #'     combines the one-sided \emph{p}-values to obtain the intermediate combined 
-#'     \emph{p}-value \eqn{p_c}, and returns a **symmetrized, two-sided \emph{p}-value**:
+#'     \emph{p}-value \eqn{p_c}, and returns a \strong{symmetrized, two-sided \emph{p}-value}:
 #'     \eqn{p_{2s} = 2 \min(p_c, 1 - p_c)}.
 #'   \item If \code{output_p = "one.sided"}, the function 
 #'     returns the inherently one-sided combined \emph{p}-value \eqn{p_c} 
-#'     **directly, without symmetrization**.
+#'     \strong{directly, without symmetrization}.
 #'   \item If \code{input_p} is \code{"two.sided"}, the input \eqn{p_i}
 #'     are already two-sided, and no further symmetrization is applied. 
 #' }
@@ -68,9 +68,12 @@
 #'
 #' @references
 #' Tippett LHC. *Methods of Statistics*. Williams Norgate; 1931.
+#' \doi{10.2307/3606890}
 #' 
-#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025.
-#'
+#' Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined *p*-value
+#' functions for meta-analysis. *Research Synthesis Methods*, 16:758-785.
+#' \doi{10.1017/rsm.2025.26}
+#' 
 #' @examples
 #' # Simulating estimates and standard errors
 #' n <- 15

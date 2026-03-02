@@ -2,7 +2,7 @@
 % Please edit documentation in R/p_value_functions.R
 \name{p_value_functions}
 \alias{p_value_functions}
-\title{Overview of p-value combination functions}
+\title{Overview of \emph{p}-value combination functions}
 \description{
 The \code{p_value_functions} family is useful to combine
 individual study effect estimates and standard errors into a single
@@ -31,8 +31,9 @@ and invert the tests to find confidence intervals at any desired level.
 }
 }
 \references{
-Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for
-meta-analysis. \emph{Research Synthesis Methods}, 16:758-785, 2025.
+Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value
+functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785.
+\doi{10.1017/rsm.2025.26}
 }
 \seealso{
 \code{\link{confMeta}}

@@ -1,85 +1,80 @@
-#' @title Visualizations of `confMeta` objects
+#' @title Visualizations of \code{confMeta} objects
 #'
-#' @description Plot one or more `confMeta` objects. Currently, this function
-#'     can create two types of plots, the *p*-value function and the
-#'     forest plot. This allows to compare different *p*-value functions with
-#'     each other.
+#' @description Plots one or more \code{confMeta} objects. This function
+#'     can create two types of plots: the \emph{p}-value function plot and the
+#'     forest plot. This allows for direct visual comparison of different 
+#'     \emph{p}-value functions.
 #'
 #' Optionally, a Bayesian meta-analysis object created with the
-#' [bayesmeta::bayesmeta()] function can be supplied via the `bayesmeta` argument.
+#' \code{bayesmeta::bayesmeta()} function can be supplied via the `bayesmeta` argument.
 #' When provided, its posterior summary is displayed as an additional diamond
 #' at the bottom of the forest plot for comparison with the frequentist methods
 #' 
+#' \strong{Important Note:} If supplying a Bayesian meta-analysis object 
+#' via the \code{bayesmeta} argument, this function explicitly extracts the 
+#' 95% credible intervals. If the Bayesian model was fit using a different 
+#' credible level, the function will crash.
 #' 
-#' @param ... One or more objects of class `confMeta`.
+#' @param ... One or more objects of class \code{confMeta}.
 #' @param type A character vector of length 1 or 2. Indicates what type of
-#'     plot should be returned. Accepted is any combination of `"p"` and
-#'     `"forest"`. Defaults to `c("p", "forest")`.
-#' @param diamond_height Numeric vector of length 1. Indicates the maximal
+#'     plot should be returned. Accepted values are \code{"p"}, \code{"forest"},
+#'     or both. Defaults to \code{c("p", "forest")}.
+#' @param diamond_height Numeric scalar. Indicates the maximal
 #'     possible height of the diamonds in the forest plot. Defaults to 0.5.
-#'     This argument is only relevant if `type` contains `"forest"` and will
+#'     This argument is only relevant if \code{type} contains \code{"forest"} and will
 #'     be ignored otherwise.
-#' @param v_space Numeric vector of length 1. Indicates the vertical space
+#' @param v_space Numeric scalar. Indicates the vertical space
 #'     between two diamonds in the forest plot. Defaults to 1.5.
-#'     This argument is only relevant if `type` contains `"forest"` and will
+#'     This argument is only relevant if \code{type} contains \code{"forest"} and will
 #'     be ignored otherwise.
-#' @param scale_diamonds Logical vector of lenght 1. Accepted values are either
-#'     `TRUE` (default) or `FALSE`. If `TRUE`, the diamond is rescaled to the
+#' @param scale_diamonds Logical. If \code{TRUE} (default), the diamond is rescaled to the
 #'      interval \[0, 1\] in cases where the maximum of the p-value
-#'     function is not equal to 1. This argument is only relevant if `type`
-#'     contains `"forest"` and will be ignored otherwise.
-#' @param show_studies Logical vector of lenght 1. Accepted values are either
-#'     `TRUE` (default) or `FALSE`. If `TRUE`, the forest plot shows the
+#'     function is not equal to 1. This argument is only relevant if \code{type}
+#'     contains \code{"forest"} and will be ignored otherwise.
+#' @param show_studies Logical. If \code{TRUE} (default), the forest plot shows the
 #'     confidence intervals for the individual effect estimates. Otherwise,
-#'     the intervals are suppressed. This argument is only relevant if `type`
-#'     contains `"forest"` and will be ignored otherwise.
-#' @param drapery Either `TRUE` (default) or `FALSE`. If `TRUE`, the individual
+#'     the intervals are suppressed. This argument is only relevant if \code{type}
+#'     contains \code{"forest"} and will be ignored otherwise.
+#' @param drapery Logical. If \code{TRUE} (default), individual
 #'     study effects are represented as drapery plots. If `FALSE` the studies
 #'     are represented by a simple vertical line at their effect estimates.
-#' @param reference_methods A character vector of length 1, 2, 3 or 4.
+#' @param reference_methods Character vector of length 1, 2, 3 or 4.
 #'     Specifies which reference meta-analysis methods should be shown in
 #'     the plot. Valid options are any subset of
-#'     `c("fe", "re", "hk", "hc")`, which correspond to:
-#'     - `"fe"`: fixed-effect meta-analysis  
-#'     - `"re"`: random-effects meta-analysis  
-#'     - `"hk"`: Hartung–Knapp adjustment  
-#'     - `"hc"`: Henmi–Copas adjustment.  
+#'     \code{c("fe", "re", "hk", "hc")}, which correspond to:
+#'     \itemize{
+#'       \item \code{"fe"}: fixed-effect meta-analysis  
+#'       \item \code{"re"}: random-effects meta-analysis  
+#'       \item \code{"hk"}: Hartung-Knapp adjustment  
+#'       \item \code{"hc"}: Henmi-Copas adjustment  
+#'     } 
 #'
-#'     **Note:** at most one of `"fe"` or `"re"` can be included at a time.
-#'     These two methods are mutually exclusive, as only one baseline
-#'     meta-analysis model (fixed or random effects) can be displayed in
-#'     a single plot. Defaults to `c("re", "hk", "hc")`.
+#' \strong{Note:} at most one of \code{"fe"} or \code{"re"} can be included at a time.
+#'     Defaults to \code{c("re", "hk", "hc")}.
 #' @param xlim Numeric vector of length 2. Global limits for the x-axis. 
-#'   If `NULL`, limits are calculated automatically.
+#'   If \code{NULL}, limits are calculated automatically.
 #' @param xlim_p Numeric vector of length 2. Specific x-axis limits for the 
-#'   p-value plot. Overrides `xlim`.
+#'   \emph{p}-value plot. Overrides \code{xlim}.
 #' @param xlim_forest Numeric vector of length 2. Specific x-axis limits for 
-#'   the forest plot. Overrides `xlim`.
-#' @param same_xlim Logical. If `TRUE`, forces the p-value plot to use the 
-#'   same x-axis limits as the forest plot. Defaults to `FALSE`.
-#' @param xlab Either NULL (default) or a character vector of length 1 which
-#'     is used as the label for the x-axis.
-#' @param  n_breaks approximate number of tick marks to display 
-#'   on the x-axis. Defaults to `7`
-#' @param bayesmeta Either `NULL` (default) or an object of class `"bayesmeta"`,
-#'     typically created using [bayesmeta::bayesmeta()]. When provided, the
-#'     posterior median (or mean, depending on the `mu_estimate` setting) and
-#'     95% credible interval are displayed as an additional diamond at the
-#'     bottom of the forest plot for direct comparison with the frequentist
-#'     confidence intervals. This argument has no effect on the *p*-value
-#'     function plot.
-#' @param n_points Number of points used to create the p value plot. n_points = 10000 gives high resolution
-#' default is 1000 for efficiency.
-#' @return An object of class `ggplot` containing the specified plot(s).
+#'   the forest plot. Overrides \code{xlim}.
+#' @param same_xlim Logical. If \code{TRUE}, forces the \emph{p}-value plot to use the 
+#'   same x-axis limits as the forest plot. Defaults to \code{TRUE}.
+#' @param xlab Character string. Label for the x-axis. Defaults to \code{NULL} 
+#'   (renders as \eqn{\mu}).
+#' @param  n_breaks Numeric. Approximate number of tick marks to display 
+#'   on the x-axis. Defaults to 7.
+#' @param bayesmeta An object of class \code{bayesmeta}, typically created using 
+#'     \code{bayesmeta::bayesmeta()}. When provided, the posterior median (or mean) and
+#'     95% credible interval are displayed as an additional diamond at the bottom 
+#'     of the forest plot. Has no effect on the \emph{p}-value plot. Defaults to \code{NULL}.
+#' @param n_points Numeric. Number of points used to create the \emph{p}-value plot. 
+#'     Higher values (e.g., 10000) yield higher resolution but take longer to render. 
+#'     Defaults to 1000.
+#' @return An object of class \code{ggplot} containing the specified plot(s).
 #'
 #'
 #'
-#'@note
-#' The function extract esplicitly the 95% credible intervals from the 'bayesmeta' object
-#' If the bayesian model was fit using a different credible level, the function will crash
 #'
-#'
-
 #' @importFrom patchwork wrap_plots
 #'
 #' @export
@@ -257,12 +252,14 @@ autoplot.confMeta <- function(
     if (!is.null(bayesmeta)) {
       if (!inherits(bayesmeta, "bayesmeta")) stop("bayesmeta argument MUST be of class 'bayesmeta'")
            if ("forest" %in% type) {
-            plots [["forest"]] <- add_bayes_forest(
-             p = plots[["forest"]], 
-             bm = bayesmeta, 
-             color = "black", 
-              label = "Bayesmeta"
-               )
+             plots[["forest"]] <- add_bayes_forest(
+               p = plots[["forest"]], 
+               bm = bayesmeta, 
+               diamond_height = diamond_height,
+               v_space = v_space,               
+               color = "black", 
+               label = "Bayesmeta"
+             )
                 }
     }
     
@@ -489,7 +486,7 @@ ggPvalueFunction <- function(
         
         pval <- pmin(pmax(pval, 0), 1) #sometimes due to approx error are a tiny bit smaller than 0, fix to not have any error messages
         
-        CIs <- cm$joint_ci
+        CIs <- cm$joint_cis
         y0 <- cm$p_0[, 2L] #p_val at mu = 0
 
         # Data frame with the lines of the p-value function: (x,y coords, value
@@ -1007,7 +1004,7 @@ get_CI_new_methods <- function(
         cm <- cms[[r]]
 
         # Calculate polygons
-        ci_exists <- if (all(is.na(cm$joint_ci))) FALSE else TRUE
+        ci_exists <- if (all(is.na(cm$joint_cis))) FALSE else TRUE
 
         if (ci_exists) {
             # Calculate the polygons for the diamond
@@ -1138,7 +1135,7 @@ calculate_polygon <- function(
 ) {
 
     # If gamma == NA, there is either one or no CI
-    no_ci <- if (all(is.na(cm$joint_ci))) TRUE else FALSE
+    no_ci <- if (all(is.na(cm$joint_cis))) TRUE else FALSE
     no_gamma <- if (all(is.na(cm$gamma))) TRUE else FALSE
 
     # Which points to evaluate for the diamonds (all maxima, minima, estimates)
@@ -1271,48 +1268,24 @@ call_pfun <- function(fun, estimates, SEs, mu, w = NULL) {
 #   Add the bayesmeta object to the forest plot. 
 # --------------------------------------------------------------------------------
 
-#' @title Add Bayesmeta diamond to a forest plot
-#' @description
-#' Internal helper function used by [autoplot.confMeta()] to add the
-#' Bayesian diamond corresponding to a `bayesmeta` object at the bottom
-#' of an existing forest plot.
-#'
-#' @keywords internal
-#' @importFrom ggplot2 ggplot_build
-#' @importFrom stats median
-
-add_bayes_forest <- function(p, bm, color = "black", label = "Bayesmeta",
+add_bayes_forest <- function(p, bm, diamond_height, v_space, 
+                             color = "#000000", label = "Bayesmeta",
                              mu_estimate = "median") {
-  stopifnot(inherits(p, "ggplot"), inherits(bm, "bayesmeta"))
   
   # Extract summary from the bayesmeta object
   s <- bm$summary
   mu_est <- s[mu_estimate, "mu"]
-  
-  # IMPORTAN NOTE --> bayesmeta object only works for 95% predictive intervals! Not different from those 
-
   lower  <- s["95% lower", "mu"]
   upper  <- s["95% upper", "mu"]
   
-  # Extract layout from the existing plot
-  gb <- ggplot_build(p)
-  y_breaks <- gb$layout$panel_params[[1]]$y$get_breaks()
-  y_labels <- gb$layout$panel_params[[1]]$y$get_labels()
+  # Get the current breaks and labels from the ggplot object's scale
+  y_scale <- p$scales$get_scales("y")
+  y_breaks <- y_scale$breaks
+  y_labels <- y_scale$labels
   
-  # Distance between rows (to find spacing for new diamond)
-  dy <- median(diff(sort(y_breaks))) #gap size between rows
-  y_bayes <- min(y_breaks) - dy    #new position, one break below bottom
-  
-  # Extract diamond layer info to get height and line width
-  
-  
-  # I could find a smarter solutioN ...
-  diamond_layer <- gb$data[[4]]  # polygon layer 
-  height <- (diamond_layer[4, 2] - diamond_layer[2, 2]) / 2
-  
-  linewidth <- diamond_layer$linewidth[1]
-  
-  
+  # Calculate new position (one step down using v_space)
+  y_bayes <- min(y_breaks) - v_space
+  height <- diamond_height / 2
   
   # Define polygon for the Bayesmeta diamond
   diamond <- data.frame(
@@ -1320,27 +1293,26 @@ add_bayes_forest <- function(p, bm, color = "black", label = "Bayesmeta",
     y = c(y_bayes, y_bayes + height, y_bayes, y_bayes - height)
   )
   
-  # Add the diamond and updated y-axis
+  # Add the diamond
   p <- p +
     ggplot2::geom_polygon(
       data = diamond,
-      aes(x = x, y = y),
+      ggplot2::aes(x = x, y = y),
       fill = color,
-      color = "black",
-      linewidth = linewidth,
-      alpha = NA
-    )
+      color = color
+      )
   
   # Extend y-axis labels and breaks
   y_breaks <- c(y_breaks, y_bayes)
   y_labels <- c(y_labels, label)
   
+  # Overwrite the scale
   suppressMessages({
     p <- p + ggplot2::scale_y_continuous(
       breaks = y_breaks,
       labels = y_labels,
-      expand = ggplot2::expansion(mult = c(0.05, 0.1))
-    )
+      limits = c(y_bayes - v_space, max(y_breaks) + (v_space / 2))
+      )
   })
   
   p

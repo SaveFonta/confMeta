@@ -61,12 +61,12 @@ distribution.
 The Pearson test statistic for \eqn{k} studies is defined as:
 \deqn{g = -2 \sum_{i=1}^k \log(1 - p_i)}
 
-Under the global null hypothesis, each \eqn{p_i} is assumed to follow a
-\eqn{Unif(0, 1)} distribution. The test statistic \eqn{g} therefore follows a
+Under the global null hypothesis, each \eqn{p_i} is assumed to be
+uniformly distributed on \eqn{[0, 1]}. The test statistic \eqn{g} therefore follows a
 chi-squared distribution with \eqn{2k} degrees of freedom: \eqn{\chi^2_{2k}}.
 The combined \emph{p}-value, \eqn{p_P}, is calculated as the probability of observing a
 value less than or equal to \eqn{g} from this distribution:
-\deqn{p_P = P(\chi^2_{2k} \leq g)}
+\deqn{p_P = \Pr(\chi^2_{2k} \leq g)}
 
 \strong{Important note on orientation:} Unlike Edgington's method, Pearson's method
 is \emph{not} orientation-invariant. The combined \emph{p}-value depends on
@@ -122,9 +122,11 @@ p_pearson(
 Pearson K. On a method of determining whether a sample of size n supposed to
 have been drawn from a parent population having a known probability integral
 has probably been drawn at random. \emph{Biometrika}, 25:379-410, 1933.
+\doi{10.2307/2332290}
 
-Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for
-meta-analysis. \emph{Research Synthesis Methods}, 16:758-785, 2025.
+Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value
+functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785.
+\doi{10.1017/rsm.2025.26}
 }
 \seealso{
 Other p-value combination functions: 

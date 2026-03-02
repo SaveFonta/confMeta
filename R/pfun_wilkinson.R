@@ -11,11 +11,11 @@
 #' The Wilkinson combined \emph{p}-value for \eqn{k} studies is defined as:
 #' \deqn{p_W = \max\{p_1, \dots, p_k\}^k} 
 #'
-#' Under the global null hypothesis, each \eqn{p_i} is assumed to follow a 
-#' \eqn{Unif(0, 1)} distribution. 
+#' Under the global null hypothesis, each \eqn{p_i} is assumed to be 
+#' uniformly distributed on \eqn{[0, 1]}.
 #' 
-#' **Important note on orientation:** Unlike Edgington's method, Wilkinson's method 
-#' is *not* orientation-invariant. The combined \emph{p}-value depends on 
+#' \strong{Important note on orientation:} Unlike Edgington's method, Wilkinson's method 
+#' is \emph{not} orientation-invariant. The combined \emph{p}-value depends on 
 #' the direction of the one-sided \emph{p}-values (controlled by the 
 #' \code{input_p} argument). 
 #' 
@@ -33,9 +33,11 @@
 #'
 #' @references
 #' Wilkinson B. A statistical consideration in psychological research. *Psychological Bulletin*, 48(2):156-158, 1951. 
+#' \doi{10.1037/h0059111}
 #' 
-#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025. 
-#'
+#' Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined *p*-value
+#' functions for meta-analysis. *Research Synthesis Methods*, 16:758-785.
+#' \doi{10.1017/rsm.2025.26}
 #'
 #'
 #' @examples
@@ -60,7 +62,6 @@
 #'     output_p = "two.sided",
 #'     input_p = "greater"
 #' )
-
 p_wilkinson <- function(
     estimates,
     SEs,

@@ -57,7 +57,6 @@
 #' SEs <- c(0.1, 0.2, 0.1)
 #' p_hmean(estimates, SEs, mu = 0, distr = "f")
 #' 
-
 p_hmean <- function(
     estimates,
     SEs,

@@ -1,173 +1,125 @@
-#' @title Creating *confMeta* objects
-#' @description Function to create objects of class `confMeta`. This is the
+#' @title Creating \code{confMeta} objects
+#' @description Function to create objects of class \code{confMeta}. This is the
 #'     main class within the package. For an overview of available methods
-#'     run `methods(class = "confMeta")`.
-#' @param estimates A vector containing the normalized individual effect
-#'     estimates. Must be of the same length as `SEs` and coercible to
-#'     type 'double'.
-#' @param SEs The standard errors of the normalized individual effect estimates.
-#'     Must be of the same length as `estimates` and coercible to
-#'     type 'double'.
-#' @param study_names Either `NULL` (the default) or a vector that can
-#'     be coerced to type 'character'. Must be of the same length as
-#'     arguments `estimates` and `SEs`. The vector is used to
-#'     differentiate the individual studies. For more information, check out the
-#'     Details section.
-#' @param conf_level The confidence level. Must be a numeric vector of length
-#'     one with its value being in (0, 1).
-#' @param fun A function that combines individual effect estimates and the
-#'     corresponding standard errors into a combined p-value. The function must
-#'     have arguments named 'estimates', 'SEs', and 'mu'.
-#'     Additional arguments are also allowed, but these must either have a
-#'     default value or be passed via the `...` argument.
-#'     For more information, see the Details section.
-#' @param fun_name A character vector of length 1. The vector serves as an
-#'     identifier for the function `fun` and is only used as a label in
-#'     plots. The default is just the literal that the function `fun` is
-#'     bound to.
-#' @param w An optional numeric vector of weights for the studies. Must be of 
-#'     the same length as `estimates` and `SEs`, finite, and non-negative. 
-#'     If `NULL` (the default), equal weights are assumed. Used by weighted 
-#'     p-value combination functions such as the weighted Edgington method.
-#' @param MH Logical. If `TRUE`, the fixed-effect comparison method will use 
-#'      Mantel-Haenszel pooling instead of the standard inverse-variance method. 
-#'      Requires `table_2x2` and `measure` to be provided. Default is `FALSE`.
-#' @param table_2x2 A data frame containing the 2x2 contingency table data for 
-#'      Mantel-Haenszel pooling. Required if `MH = TRUE`. Must contain columns: 
-#'      `ai` (events in experimental), `bi` (non-events in experimental), 
-#'      `ci` (events in control), `di` (non-events in control), 
-#'      `n1i` (total experimental), and `n2i` (total control).
-#' @param measure A character string indicating the effect measure to be used 
-#'      for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if 
-#'      `MH = TRUE`.
-#' @param ... Additional arguments passed to `fun`. See the Details
-#'      section.
-#' @return
-#' An S3 object of class `confMeta` containing the following elements:
-#'
-#' - `estimates`: The normalized individual effect estimates.
-#' - `SEs`: The standard errors of the normalized individual effect estimates.
-#' - `w`: The weights for the studies (if specified). If `NULL`,
-#'   equal weights were assumed.
-#' - `study_names`: The names of the individual studies.
-#' - `conf_level`: The confidence level.
-#' - `individual_cis`: The confidence intervals for the individual effects.
-#'   The exact calculation of these intervals can be found in the Details
-#'   section.
-#' - `p_fun`: A function with arguments named `estimates`, `SEs`,
-#'   `conf_level`, and `mu`. This is the p-value function that is used to
-#'   find the combined confidence intervals.
-#' - `fun_name`: The name of the function. It is only used in plots as
-#'   a legend entry.
-#' - `joint_cis`: The combined confidence interval(s). These are calculated
-#'   by finding the mean values where the \eqn{p}-value function is larger
-#'   than the confidence level in element `conf_level`.
-#' - `gamma`: The local minima within the range of the individual effect
-#'   estimates. Column `x` refers to the mean \eqn{\mu} and column `y`
-#'   contains the corresponding \eqn{p}-value.
-#' - `p_max`: The local maxima of the \eqn{p}-value function. Column `x`
-#'   refers to the mean \eqn{\mu} and column `y` contains the corresponding
-#'   \eqn{p}-value.
-#' - `p_0`: The value of the \eqn{p}-value at \eqn{\mu = 0}.
-#' - `comparison_cis`: Combined confidence intervals calculated with other
-#'   methods. These can be used for comparison purposes. Currently, these
-#'   other methods are random effects (IV), Hartung & Knapp, and
-#'   Henmi & Copas.
-#' - `comparison_p_0`: The same as in element `p_0` but for the comparison
-#'   methods (random effects, Hartung & Knapp, Henmi & Copas).
-#' - `heterogeneity`: A data frame containing heterogeneity statistics 
-#'    (Cochran's Q, p-value for Q, I-squared, Tau-squared) calculated 
-#'    using REML estimator. 
-#' - `table_2x2`: The 2x2 table data frame (if provided), otherwise `NULL`.
+#'     run \code{methods(class = "confMeta")}.
 #'     
-#' @details
-#' Additional details are provided in the sections below.
-#' 
-#' @section Function arguments:
-#'
-#'The argument `study_names` is used to differentiate between the
-#'different individual estimates. If the argument is set to `NULL`,
-#'the element 'study_names' in the return object will just be a
-#'character vector with elements "Study n" where n is a number from 1
-#'to `length(estimates)`. These names are only used in some of the
-#'`autoplot` methods.
-#'
-#'The argument `fun` must have arguments 'estimates', 'SEs',
-#'and 'mu' but it can also have further arguments.
-#'However, these must either have a default value or
-#'need to be passed via the `...` argument. If there
-#'are additional arguments passed via `...`,
-#'`confMeta` will internally create a new
-#'function that calls `fun` with the additional arguments fixed.
-#'Thus, any argument passed via `...` overwrites existing
-#'defaults.
-#'Since this is the p-value function that is used to calculate the
-#'combined confidence interval(s), it should return a vector of class
-#''numeric' with value(s) in the interval \eqn{[0, 1]}.
-#'
-#'The argument `w` allows assigning weights to the studies. If not 
-#'specified, all studies receive equal weight (`w = rep(1, n)`). 
-#'Weighted p-value combination functions (e.g. weighted Edgington) 
-#'will use these values directly; other functions that do not depend 
-#'on weights will ignore `w`.
-#'
+#' @param estimates A vector containing the individual effect estimates. These should be on 
+#' a scale where they are approximately normally distributed (e.g., log odds ratios, log risk 
+#' ratios, mean differences).  Must be of the same length as \code{SEs} and coercible to 
+#' type \code{double}.
+#' @param SEs The standard errors of the individual effect estimates.
+#'     Must be of the same length as \code{estimates} and coercible to
+#'     type \code{double}.
+#' @param study_names Optional vector of study identifiers. If \code{NULL} (the default) 
+#'     names ("Study 1", "Study 2", ...) are used. Otherwise a vector that can
+#'     be coerced to type \code{character}. Must be of the same length as
+#'     arguments \code{estimates} and \code{SEs}. 
+#' @param conf_level The confidence level (numeric scalar between 0 and 1).
+#' @param fun A function that combines estimates and SEs into a combined \emph{p}-value. 
+#'     The function must accept arguments \code{estimates}, \code{SEs}, and \code{mu}. 
+#'     Any additional arguments that \code{fun} accepts can be passed via \code{...}. 
+#'     See \code{\link{p_value_functions}} for supported methods.
+#' @param fun_name A character vector of length 1. Label for \code{fun} used in
+#'     \code{\link{autoplot.confMeta}}. Defaults to the name of the 
+#'     function passed to \code{fun}.
+#' @param w Numeric vector of weights for the studies. Must be of 
+#'     the same length as \code{estimates} and \code{SEs}, finite, and non-negative. 
+#'     If \code{NULL} (the default), equal weights are assumed. Used by weighted 
+#'     \emph{p}-value combination functions.
+#' @param MH Logical. If \code{TRUE}, the fixed-effect comparison method will use 
+#'     Mantel-Haenszel pooling instead of the standard inverse-variance method. 
+#'     Requires \code{table_2x2} and \code{measure} to be provided. Default is \code{FALSE}.
+#' @param table_2x2 A data frame containing the 2x2 contingency table data for 
+#'     Mantel-Haenszel pooling. Required if \code{MH = TRUE}. Must contain columns: 
+#'     \code{ai} (events in experimental), \code{bi} (non-events in experimental), 
+#'     \code{ci} (events in control), \code{di} (non-events in control), 
+#'     \code{n1i} (total experimental), and \code{n2i} (total control).
+#' @param measure A character string indicating the effect measure to be used 
+#'     for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if 
+#'     \code{MH = TRUE}.
+#' @param ... Additional arguments passed to \code{fun}. 
+#'     
+#' @return
+#' An S3 object of class \code{confMeta} containing the following elements:
+#' \itemize{
+#'  \item \code{estimates}, \code{SEs}, \code{w}, \code{study_names}, \code{conf_level}: Values 
+#'  used to build the object.
+#'  \item \code{individual_cis}: Matrix of Wald-type confidence intervals for each study.
+#'   \item \code{p_fun}: The \emph{p}-value function used for combined inference.
+#'   \item \code{joint_cis}: Combined confidence interval(s). Calculated
+#'     by finding the values where the \emph{p}-value function is larger
+#'     than the significant level (\code{1 - conf_level}).
+#'   \item \code{gamma}: The local minima within the range of the individual effect
+#'     estimates. Column \code{x} refers to the mean \eqn{\mu} and column \code{y}
+#'     contains the corresponding \emph{p}-value.
+#'   \item \code{p_max}: The local maxima of the \emph{p}-value function. Column \code{x}
+#'     refers to the mean \eqn{\mu} and column \code{y} contains the corresponding
+#'     \emph{p}-value.
+#'   \item \code{p_0}: The value of the \emph{p}-value at \eqn{\mu = 0}.
+#'   \item \code{comparison_cis}: Combined confidence intervals calculated with other
+#'     methods. These can be used for comparison purposes. Currently, these
+#'     other methods are fixed effect (IV or Mantel-Haenszel), random effects (IV), 
+#'     Hartung & Knapp, and Henmi & Copas.
+#'   \item \code{comparison_p_0}: The same as in element \code{p_0} but for the comparison
+#'     methods (fixed effect, random effects, Hartung & Knapp, Henmi & Copas).
+#'   \item \code{heterogeneity}: A data frame containing heterogeneity statistics 
+#'     (Cochran's Q, \emph{p}-value for Q, \eqn{I^2}, \eqn{\tau^2}) calculated 
+#'     using the REML estimator. 
+#'   \item \code{table_2x2}: The 2x2 table data frame (if provided), otherwise \code{NULL}.
+#' }
+#'     
 #' @section Confidence intervals:
-#'
-#' The `individual_cis` are calculated as
+#' Individual confidence intervals are calculated as:
 #' \deqn{x_i \pm \Phi^{-1}(1 - \alpha/2) \cdot \sigma_i}
-#'
-#' where \eqn{x_i} corresponds to the elements of vector
-#' `estimates`, \eqn{\Phi^{-1}} is the quantile function of
-#' the standard normal distribution, \eqn{\alpha} is the confidence
-#' level passed as argument `conf_level`, and
-#' \eqn{\sigma_i} are the standard errors passed in argument
-#' `SEs`.
-#'
-#'The boundaries of the confidence intervals returned in element
-#'`joint_cis` are found by searching where the function returned
-#'in element 'p_fun' is equal to 1-`conf_level`.
+#' where \eqn{x_i} are the \code{estimates}, \eqn{\sigma_i} the \code{SEs}, and 
+#' \eqn{\alpha = 1 -} \code{conf_level}.
 #' 
-#' **Note:** due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not anymore the REML.
-#' Also, the HK method uses the adhoc.hakn.ci = "IQWiG6"	by default, i.e. use variance correction if HK confidence interval
-#' is narrower than CI from classic random effects model with DerSimonian-Laird estimator (IQWiG, 2022)
+#' Combined confidence intervals are found by inverting the \emph{p}-value function, 
+#' identifying all \eqn{\mu} where the \emph{p}-value exceeds the significance level (1 - \code{conf_level}).
 #' 
+#' \strong{Note:} Due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not the REML estimator anymore.
+#' Also, the HK method uses \code{adhoc.hakn.ci = "IQWiG6"} by default, i.e., it uses variance correction if the HK confidence interval
+#' is narrower than the CI from the classic random effects model with the DerSimonian-Laird estimator (IQWiG, 2022).
 #' 
 #' @examples
-#'     # Simulate effect estimates and standard errors
-#'     set.seed(42)
-#'     n <- 5
-#'     estimates <- rnorm(n)
-#'     SEs <- rgamma(n, 5, 5)
-#'     conf_level <- 0.95
+#'# Simulate effect estimates and standard errors
+#'set.seed(42)
+#'n <- 5
+#'estimates <- rnorm(n)
+#'SEs <- rgamma(n, 5, 5)
+#'conf_level <- 0.95
 #'
-#'     # Construct a simple confMeta object using p_edgington as
-#'     # the p-value function
-#'     cm <- confMeta(
-#'         estimates = estimates,
-#'         SEs = SEs,
-#'         conf_level = conf_level,
-#'         fun = p_edgington,
-#'         fun_name = "Edgington",
-#'         input_p = "greater"
-#'     )
-#'     cm2 <- confMeta(
-#'         estimates = estimates,
-#'         SEs = SEs,
-#'         conf_level = conf_level,
-#'         fun = p_edgington_w,
-#'         w = 1/SEs,
-#'         fun_name = "Edgington (1/SE)",
-#'         input_p = "greater"
-#'     )
+#'# Construct a simple confMeta object using p_edgington as
+#'# the p-value function
+#'cm <- confMeta(
+#'   estimates = estimates,
+#'   SEs = SEs,
+#'   conf_level = conf_level,
+#'   fun = p_edgington,
+#'   fun_name = "Edgington",
+#'   input_p = "greater"
+#')
 #'     
-#'     #get a summary of the objects
-#'     summary(cm, cm2)
-#'     
-#'     # Plot the object
-#'     autoplot(cm, cm2, type = "p")                   # p-value function plot
-#'     autoplot(cm, cm2, type = "forest")              # forest plot
-#'     autoplot(cm, cm2, type = c("p", "forest"))      # both
+#'cm2 <- confMeta(
+#'   estimates = estimates,
+#'   SEs = SEs,
+#'   conf_level = conf_level,
+#'   fun = p_edgington_w,
+#'   w = 1/SEs,
+#'   fun_name = "Edgington (1/SE)",
+#'   input_p = "greater"
+#')
+#' 
+#'# print the objects
+#'cm
+#'cm2
+#' 
+#'# Plot the objects
+#'autoplot(cm, cm2, type = "p")                   # p-value function plot
+#'autoplot(cm, cm2, type = "forest")              # forest plot
+#'autoplot(cm, cm2, type = c("p", "forest"))      # both
 #'
+#' @seealso \code{\link{p_value_functions}}, \code{\link{autoplot.confMeta}}
 #' @export
 confMeta <- function(
     estimates,
@@ -176,7 +128,7 @@ confMeta <- function(
     conf_level = 0.95,
     fun,
     fun_name = NULL,
-    w = NULL,   # [MOD] 
+    w = NULL,    
     MH = FALSE, 
     table_2x2 = NULL,
     measure = NULL,
@@ -265,6 +217,7 @@ confMeta <- function(
 # Constructor function
 #' @importFrom stats qnorm
 #' @importFrom meta metagen metabin
+#' @noRd
 
 new_confMeta <- function(
     estimates = double(),
@@ -514,6 +467,7 @@ validate_confMeta <- function(confMeta) {
 # ==============================================================================
 
 #' @importFrom meta metagen
+#' @noRd
 get_obj_re <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
@@ -521,17 +475,19 @@ get_obj_re <- function(estimates, SEs, conf_level) {
         random = TRUE, common = FALSE
     )
 }
-
+#???
 #' @importFrom meta metagen
+#' @noRd
 get_obj_fe <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "REML",
+        level = conf_level, method.tau = "REML", #note that here method.tau doesn't change anything 
         random = FALSE, common = TRUE
     )
 }
 
 #' @importFrom meta metagen
+#' @noRd
 get_obj_hk <- function(estimates, SEs, conf_level) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
@@ -547,6 +503,7 @@ get_obj_hk <- function(estimates, SEs, conf_level) {
 #I also added the ad.hoc correction
 
 #' @importFrom metafor hc rma
+#' @noRd
 get_obj_hc <- function(estimates, SEs, conf_level) {
     metafor::hc(
         object = metafor::rma(yi = estimates, sei = SEs, level = conf_level)
@@ -612,6 +569,7 @@ get_pval_hk <- function(obj) {
 }
 
 #' @importFrom ReplicationSuccess ci2p
+#' @noRd
 get_pval_hc <- function(obj, conf_level) {
     ci <- get_ci_hc(obj)
     p <- ReplicationSuccess::ci2p(
@@ -754,7 +712,10 @@ overwrite_FE <- function(comparison, table_2x2, measure, conf_level = 0.95) {
 # with this function we compute a general metagen object. If one need to add other statistics computed by metagen (since it computes
 #everything you can think of in meta analysis), just extract from this (NB: here you can easily change the default options used in metagen to estimate tau in different ways)
 
-
+# NOTE: I am aware that "metagen_wrap" and "get_obj_re" do the same call to "metagen"
+# But I wanted them to keep them separate to have more control on the estimator used in each one of them 
+# if in the future we want to change them 
+#???
 metagen_wrap <- function(estimates, SEs, conf_level = 0.95) {
   meta::metagen(
     TE = estimates, seTE = SEs,

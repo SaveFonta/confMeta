@@ -33,8 +33,8 @@ standard errors are adjusted for between-study heterogeneity using
 
 \item{tau2}{Additive heterogeneity parameter (if applicable).}
 
-\item{check_inputs}{Logical (default \code{TRUE}). If \code{TRUE}, perform
-input validation.}
+\item{check_inputs}{Logical (default \code{TRUE}). If \code{TRUE},
+perform input validation.}
 
 \item{w}{Numeric vector of study weights. Defaults to \code{1/SEs} producing
 the same \emph{p}-value as meta-analsis}
@@ -69,8 +69,11 @@ p_stouffer(estimates, SEs, mu = 0, heterogeneity = "none")
 }
 \references{
 Stouffer SA, et al. \emph{The American Soldier}. Princeton University Press, 1949.
+\doi{10.2307/2572105}
 
-Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785, 2025.
+Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value
+functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785.
+\doi{10.1017/rsm.2025.26}
 }
 \seealso{
 Other p-value combination functions: 

@@ -69,7 +69,8 @@ procedure, see \code{\link{p_edgington_w}}.
 The classical Edgington statistic is defined for \eqn{k} studies as
 \deqn{S = \sum_{i=1}^k p_i,}
 where \eqn{p_i} are individual study \emph{p}-values. Under the global null
-hypothesis, each \eqn{p_i} is assumed to follow a \eqn{Unif(0, 1)} distribution.
+hypothesis, each \eqn{p_i} is assumed to be
+uniformly distributed on \eqn{[0, 1]}.
 
 \strong{Important note on orientation:} Edgington's method is orientation-invariant.
 The combined \emph{p}-value is symmetric with respect to the direction of the
@@ -87,11 +88,11 @@ one of two ways:
 \itemize{
 \item \strong{Exact Method:} The function uses the exact Irwin-Hall distribution
 to compute the CDF:
-\deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor s \rfloor} (-1)^j \binom{k}{j} (s - j)^k}
+\deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{k}{j} (S - j)^k}
 \item \strong{Normal Approximation:} For a large number of studies (\eqn{n \geq 12}),
 the sum is approximated by a Normal distribution with:
-\deqn{E[s] = \frac{k}{2}}
-\deqn{Var(s) = \frac{k}{12}}
+\deqn{E[S] = \frac{k}{2}}
+\deqn{\mathrm{Var}(S) = \frac{k}{12}}
 }
 }
 
@@ -137,9 +138,13 @@ p_edgington(
 )
 }
 \references{
-Edgington ES. An additive method for combining probability values from independent experiments. \emph{The Journal of Psychology}, 80(2):351-363, 1972.
+Edgington, E. S. (1972). An additive method for combining probability values from
+independent experiments. \emph{The Journal of Psychology}, 80(2), 351-363.
+\doi{10.1080/00223980.1972.9924813}
 
-Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785, 2025.
+Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value
+functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785.
+\doi{10.1017/rsm.2025.26}
 }
 \seealso{
 Other p-value combination functions: 

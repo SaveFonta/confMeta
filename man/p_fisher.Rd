@@ -60,12 +60,12 @@ logarithm and evaluates the sum against a chi-squared distribution.
 The Fisher test statistic for \eqn{k} studies is defined as:
 \deqn{f = -2 \sum_{i=1}^k \log(p_i)}
 
-Under the global null hypothesis, each \eqn{p_i} is assumed to follow a
-\eqn{Unif(0, 1)} distribution. The test statistic \eqn{f} therefore follows a
+Under the global null hypothesis, each \eqn{p_i} is assumed to be
+uniformly distributed on \eqn{[0, 1]}. The test statistic \eqn{f} therefore follows a
 chi-squared distribution with \eqn{2k} degrees of freedom: \eqn{\chi^2_{2k}}.
 The combined \emph{p}-value, \eqn{p_F}, is calculated as the probability of observing a
 value strictly greater than \eqn{f} from this distribution:
-\deqn{p_F = P(\chi^2_{2k} > f)}
+\deqn{p_F = \Pr(\chi^2_{2k} > f)}
 
 \strong{Important note on orientation:} Unlike Edgington's method, Fisher's method
 is \emph{not} orientation-invariant. The combined \emph{p}-value depends on
@@ -118,9 +118,12 @@ p_fisher(
 
 }
 \references{
-Fisher RA. \emph{Statistical Methods for Research Workers}. 4th ed. Oliver & Boyd; 1932.
+Fisher R.A. \emph{Statistical Methods for Research Workers}. 4th ed. Oliver & Boyd; 1932.
+\doi{10.1093/oso/9780198522294.002.0003}
 
-Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785, 2025.
+Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value
+functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785.
+\doi{10.1017/rsm.2025.26}
 }
 \seealso{
 Other p-value combination functions: 

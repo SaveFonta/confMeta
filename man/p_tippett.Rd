@@ -60,8 +60,8 @@ The Tippett combined \emph{p}-value, \eqn{p_T}, for \eqn{k} studies is
 defined directly as:
 \deqn{p_T = 1 - (1 - \min\{p_1, \dots, p_k\})^k}
 
-Under the global null hypothesis, each \eqn{p_i} is assumed to follow a
-\eqn{Unif(0, 1)} distribution.
+Under the global null hypothesis, each \eqn{p_i} is assumed to be
+uniformly distributed on \eqn{[0, 1]}.
 
 \strong{Important note on orientation:} Unlike Edgington's method, Tippett's method
 is \emph{not} orientation-invariant. The combined \emph{p}-value depends on
@@ -114,8 +114,11 @@ p_tippett(
 }
 \references{
 Tippett LHC. \emph{Methods of Statistics}. Williams Norgate; 1931.
+\doi{10.2307/3606890}
 
-Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785, 2025.
+Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value
+functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785.
+\doi{10.1017/rsm.2025.26}
 }
 \seealso{
 Other p-value combination functions: 

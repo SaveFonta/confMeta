@@ -13,15 +13,15 @@
 #' The Pearson test statistic for \eqn{k} studies is defined as:
 #' \deqn{g = -2 \sum_{i=1}^k \log(1 - p_i)}
 #' 
-#' Under the global null hypothesis, each \eqn{p_i} is assumed to follow a 
-#' \eqn{Unif(0, 1)} distribution. The test statistic \eqn{g} therefore follows a 
+#' Under the global null hypothesis, each \eqn{p_i} is assumed to be 
+#' uniformly distributed on \eqn{[0, 1]}. The test statistic \eqn{g} therefore follows a 
 #' chi-squared distribution with \eqn{2k} degrees of freedom: \eqn{\chi^2_{2k}}. 
 #' The combined \emph{p}-value, \eqn{p_P}, is calculated as the probability of observing a 
 #' value less than or equal to \eqn{g} from this distribution:
-#' \deqn{p_P = P(\chi^2_{2k} \leq g)}
+#' \deqn{p_P = \Pr(\chi^2_{2k} \leq g)}
 #'
-#' **Important note on orientation:** Unlike Edgington's method, Pearson's method 
-#' is *not* orientation-invariant. The combined \emph{p}-value depends on 
+#' \strong{Important note on orientation:} Unlike Edgington's method, Pearson's method 
+#' is \emph{not} orientation-invariant. The combined \emph{p}-value depends on 
 #' the direction of the one-sided \emph{p}-values (controlled by the 
 #' \code{input_p} argument). 
 #' 
@@ -41,9 +41,11 @@
 #' Pearson K. On a method of determining whether a sample of size n supposed to 
 #' have been drawn from a parent population having a known probability integral 
 #' has probably been drawn at random. *Biometrika*, 25:379-410, 1933.
+#' \doi{10.2307/2332290}
 #' 
-#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for 
-#' meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025.
+#' Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined *p*-value
+#' functions for meta-analysis. *Research Synthesis Methods*, 16:758-785.
+#' \doi{10.1017/rsm.2025.26}
 #'
 #' @examples
 #' # Simulating estimates and standard errors
@@ -68,7 +70,6 @@
 #'      input_p = "greater"
 #' )
 #' 
-
 p_pearson <- function(
     estimates,
     SEs,

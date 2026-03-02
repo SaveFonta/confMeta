@@ -59,8 +59,8 @@ This method evaluates the maximum individual study \emph{p}-value.
 The Wilkinson combined \emph{p}-value for \eqn{k} studies is defined as:
 \deqn{p_W = \max\{p_1, \dots, p_k\}^k}
 
-Under the global null hypothesis, each \eqn{p_i} is assumed to follow a
-\eqn{Unif(0, 1)} distribution.
+Under the global null hypothesis, each \eqn{p_i} is assumed to be
+uniformly distributed on \eqn{[0, 1]}.
 
 \strong{Important note on orientation:} Unlike Edgington's method, Wilkinson's method
 is \emph{not} orientation-invariant. The combined \emph{p}-value depends on
@@ -113,8 +113,11 @@ p_wilkinson(
 }
 \references{
 Wilkinson B. A statistical consideration in psychological research. \emph{Psychological Bulletin}, 48(2):156-158, 1951.
+\doi{10.1037/h0059111}
 
-Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785, 2025.
+Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value
+functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785.
+\doi{10.1017/rsm.2025.26}
 }
 \seealso{
 Other p-value combination functions: 

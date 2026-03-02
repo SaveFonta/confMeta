@@ -4,22 +4,10 @@
 #' @description
 #' Stouffer's method for combining \emph{p}-values across studies
 #'
-#' @param estimates Numeric vector of study-level effect estimates.
-#' @param SEs Numeric vector of corresponding standard errors.
-#' @param mu Numeric **scalar or vector** of null values for the overall effect
-#'     (default: 0).
-#' @param heterogeneity Character string: \code{"none"} (default),
-#'     \code{"additive"}, or \code{"multiplicative"}. Determines whether
-#'     standard errors are adjusted for between-study heterogeneity using
-#'     \code{tau2} or \code{phi}.
-#' @param phi Multiplicative heterogeneity parameter (if applicable).
-#' @param tau2 Additive heterogeneity parameter (if applicable).
-#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE}, perform
-#'     input validation.
+#' @inheritParams p_tippett
 #' @param w Numeric vector of study weights. Defaults to \code{1/SEs} producing
 #'     the same *p*-value as meta-analsis
 #'
-#' @inheritParams p_tippett
 #'
 #' @details
 #' Stouffer's *z*-statistic for \eqn{k} studies is defined as
@@ -40,14 +28,16 @@
 #'
 #' @references
 #' Stouffer SA, et al. *The American Soldier*. Princeton University Press, 1949.
+#'  \doi{10.2307/2572105} 
 #'   
-#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025. 
+#' Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined *p*-value
+#' functions for meta-analysis. *Research Synthesis Methods*, 16:758-785.
+#' \doi{10.1017/rsm.2025.26}
 #'  
 #' @examples
 #' estimates <- c(0.1, 0.2, 0.3)
 #' SEs <- c(0.05, 0.05, 0.1)
 #' p_stouffer(estimates, SEs, mu = 0, heterogeneity = "none")
-
 p_stouffer <- function(
     estimates,
     SEs,

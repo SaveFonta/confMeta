@@ -1,14 +1,14 @@
-#' @title Overview of p-value combination functions
+#' @title Overview of \emph{p}-value combination functions
 #' @name p_value_functions
 #' 
 #' @description
-#' The `p_value_functions` family is useful to combine 
+#' The \code{p_value_functions} family is useful to combine 
 #' individual study effect estimates and standard errors into a single 
 #' meta-analytical \emph{p}-value function. These functions are the 
 #' building blocks for the \code{\link{confMeta}} function.
 #' 
 #' @details
-#' **Vectorization over mu:**
+#' \strong{Vectorization over mu:}
 #' All of the \emph{p}-value functions in this package are vectorized over the 
 #' \code{mu} argument. This means that you can pass a sequence of null values 
 #' (e.g., \code{seq(-2, 2, length.out = 1000)}) and the function will 
@@ -16,8 +16,7 @@
 #' designed to construct \emph{p}-value functions 
 #' and invert the tests to find confidence intervals at any desired level.
 #' 
-#' 
-#' **Available Methods:**
+#' \strong{Available Methods:}
 #' \itemize{
 #'   \item \code{\link{p_edgington}}: Classical Edgington method (Sum of \emph{p}-values).
 #'   \item \code{\link{p_edgington_w}}: Weighted Edgington method.
@@ -30,8 +29,9 @@
 #' }
 #' 
 #' @references 
-#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for 
-#' meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025.
+#' Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined *p*-value
+#' functions for meta-analysis. *Research Synthesis Methods*, 16:758-785.
+#' \doi{10.1017/rsm.2025.26}
 #' 
 #' @seealso \code{\link{confMeta}}
 NULL

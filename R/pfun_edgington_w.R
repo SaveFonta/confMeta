@@ -1,6 +1,5 @@
 #' @title Weighted Edgington’s method
 #' @family p-value combination functions
-#'@export
 #'
 #' @description
 #' Weighted generalization of Edgington’s method for combining
@@ -17,7 +16,7 @@
 #'     Defaults to equal weights.
 #' @param approx Logical (default \code{TRUE}). If \code{TRUE}, use a normal
 #'     approximation for the weighted sum when the condition defined by \code{approx_rule}
-#'     is met
+#'     is met.
 #' @param approx_rule Rule for normal approximation: \code{"n"} 
 #'     uses the number of studies; \code{"neff"} (default) uses the effective sample
 #'     size criterion (see Details).
@@ -30,36 +29,36 @@
 #' The weighted Edgington statistic is defined for \eqn{k} studies as
 #' \deqn{S = \sum_{i=1}^k w_i p_i,}
 #' where \eqn{w_i} are positive study weights and \eqn{p_i} are individual
-#' study \emph{p}-values. Under the global null hypothesis, each \eqn{p_i}
-#' is assumed to follow a \eqn{Unif(0, 1)} distribution. 
+#' study \emph{p}-values. Under the global null hypothesis, each \eqn{p_i} is assumed to be 
+#' uniformly distributed on \eqn{[0, 1]}.
 #' 
 #' @section Null Distribution and Approximation:
-#' The CDF of the test statistic S under the null, \eqn{F(t) = P(S \leq t)},
+#' The CDF of the test statistic \eqn{S} under the null, \eqn{F(t) = \Pr(S \leq t)},
 #' is computed in one of two ways:
 #' \itemize{
-#'   \item **Exact Method:** The function uses the exact Barrow-Smith
-#'     inclusion-exclusion formula to compute the CDF.
-#'     \deqn{F(t) = \frac{1}{n! \prod_{i=1}^n w_i} \sum_{v \in \{0,1\}^n} (-1)^{\sum v_j} (t - w^T v)^n \mathbf{I}_{\{t - w^T v \ge 0\}}}
-#'     This method is computationally intensive and is infeasible for `n > 18`
-#'     studies, at which point the function will stop with an error if
-#'     `approx = FALSE` is used.
+#'    \item **Exact Method:** The function uses the exact Barrow-Smith
+#'      inclusion-exclusion formula to compute the CDF.
+#'      \deqn{F(t) = \frac{1}{n! \prod_{i=1}^n w_i} \sum_{v \in \{0,1\}^n} (-1)^{\sum v_j} (t - w^T v)^n \mathbf{I}_{\{t - w^T v \ge 0\}}}
+#'      This method is computationally intensive and is infeasible for \eqn{n > 18}
+#'      studies, at which point the function will stop with an error if
+#'      \code{approx = FALSE} is used.
 #'
-#'   \item **Normal Approximation:** For a large number of studies or
-#'     sufficiently balanced weights, S is approximated by a Normal
-#'     distribution  with:
-#'     \deqn{E[S] = \frac{1}{2}\sum_{i=1}^k w_i}
-#'     \deqn{Var(S) = \frac{1}{12}\sum_{i=1}^k w_i^2}
+#'    \item **Normal Approximation:** For a large number of studies or
+#'      sufficiently balanced weights, \eqn{S} is approximated by a Normal
+#'      distribution with:
+#'      \deqn{E[S] = \frac{1}{2}\sum_{i=1}^k w_i}
+#'      \deqn{\mathrm{Var}(S) = \frac{1}{12}\sum_{i=1}^k w_i^2}
 #' }
 #'
 #'
 #' @section Approximation Rule:
-#' The `approx = TRUE` argument enables the normal approximation, but it is
+#' The \code{approx = TRUE} argument enables the normal approximation, but it is
 #' only used if a condition (controlled by \code{approx_rule}) is met.
 #' \itemize{
-#'   \item \code{approx_rule = "n"}: Uses the approximation if the
-#'     number of studies n > neff_cut.
-#'   \item \code{approx_rule = "neff"} (default): Uses the approximation if the
-#'     **effective sample size** n_eff > neff_cut.
+#'    \item \code{approx_rule = "n"}: Uses the approximation if the
+#'      number of studies \code{n > neff_cut}.
+#'    \item \code{approx_rule = "neff"} (default): Uses the approximation if the
+#'      **effective sample size** \code{n_eff > neff_cut}.
 #' }
 #' The effective sample size is defined as:
 #' \deqn{n_{\mathrm{eff}} = \frac{(\sum w_i^2)^2}{\sum w_i^4} = \frac{\|w\|_2^4}{\|w\|_4^4}}
@@ -73,39 +72,33 @@
 #' @section Approximation Error:
 #' The \code{neff_cut} parameter directly controls the tolerance for
 #' the approximation error.
-#'   **Edgeworth Approximation:** This provides an
-#'   *approximation* of the error, which directly relates to the
-#'   \eqn{n_{\mathrm{eff}}} criterion used in this function:
-#'   \deqn{\sup_{t \in \mathbb{R}} |F_n^w(t) - \Phi(t)| \approx \frac{||\phi^{(3)}||_{\infty}}{20}\frac{||w||_{4}^{4}}{||w||_{2}^{4}} \approx \frac{0.028}{n_{\mathrm{eff}}}}
+#'    **Edgeworth Approximation:** This provides an
+#'    *approximation* of the error, which directly relates to the
+#'    \eqn{n_{\mathrm{eff}}} criterion used in this function:
+#'    \deqn{\sup_{t \in \mathbb{R}} |F_n^w(t) - \Phi(t)| \approx \frac{\|\phi^{(3)}\|_{\infty}}{20}\frac{\|w\|_{4}^{4}}{\|w\|_{2}^{4}} \approx \frac{0.028}{n_{\mathrm{eff}}}}
 #'
 #' The default \code{neff_cut = 12} is chosen based on this, as it
 #' corresponds to an approximate maximum error of
 #' \eqn{0.028 / 12 \approx 0.0023}.
 #' If you change \code{neff_cut}, you are changing this error tolerance.
 #' 
-#' 
 #'
 #' @inheritSection p_tippett Output p-value
 #'
 #' @inherit p_tippett return
-#'   
-#'   
+#' 
+#' @export
 #'   
 #'   
 #' @references
-#' D. L. Barrow and P. W. Smith. Spline notation applied to a volume
-#' problem. *The American Mathematical Monthly*, 86(1):50-51, 1979.
-#'
-#' H. Cramér. *Mathematical Methods of Statistics*. Princeton University
-#' Press, 1946.
-#'
-#' E. G. Olds. A note on the convolution of uniform distributions.
-#' *The Annals of Mathematical Statistics*, 23(2):282-285, 1952.
-#'
-#' B. D. Ripley. *Stochastic Simulation*. John Wiley & Sons, Hoboken,
-#' NJ, 1987.
 #' 
-#' Held L, Hofmann F, Pawel S. A comparison of combined p-value functions for meta-analysis. *Research Synthesis Methods*, 16:758-785, 2025.
+#' Edgington, E. S. (1972). An additive method for combining probability values from
+#'   independent experiments. *The Journal of Psychology*, 80(2), 351-363.
+#'   \doi{10.1080/00223980.1972.9924813}
+#'   
+#' Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined *p*-value
+#' functions for meta-analysis. *Research Synthesis Methods*, 16:758-785.
+#' \doi{10.1017/rsm.2025.26}
 #' 
 #' 
 #' @examples
@@ -124,13 +117,6 @@
 #'     approx = TRUE,
 #'     approx_rule = "neff"
 #' )
-
-
-
-
-
-
-
 p_edgington_w <- function(
     estimates, SEs, mu = 0, 
     heterogeneity = "none",           

@@ -27,94 +27,90 @@
 \item{...}{One or more objects of class \code{confMeta}.}
 
 \item{type}{A character vector of length 1 or 2. Indicates what type of
-plot should be returned. Accepted is any combination of \code{"p"} and
-\code{"forest"}. Defaults to \code{c("p", "forest")}.}
+plot should be returned. Accepted values are \code{"p"}, \code{"forest"},
+or both. Defaults to \code{c("p", "forest")}.}
 
-\item{diamond_height}{Numeric vector of length 1. Indicates the maximal
+\item{diamond_height}{Numeric scalar. Indicates the maximal
 possible height of the diamonds in the forest plot. Defaults to 0.5.
 This argument is only relevant if \code{type} contains \code{"forest"} and will
 be ignored otherwise.}
 
-\item{v_space}{Numeric vector of length 1. Indicates the vertical space
+\item{v_space}{Numeric scalar. Indicates the vertical space
 between two diamonds in the forest plot. Defaults to 1.5.
 This argument is only relevant if \code{type} contains \code{"forest"} and will
 be ignored otherwise.}
 
-\item{scale_diamonds}{Logical vector of lenght 1. Accepted values are either
-\code{TRUE} (default) or \code{FALSE}. If \code{TRUE}, the diamond is rescaled to the
+\item{scale_diamonds}{Logical. If \code{TRUE} (default), the diamond is rescaled to the
 interval [0, 1] in cases where the maximum of the p-value
 function is not equal to 1. This argument is only relevant if \code{type}
 contains \code{"forest"} and will be ignored otherwise.}
 
-\item{show_studies}{Logical vector of lenght 1. Accepted values are either
-\code{TRUE} (default) or \code{FALSE}. If \code{TRUE}, the forest plot shows the
+\item{show_studies}{Logical. If \code{TRUE} (default), the forest plot shows the
 confidence intervals for the individual effect estimates. Otherwise,
 the intervals are suppressed. This argument is only relevant if \code{type}
 contains \code{"forest"} and will be ignored otherwise.}
 
-\item{drapery}{Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE}, the individual
+\item{drapery}{Logical. If \code{TRUE} (default), individual
 study effects are represented as drapery plots. If \code{FALSE} the studies
 are represented by a simple vertical line at their effect estimates.}
 
-\item{reference_methods}{A character vector of length 1, 2, 3 or 4.
+\item{reference_methods}{Character vector of length 1, 2, 3 or 4.
 Specifies which reference meta-analysis methods should be shown in
 the plot. Valid options are any subset of
 \code{c("fe", "re", "hk", "hc")}, which correspond to:
-- \code{"fe"}: fixed-effect meta-analysis
-- \code{"re"}: random-effects meta-analysis
-- \code{"hk"}: Hartung–Knapp adjustment
-- \code{"hc"}: Henmi–Copas adjustment.
+\itemize{
+\item \code{"fe"}: fixed-effect meta-analysis
+\item \code{"re"}: random-effects meta-analysis
+\item \code{"hk"}: Hartung-Knapp adjustment
+\item \code{"hc"}: Henmi-Copas adjustment
+}
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{**Note:** at most one of `"fe"` or `"re"` can be included at a time.
-These two methods are mutually exclusive, as only one baseline
-meta-analysis model (fixed or random effects) can be displayed in
-a single plot. Defaults to `c("re", "hk", "hc")`.
-}\if{html}{\out{</div>}}}
+\strong{Note:} at most one of \code{"fe"} or \code{"re"} can be included at a time.
+Defaults to \code{c("re", "hk", "hc")}.}
 
 \item{xlim}{Numeric vector of length 2. Global limits for the x-axis.
 If \code{NULL}, limits are calculated automatically.}
 
 \item{xlim_p}{Numeric vector of length 2. Specific x-axis limits for the
-p-value plot. Overrides \code{xlim}.}
+\emph{p}-value plot. Overrides \code{xlim}.}
 
 \item{xlim_forest}{Numeric vector of length 2. Specific x-axis limits for
 the forest plot. Overrides \code{xlim}.}
 
-\item{same_xlim}{Logical. If \code{TRUE}, forces the p-value plot to use the
-same x-axis limits as the forest plot. Defaults to \code{FALSE}.}
+\item{same_xlim}{Logical. If \code{TRUE}, forces the \emph{p}-value plot to use the
+same x-axis limits as the forest plot. Defaults to \code{TRUE}.}
 
-\item{xlab}{Either NULL (default) or a character vector of length 1 which
-is used as the label for the x-axis.}
+\item{xlab}{Character string. Label for the x-axis. Defaults to \code{NULL}
+(renders as \eqn{\mu}).}
 
-\item{n_breaks}{approximate number of tick marks to display
-on the x-axis. Defaults to \code{7}}
+\item{n_breaks}{Numeric. Approximate number of tick marks to display
+on the x-axis. Defaults to 7.}
 
-\item{bayesmeta}{Either \code{NULL} (default) or an object of class \code{"bayesmeta"},
-typically created using \code{\link[bayesmeta:bayesmeta]{bayesmeta::bayesmeta()}}. When provided, the
-posterior median (or mean, depending on the \code{mu_estimate} setting) and
-95\% credible interval are displayed as an additional diamond at the
-bottom of the forest plot for direct comparison with the frequentist
-confidence intervals. This argument has no effect on the \emph{p}-value
-function plot.}
+\item{bayesmeta}{An object of class \code{bayesmeta}, typically created using
+\code{bayesmeta::bayesmeta()}. When provided, the posterior median (or mean) and
+95\% credible interval are displayed as an additional diamond at the bottom
+of the forest plot. Has no effect on the \emph{p}-value plot. Defaults to \code{NULL}.}
 
-\item{n_points}{Number of points used to create the p value plot. n_points = 10000 gives high resolution
-default is 1000 for efficiency.}
+\item{n_points}{Numeric. Number of points used to create the \emph{p}-value plot.
+Higher values (e.g., 10000) yield higher resolution but take longer to render.
+Defaults to 1000.}
 }
 \value{
 An object of class \code{ggplot} containing the specified plot(s).
 }
 \description{
-Plot one or more \code{confMeta} objects. Currently, this function
-can create two types of plots, the \emph{p}-value function and the
-forest plot. This allows to compare different \emph{p}-value functions with
-each other.
+Plots one or more \code{confMeta} objects. This function
+can create two types of plots: the \emph{p}-value function plot and the
+forest plot. This allows for direct visual comparison of different
+\emph{p}-value functions.
 
 Optionally, a Bayesian meta-analysis object created with the
-\code{\link[bayesmeta:bayesmeta]{bayesmeta::bayesmeta()}} function can be supplied via the \code{bayesmeta} argument.
+\code{bayesmeta::bayesmeta()} function can be supplied via the \code{bayesmeta} argument.
 When provided, its posterior summary is displayed as an additional diamond
 at the bottom of the forest plot for comparison with the frequentist methods
-}
-\note{
-The function extract esplicitly the 95\% credible intervals from the 'bayesmeta' object
-If the bayesian model was fit using a different credible level, the function will crash
+
+\strong{Important Note:} If supplying a Bayesian meta-analysis object
+via the \code{bayesmeta} argument, this function explicitly extracts the
+95\% credible intervals. If the Bayesian model was fit using a different
+credible level, the function will crash.
 }

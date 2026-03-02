@@ -27,7 +27,8 @@ Imports:
     patchwork,
     ReplicationSuccess,
     scales,
-    stats
+    stats,
+    bayesmeta
 Suggests: 
     knitr,
     rmarkdown,

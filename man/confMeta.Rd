@@ -2,7 +2,7 @@
 % Please edit documentation in R/confMeta.R
 \name{confMeta}
 \alias{confMeta}
-\title{Creating \emph{confMeta} objects}
+\title{Creating \code{confMeta} objects}
 \usage{
 confMeta(
   estimates,
@@ -19,39 +19,35 @@ confMeta(
 )
 }
 \arguments{
-\item{estimates}{A vector containing the normalized individual effect
-estimates. Must be of the same length as \code{SEs} and coercible to
-type 'double'.}
+\item{estimates}{A vector containing the individual effect estimates. These should be on
+a scale where they are approximately normally distributed (e.g., log odds ratios, log risk
+ratios, mean differences).  Must be of the same length as \code{SEs} and coercible to
+type \code{double}.}
 
-\item{SEs}{The standard errors of the normalized individual effect estimates.
+\item{SEs}{The standard errors of the individual effect estimates.
 Must be of the same length as \code{estimates} and coercible to
-type 'double'.}
+type \code{double}.}
 
-\item{study_names}{Either \code{NULL} (the default) or a vector that can
-be coerced to type 'character'. Must be of the same length as
-arguments \code{estimates} and \code{SEs}. The vector is used to
-differentiate the individual studies. For more information, check out the
-Details section.}
+\item{study_names}{Optional vector of study identifiers. If \code{NULL} (the default)
+names ("Study 1", "Study 2", ...) are used. Otherwise a vector that can
+be coerced to type \code{character}. Must be of the same length as
+arguments \code{estimates} and \code{SEs}.}
 
-\item{conf_level}{The confidence level. Must be a numeric vector of length
-one with its value being in (0, 1).}
+\item{conf_level}{The confidence level (numeric scalar between 0 and 1).}
 
-\item{fun}{A function that combines individual effect estimates and the
-corresponding standard errors into a combined p-value. The function must
-have arguments named 'estimates', 'SEs', and 'mu'.
-Additional arguments are also allowed, but these must either have a
-default value or be passed via the \code{...} argument.
-For more information, see the Details section.}
+\item{fun}{A function that combines estimates and SEs into a combined \emph{p}-value.
+The function must accept arguments \code{estimates}, \code{SEs}, and \code{mu}.
+Any additional arguments that \code{fun} accepts can be passed via \code{...}.
+See \code{\link{p_value_functions}} for supported methods.}
 
-\item{fun_name}{A character vector of length 1. The vector serves as an
-identifier for the function \code{fun} and is only used as a label in
-plots. The default is just the literal that the function \code{fun} is
-bound to.}
+\item{fun_name}{A character vector of length 1. Label for \code{fun} used in
+\code{\link{autoplot.confMeta}}. Defaults to the name of the
+function passed to \code{fun}.}
 
-\item{w}{An optional numeric vector of weights for the studies. Must be of
+\item{w}{Numeric vector of weights for the studies. Must be of
 the same length as \code{estimates} and \code{SEs}, finite, and non-negative.
 If \code{NULL} (the default), equal weights are assumed. Used by weighted
-p-value combination functions such as the weighted Edgington method.}
+\emph{p}-value combination functions.}
 
 \item{MH}{Logical. If \code{TRUE}, the fixed-effect comparison method will use
 Mantel-Haenszel pooling instead of the standard inverse-variance method.
@@ -67,45 +63,34 @@ Mantel-Haenszel pooling. Required if \code{MH = TRUE}. Must contain columns:
 for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if
 \code{MH = TRUE}.}
 
-\item{...}{Additional arguments passed to \code{fun}. See the Details
-section.}
+\item{...}{Additional arguments passed to \code{fun}.}
 }
 \value{
 An S3 object of class \code{confMeta} containing the following elements:
 \itemize{
-\item \code{estimates}: The normalized individual effect estimates.
-\item \code{SEs}: The standard errors of the normalized individual effect estimates.
-\item \code{w}: The weights for the studies (if specified). If \code{NULL},
-equal weights were assumed.
-\item \code{study_names}: The names of the individual studies.
-\item \code{conf_level}: The confidence level.
-\item \code{individual_cis}: The confidence intervals for the individual effects.
-The exact calculation of these intervals can be found in the Details
-section.
-\item \code{p_fun}: A function with arguments named \code{estimates}, \code{SEs},
-\code{conf_level}, and \code{mu}. This is the p-value function that is used to
-find the combined confidence intervals.
-\item \code{fun_name}: The name of the function. It is only used in plots as
-a legend entry.
-\item \code{joint_cis}: The combined confidence interval(s). These are calculated
-by finding the mean values where the \eqn{p}-value function is larger
-than the confidence level in element \code{conf_level}.
+\item \code{estimates}, \code{SEs}, \code{w}, \code{study_names}, \code{conf_level}: Values
+used to build the object.
+\item \code{individual_cis}: Matrix of Wald-type confidence intervals for each study.
+\item \code{p_fun}: The \emph{p}-value function used for combined inference.
+\item \code{joint_cis}: Combined confidence interval(s). Calculated
+by finding the values where the \emph{p}-value function is larger
+than the significant level (\code{1 - conf_level}).
 \item \code{gamma}: The local minima within the range of the individual effect
 estimates. Column \code{x} refers to the mean \eqn{\mu} and column \code{y}
-contains the corresponding \eqn{p}-value.
-\item \code{p_max}: The local maxima of the \eqn{p}-value function. Column \code{x}
+contains the corresponding \emph{p}-value.
+\item \code{p_max}: The local maxima of the \emph{p}-value function. Column \code{x}
 refers to the mean \eqn{\mu} and column \code{y} contains the corresponding
-\eqn{p}-value.
-\item \code{p_0}: The value of the \eqn{p}-value at \eqn{\mu = 0}.
+\emph{p}-value.
+\item \code{p_0}: The value of the \emph{p}-value at \eqn{\mu = 0}.
 \item \code{comparison_cis}: Combined confidence intervals calculated with other
 methods. These can be used for comparison purposes. Currently, these
-other methods are random effects (IV), Hartung & Knapp, and
-Henmi & Copas.
+other methods are fixed effect (IV or Mantel-Haenszel), random effects (IV),
+Hartung & Knapp, and Henmi & Copas.
 \item \code{comparison_p_0}: The same as in element \code{p_0} but for the comparison
-methods (random effects, Hartung & Knapp, Henmi & Copas).
+methods (fixed effect, random effects, Hartung & Knapp, Henmi & Copas).
 \item \code{heterogeneity}: A data frame containing heterogeneity statistics
-(Cochran's Q, p-value for Q, I-squared, Tau-squared) calculated
-using REML estimator.
+(Cochran's Q, \emph{p}-value for Q, \eqn{I^2}, \eqn{\tau^2}) calculated
+using the REML estimator.
 \item \code{table_2x2}: The 2x2 table data frame (if provided), otherwise \code{NULL}.
 }
 }
@@ -114,95 +99,60 @@ Function to create objects of class \code{confMeta}. This is the
 main class within the package. For an overview of available methods
 run \code{methods(class = "confMeta")}.
 }
-\details{
-Additional details are provided in the sections below.
-}
-\section{Function arguments}{
-
-
-The argument \code{study_names} is used to differentiate between the
-different individual estimates. If the argument is set to \code{NULL},
-the element 'study_names' in the return object will just be a
-character vector with elements "Study n" where n is a number from 1
-to \code{length(estimates)}. These names are only used in some of the
-\code{autoplot} methods.
-
-The argument \code{fun} must have arguments 'estimates', 'SEs',
-and 'mu' but it can also have further arguments.
-However, these must either have a default value or
-need to be passed via the \code{...} argument. If there
-are additional arguments passed via \code{...},
-\code{confMeta} will internally create a new
-function that calls \code{fun} with the additional arguments fixed.
-Thus, any argument passed via \code{...} overwrites existing
-defaults.
-Since this is the p-value function that is used to calculate the
-combined confidence interval(s), it should return a vector of class
-'numeric' with value(s) in the interval \eqn{[0, 1]}.
-
-The argument \code{w} allows assigning weights to the studies. If not
-specified, all studies receive equal weight (\code{w = rep(1, n)}).
-Weighted p-value combination functions (e.g. weighted Edgington)
-will use these values directly; other functions that do not depend
-on weights will ignore \code{w}.
-}
-
 \section{Confidence intervals}{
 
-
-The \code{individual_cis} are calculated as
+Individual confidence intervals are calculated as:
 \deqn{x_i \pm \Phi^{-1}(1 - \alpha/2) \cdot \sigma_i}
+where \eqn{x_i} are the \code{estimates}, \eqn{\sigma_i} the \code{SEs}, and
+\eqn{\alpha = 1 -} \code{conf_level}.
 
-where \eqn{x_i} corresponds to the elements of vector
-\code{estimates}, \eqn{\Phi^{-1}} is the quantile function of
-the standard normal distribution, \eqn{\alpha} is the confidence
-level passed as argument \code{conf_level}, and
-\eqn{\sigma_i} are the standard errors passed in argument
-\code{SEs}.
+Combined confidence intervals are found by inverting the \emph{p}-value function,
+identifying all \eqn{\mu} where the \emph{p}-value exceeds the significance level (1 - \code{conf_level}).
 
-The boundaries of the confidence intervals returned in element
-\code{joint_cis} are found by searching where the function returned
-in element 'p_fun' is equal to 1-\code{conf_level}.
-
-\strong{Note:} due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not anymore the REML.
-Also, the HK method uses the adhoc.hakn.ci = "IQWiG6"	by default, i.e. use variance correction if HK confidence interval
-is narrower than CI from classic random effects model with DerSimonian-Laird estimator (IQWiG, 2022)
+\strong{Note:} Due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not the REML estimator anymore.
+Also, the HK method uses \code{adhoc.hakn.ci = "IQWiG6"} by default, i.e., it uses variance correction if the HK confidence interval
+is narrower than the CI from the classic random effects model with the DerSimonian-Laird estimator (IQWiG, 2022).
 }
 
 \examples{
-    # Simulate effect estimates and standard errors
-    set.seed(42)
-    n <- 5
-    estimates <- rnorm(n)
-    SEs <- rgamma(n, 5, 5)
-    conf_level <- 0.95
+# Simulate effect estimates and standard errors
+set.seed(42)
+n <- 5
+estimates <- rnorm(n)
+SEs <- rgamma(n, 5, 5)
+conf_level <- 0.95
 
-    # Construct a simple confMeta object using p_edgington as
-    # the p-value function
-    cm <- confMeta(
-        estimates = estimates,
-        SEs = SEs,
-        conf_level = conf_level,
-        fun = p_edgington,
-        fun_name = "Edgington",
-        input_p = "greater"
-    )
-    cm2 <- confMeta(
-        estimates = estimates,
-        SEs = SEs,
-        conf_level = conf_level,
-        fun = p_edgington_w,
-        w = 1/SEs,
-        fun_name = "Edgington (1/SE)",
-        input_p = "greater"
-    )
+# Construct a simple confMeta object using p_edgington as
+# the p-value function
+cm <- confMeta(
+  estimates = estimates,
+  SEs = SEs,
+  conf_level = conf_level,
+  fun = p_edgington,
+  fun_name = "Edgington",
+  input_p = "greater"
+)
     
-    #get a summary of the objects
-    summary(cm, cm2)
-    
-    # Plot the object
-    autoplot(cm, cm2, type = "p")                   # p-value function plot
-    autoplot(cm, cm2, type = "forest")              # forest plot
-    autoplot(cm, cm2, type = c("p", "forest"))      # both
+cm2 <- confMeta(
+  estimates = estimates,
+  SEs = SEs,
+  conf_level = conf_level,
+  fun = p_edgington_w,
+  w = 1/SEs,
+  fun_name = "Edgington (1/SE)",
+  input_p = "greater"
+)
 
+# print the objects
+cm
+cm2
+
+# Plot the objects
+autoplot(cm, cm2, type = "p")                   # p-value function plot
+autoplot(cm, cm2, type = "forest")              # forest plot
+autoplot(cm, cm2, type = c("p", "forest"))      # both
+
+}
+\seealso{
+\code{\link{p_value_functions}}, \code{\link{autoplot.confMeta}}
 }
