@@ -21,7 +21,7 @@ test_that("p_edgington_w reproduces known CI for fixed inputs", {
     fun = p_edgington_w,
     w = w,
     input_p = "greater",
-    alternative = "one.sided",
+    output.p = "one.sided",
     heterogeneity = "none"
   )
   

@@ -1,6 +1,6 @@
 #' @export
 #' @noRd
-print.confMeta <- function(x) {
+print.confMeta <- function(x, ...) {
   
   k <- length(x$estimates)
   cat("  Meta-Analysis with p-value combination\n")
