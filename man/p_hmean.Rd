@@ -11,7 +11,6 @@ p_hmean(
   phi = NULL,
   tau2 = NULL,
   heterogeneity = "none",
-  alternative = "none",
   check_inputs = TRUE,
   w = rep(1, length(estimates)),
   distr = "chisq"
@@ -33,10 +32,6 @@ p_hmean(
 \code{"additive"}, or \code{"multiplicative"}. Determines whether
 standard errors are adjusted for between-study heterogeneity using
 \code{tau2} or \code{phi}.}
-
-\item{alternative}{Character string indicating the alternative hypothesis.
-Can be \code{"none"} (default), \code{"greater"}, \code{"less"}, or
-\code{"two.sided"}. TODO: describe better or drop and only have "none"}
 
 \item{check_inputs}{Logical (default \code{TRUE}). If \code{TRUE}, perform
 input validation.}
