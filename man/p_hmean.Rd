@@ -39,10 +39,6 @@ are multiplied by \eqn{\sqrt{\text{phi}}} before computation of the
 \emph{p}-values.
 Defaults to \code{"none"}.}
 
-\item{alternative}{Character string indicating the alternative hypothesis.
-Can be \code{"none"} (default), \code{"greater"}, \code{"less"}, or
-\code{"two.sided"}. TODO: describe better or drop and only have "none"}
-
 \item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
 The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
 in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument

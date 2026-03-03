@@ -53,8 +53,7 @@ combined.}
 \item{output_p}{Character string specifying the combined
 \emph{p}-value type: \code{"two.sided"} (default) or \code{"one.sided"}.
 This controls whether the final combined \emph{p}-value is symmetrized.
-\strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}
-function strictly requires \code{"two.sided"}.}
+\strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}}
 
 \item{approx}{Logical (default \code{TRUE}). If \code{TRUE}, use a normal
 approximation for the sum of \emph{p}-values when \eqn{k\geq 12} to
@@ -98,8 +97,8 @@ one of two ways:
 to compute the combined \emph{p}-value:
 \deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{k}{j} (S - j)^k}
 \item \strong{Normal Approximation:} For a large number of studies (\eqn{k \geq 12}),
-the sum is approximated by a Normal distribution with:
-\deqn{E[S] = \frac{k}{2}}
+the distribution of the sum is approximated by a Normal distribution with:
+\deqn{\mathrm{E}[S] = \frac{k}{2}}
 \deqn{\mathrm{Var}(S) = \frac{k}{12}}
 }
 }
@@ -147,7 +146,7 @@ p_edgington(
 }
 \references{
 Edgington, E. S. (1972). An additive method for combining probability values from
-independent experiments. \emph{The Journal of Psychology}, 80(2), 351-363.
+independent experiments. \emph{The Journal of Psychology}, 80(2): 351-363.
 \doi{10.1080/00223980.1972.9924813}
 
 Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value

@@ -5,9 +5,6 @@
 #' Combines study-level results using the harmonic mean combination method
 #' 
 #' @inheritParams p_tippett
-#' @param alternative Character string indicating the alternative hypothesis.
-#'     Can be \code{"none"} (default), \code{"greater"}, \code{"less"}, or
-#'     \code{"two.sided"}. TODO: describe better or drop and only have "none"
 #' @template w
 #' @template distr
 #' 

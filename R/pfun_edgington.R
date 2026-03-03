@@ -39,8 +39,8 @@
 #'     to compute the combined \emph{p}-value:
 #'     \deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{k}{j} (S - j)^k}
 #'   \item \strong{Normal Approximation:} For a large number of studies (\eqn{k \geq 12}), 
-#'     the sum is approximated by a Normal distribution with:
-#'     \deqn{E[S] = \frac{k}{2}}
+#'     the distribution of the sum is approximated by a Normal distribution with:
+#'     \deqn{\mathrm{E}[S] = \frac{k}{2}}
 #'     \deqn{\mathrm{Var}(S) = \frac{k}{12}}
 #' }
 #'
@@ -54,7 +54,7 @@
 #'
 #' @references
 #' Edgington, E. S. (1972). An additive method for combining probability values from
-#'   independent experiments. *The Journal of Psychology*, 80(2), 351-363.
+#'   independent experiments. *The Journal of Psychology*, 80(2): 351-363.
 #'   \doi{10.1080/00223980.1972.9924813}
 #'   
 #' Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined *p*-value
