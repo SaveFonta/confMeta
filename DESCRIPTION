@@ -16,7 +16,8 @@ Description: Provides tools for the combination of individual study results in
     combination methods and contains functionality for the visualization of
     results.
 License: GPL (>= 3)
-BugReports: https://github.com/felix-hof/confMeta/issues
+BugReports: https://github.com/SaveFonta/confMeta/issues
+URL: https://github.com/SaveFonta/confMeta
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
