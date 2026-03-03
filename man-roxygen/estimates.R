@@ -1,1 +1,1 @@
-#' @param estimates Numeric vector of effect estimates.
+#' @param estimates Numeric vector of study-level effect estimates.

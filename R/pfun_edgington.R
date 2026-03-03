@@ -12,7 +12,7 @@
 #'
 #' @inheritParams p_tippett
 #' @param approx Logical (default \code{TRUE}). If \code{TRUE}, use a normal
-#'     approximation for the sum of \emph{p}-values when \eqn{n \geq 12} to 
+#'     approximation for the sum of \emph{p}-values when \eqn{k\geq 12} to 
 #'     avoid numerical overflow issues.
 #'
 #' @details
@@ -38,7 +38,7 @@
 #'   \item \strong{Exact Method:} The function uses the exact Irwin-Hall distribution 
 #'     to compute the CDF:
 #'     \deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{k}{j} (S - j)^k}
-#'   \item \strong{Normal Approximation:} For a large number of studies (\eqn{n \geq 12}), 
+#'   \item \strong{Normal Approximation:} For a large number of studies (\eqn{k \geq 12}), 
 #'     the sum is approximated by a Normal distribution with:
 #'     \deqn{E[S] = \frac{k}{2}}
 #'     \deqn{\mathrm{Var}(S) = \frac{k}{12}}
