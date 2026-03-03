@@ -11,7 +11,6 @@ p_hmean(
   phi = NULL,
   tau2 = NULL,
   heterogeneity = "none",
-  alternative = "none",
   check_inputs = TRUE,
   w = rep(1, length(estimates)),
   distr = "chisq"

@@ -1,4 +1,4 @@
-#' @title Overview of \emph{p}-value combination functions
+#' @title Overview of p-value combination functions
 #' @name p_value_functions
 #' 
 #' @description

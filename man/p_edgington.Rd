@@ -50,8 +50,8 @@ to \code{FALSE} might be dangerous.}
 If \code{"greater"} or \code{"less"}, one-sided \emph{p}-values are
 combined.}
 
-\item{output_p}{Character string specifying the nature of the combined
-\emph{p}-value: \code{"two.sided"} (default) or \code{"one.sided"}.
+\item{output_p}{Character string specifying the combined
+\emph{p}-value type: \code{"two.sided"} (default) or \code{"one.sided"}.
 This controls whether the final combined \emph{p}-value is symmetrized.
 \strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}
 function strictly requires \code{"two.sided"}.}
@@ -95,7 +95,7 @@ less than or equal to \eqn{S} under the null hypothesis. This is computed in
 one of two ways:
 \itemize{
 \item \strong{Exact Method:} The function uses the exact Irwin-Hall distribution
-to compute the CDF:
+to compute the combined \emph{p}-value:
 \deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{k}{j} (S - j)^k}
 \item \strong{Normal Approximation:} For a large number of studies (\eqn{k \geq 12}),
 the sum is approximated by a Normal distribution with:

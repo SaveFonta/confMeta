@@ -52,7 +52,6 @@ p_hmean <- function(
     phi = NULL,
     tau2 = NULL,
     heterogeneity = "none",
-    alternative = "none",
     check_inputs = TRUE,
     w = rep(1, length(estimates)),
     distr = "chisq"
@@ -68,7 +67,6 @@ p_hmean <- function(
             phi = phi,
             tau2 = tau2
         )
-        check_alternative_arg_hmean(alternative = alternative)
         check_distr_arg(distr = distr)
         check_w_arg(w = w, estimates = estimates)
     }
@@ -98,18 +96,6 @@ p_hmean <- function(
         "chisq" = stats::pchisq(zh2, df = 1L, lower.tail = FALSE),
         "f" = stats::pf(zh2, df1 = 1L, df2 = n - 1, lower.tail = FALSE)
     )
-
-    if (alternative != "none") {
-        check_g <- apply(z, 2L, function(z) min(z) >= 0)
-        check_l <- apply(z, 2L, function(z) max(z) <= 0)
-        cond <- check_g | check_l
-        res <- switch(
-            alternative,
-            "greater" = ifelse(cond, res / 2^n, NaN),
-            "less" = ifelse(cond, res / 2^n, NaN),
-            "two.sided" = ifelse(cond, res / 2^(n - 1), NaN),
-        )
-    }
 
     # return
     res

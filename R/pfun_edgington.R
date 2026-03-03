@@ -36,7 +36,7 @@
 #' one of two ways:
 #' \itemize{
 #'   \item \strong{Exact Method:} The function uses the exact Irwin-Hall distribution 
-#'     to compute the CDF:
+#'     to compute the combined \emph{p}-value:
 #'     \deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{k}{j} (S - j)^k}
 #'   \item \strong{Normal Approximation:} For a large number of studies (\eqn{k \geq 12}), 
 #'     the sum is approximated by a Normal distribution with:

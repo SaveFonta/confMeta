@@ -53,8 +53,8 @@ to \code{FALSE} might be dangerous.}
 If \code{"greater"} or \code{"less"}, one-sided \emph{p}-values are
 combined.}
 
-\item{output_p}{Character string specifying the nature of the combined
-\emph{p}-value: \code{"two.sided"} (default) or \code{"one.sided"}.
+\item{output_p}{Character string specifying the combined
+\emph{p}-value type: \code{"two.sided"} (default) or \code{"one.sided"}.
 This controls whether the final combined \emph{p}-value is symmetrized.
 \strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}
 function strictly requires \code{"two.sided"}.}
@@ -102,15 +102,15 @@ is computed in one of two ways:
 \itemize{
 \item \strong{Exact Method:} The function uses the exact Barrow-Smith
 inclusion-exclusion formula to compute the CDF.
-\deqn{F(t) = \frac{1}{n! \prod_{i=1}^n w_i} \sum_{v \in \{0,1\}^n} (-1)^{\sum v_j} (t - w^T v)^n \mathbf{I}_{\{t - w^T v \ge 0\}}}
-This method is computationally intensive and is infeasible for \eqn{n > 18}
+\deqn{F(t) = \frac{1}{k! \prod_{i=1}^k w_i} \sum_{v \in \{0,1\}^k} (-1)^{\sum v_j} (t - w^T v)^k \mathbf{I}_{\{t - w^T v \ge 0\}}}
+This method is computationally intensive and is infeasible for \eqn{k > 18}
 studies, at which point the function will stop with an error if
 \code{approx = FALSE} is used.
 
 \item \strong{Normal Approximation:} For a large number of studies or
 sufficiently balanced weights, \eqn{S} is approximated by a Normal
 distribution with:
-\deqn{E[S] = \frac{1}{2}\sum_{i=1}^k w_i}
+\deqn{\mathrm{E}[S] = \frac{1}{2}\sum_{i=1}^k w_i}
 \deqn{\mathrm{Var}(S) = \frac{1}{12}\sum_{i=1}^k w_i^2}
 }
 }
@@ -184,12 +184,16 @@ p_edgington_w(
 }
 \references{
 Edgington, E. S. (1972). An additive method for combining probability values from
-independent experiments. \emph{The Journal of Psychology}, 80(2), 351-363.
+independent experiments. \emph{The Journal of Psychology}, 80(2): 351-363.
 \doi{10.1080/00223980.1972.9924813}
 
 Held, L, Hofmann, F, Pawel, S. (2025). A comparison of combined \emph{p}-value
 functions for meta-analysis. \emph{Research Synthesis Methods}, 16:758-785.
 \doi{10.1017/rsm.2025.26}
+
+Barrow, D. L., & Smith, P. W. (1979). Spline notation applied to a volume
+problem. \emph{The American Mathematical Monthly}, 86(1): 50-51.
+\doi{10.1080/00029890.1979.11994730}
 }
 \seealso{
 Other p-value combination functions: 

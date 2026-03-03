@@ -27,8 +27,8 @@ For \code{estimate_phi}: the estimated heterogeneity parameter
 \code{estimate_tau2} estimates the between-study heterogeneity
 \eqn{\tau^{2}}{tau^2} using an additive model. The resulting parameter
 \eqn{\tau^2}{tau^2} is estimated through a call to
-\code{\link[meta]{metagen}} with \code{TE = estimates} and
-\code{seTE = SEs}. Other arguments to \code{\link[meta]{metagen}} can be
+\code{meta::metagen} with \code{TE = estimates} and
+\code{seTE = SEs}. Other arguments to \code{meta::metagen} can be
 passed via the \code{...} argument. If no arguments are passed via
 \code{...}, the following defaults are applied.
 \itemize{
@@ -38,12 +38,12 @@ passed via the \code{...} argument. If no arguments are passed via
 }
 However, each of these defaults can be overwritten via \code{...}.
 
-\code{estimate_phi} estimates the the between-study heterogeneity
+\code{estimate_phi} estimates the between-study heterogeneity
 \eqn{\phi}{phi} using a multiplicative model. The function is a
 modified version of Page 3 of: \cr
 Accounting for heterogeneity in meta-analysis using a
-multiplicative model - an empirical study,
-Mawdsley D. etal. 2016. DOI: 10.1002/jrsm.1216 \cr \cr
+multiplicative model -- an empirical study,
+Mawdsley D. et al. 2016. \doi{10.1002/jrsm.1216} \cr \cr
 }
 \examples{
     # Example estimates and std. errors

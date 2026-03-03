@@ -47,8 +47,8 @@ to \code{FALSE} might be dangerous.}
 \item{w}{Numeric vector of study weights. Defaults to \code{1/SEs} producing
 the same \emph{p}-value as meta-analysis}
 
-\item{output_p}{Character string specifying the nature of the combined
-\emph{p}-value: \code{"two.sided"} (default) or \code{"one.sided"}.
+\item{output_p}{Character string specifying the combined
+\emph{p}-value type: \code{"two.sided"} (default) or \code{"one.sided"}.
 This controls whether the final combined \emph{p}-value is symmetrized.
 \strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}
 function strictly requires \code{"two.sided"}.}
