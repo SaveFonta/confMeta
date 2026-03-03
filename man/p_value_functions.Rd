@@ -2,7 +2,7 @@
 % Please edit documentation in R/p_value_functions.R
 \name{p_value_functions}
 \alias{p_value_functions}
-\title{Overview of \emph{p}-value combination functions}
+\title{Overview of p-value combination functions}
 \description{
 The \code{p_value_functions} family is useful to combine
 individual study effect estimates and standard errors into a single

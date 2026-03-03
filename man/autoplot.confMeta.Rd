@@ -99,10 +99,10 @@ Defaults to 1000.}
 An object of class \code{ggplot} containing the specified plot(s).
 }
 \description{
-Plots one or more \code{confMeta} objects. This function
-can create two types of plots: the \emph{p}-value function plot and the
-forest plot. This allows for direct visual comparison of different
-\emph{p}-value functions.
+Plots one or more \code{confMeta} objects. This function can
+create two types of plots: the \emph{p}-value function plot (also known
+as drapery plot) and the forest plot. This allows for direct visual
+comparison of different \emph{p}-value functions.
 
 Optionally, a Bayesian meta-analysis object created with the
 \code{bayesmeta::bayesmeta()} function can be supplied via the \code{bayesmeta} argument.

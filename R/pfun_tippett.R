@@ -7,7 +7,7 @@
 #'
 #' @param estimates Numeric vector of study-level effect estimates.
 #' @param SEs Numeric vector of corresponding standard errors.
-#' @param mu Numeric \strong{scalar or vector} of null values for the overall effect
+#' @param mu Numeric scalar or vector of null values for the overall effect
 #'     (default: 0). 
 #' @param heterogeneity Character string: \code{"none"} (default),
 #'     \code{"additive"}, or \code{"multiplicative"}. Determines whether
@@ -17,10 +17,10 @@
 #' @param tau2 Additive heterogeneity parameter (if applicable).
 #' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE},
 #'     perform input validation.
-#' @param output_p Character string specifying the nature of the combined
-#'     \emph{p}-value: \code{"two.sided"} (default) or \code{"one.sided"}. 
-#'     This controls whether the final combined \emph{p}-value is symmetrized. 
-#'     \strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}} 
+#' @param output_p Character string specifying the combined
+#'     \emph{p}-value type: \code{"two.sided"} (default) or \code{"one.sided"}.
+#'     This controls whether the final combined \emph{p}-value is symmetrized.
+#'     \strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}
 #'     function strictly requires \code{"two.sided"}.
 #' @param input_p Type of study-level \emph{p}-values used in the combination:
 #'     \code{"greater"} (default), \code{"less"}, or \code{"two.sided"}.
