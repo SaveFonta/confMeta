@@ -12,8 +12,7 @@
 #'
 #'
 #' @inheritParams p_tippett
-#' @param w Numeric vector of nonnegative weights, same length as \code{estimates}.
-#'     Defaults to equal weights.
+#' @template w
 #' @param approx Logical (default \code{TRUE}). If \code{TRUE}, use a normal
 #'     approximation for the weighted sum when the condition defined by \code{approx_rule}
 #'     is met.

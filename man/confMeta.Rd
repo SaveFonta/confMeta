@@ -104,7 +104,7 @@ run \code{methods(class = "confMeta")}.
 Individual confidence intervals are calculated as:
 \deqn{x_i \pm \Phi^{-1}(1 - \alpha/2) \cdot \sigma_i}
 where \eqn{x_i} are the \code{estimates}, \eqn{\sigma_i} the \code{SEs}, and
-\eqn{\alpha = 1 -} \code{conf_level}.
+\eqn{\alpha = 1 - \mathrm{conf\_level}}.
 
 Combined confidence intervals are found by inverting the \emph{p}-value function,
 identifying all \eqn{\mu} where the \emph{p}-value exceeds the significance level (1 - \code{conf_level}).

@@ -10,10 +10,9 @@ estimate_tau2(estimates, SEs, ...)
 estimate_phi(estimates, SEs)
 }
 \arguments{
-\item{estimates}{Numeric vector of effect estimates.}
+\item{estimates}{Numeric vector of study-level effect estimates.}
 
-\item{SEs}{Numeric vector containing the standard errors of the effect
-estimates.}
+\item{SEs}{Numeric vector of corresponding standard errors.}
 
 \item{...}{Further arguments that are passed to \code{\link[meta]{metagen}}.}
 }

@@ -6,7 +6,7 @@
 #'     comparison of different \emph{p}-value functions.
 #'
 #' Optionally, a Bayesian meta-analysis object created with the
-#' \code{bayesmeta::bayesmeta()} function can be supplied via the `bayesmeta` argument.
+#' \code{bayesmeta::bayesmeta()} function can be supplied via the \code{bayesmeta} argument.
 #' When provided, its posterior summary is displayed as an additional diamond
 #' at the bottom of the forest plot for comparison with the frequentist methods
 #' 
@@ -36,8 +36,10 @@
 #'     the intervals are suppressed. This argument is only relevant if \code{type}
 #'     contains \code{"forest"} and will be ignored otherwise.
 #' @param drapery Logical. If \code{TRUE} (default), individual
-#'     study effects are represented as drapery plots. If `FALSE` the studies
-#'     are represented by a simple vertical line at their effect estimates.
+#'     study effects are represented as drapery plots in the \emph{p}-value function plot. 
+#'     If \code{FALSE} the studies are represented by a simple vertical line at their effect estimates.
+#'      This argument is only relevant if \code{type}
+#'     contains \code{"p"} and will be ignored otherwise.
 #' @param reference_methods Character vector of length 1, 2, 3 or 4.
 #'     Specifies which reference meta-analysis methods should be shown in
 #'     the plot. Valid options are any subset of

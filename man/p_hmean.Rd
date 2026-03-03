@@ -24,22 +24,35 @@ p_hmean(
 \item{mu}{Numeric scalar or vector of null values for the overall effect
 (default: 0).}
 
-\item{phi}{Multiplicative heterogeneity parameter (if applicable).}
+\item{phi}{A numeric vector of length 1. Must be finite and larger than 0. The square root of the argument is used to scale the standard errors.}
 
-\item{tau2}{Additive heterogeneity parameter (if applicable).}
+\item{tau2}{A numeric vector of length 1. Additive heterogeneity parameter.}
 
-\item{heterogeneity}{Character string: \code{"none"} (default),
-\code{"additive"}, or \code{"multiplicative"}. Determines whether
-standard errors are adjusted for between-study heterogeneity using
-\code{tau2} or \code{phi}.}
+\item{heterogeneity}{One of \code{c("none", "additive", "multiplicative")}.
+If \code{heterogeneity = "none"}, \emph{p}-values are returned for the
+passed \code{SEs} without any adaptation.
+If \code{heterogeneity = "additive"}, the standard errors are reassigned
+the value \eqn{\sqrt{SEs^2 + \text{tau2}}} before computation of the
+\emph{p}-values.
+If \code{heterogeneity = "multiplicative"}, the standard errors \code{SEs}
+are multiplied by \eqn{\sqrt{\text{phi}}} before computation of the
+\emph{p}-values.
+Defaults to \code{"none"}.}
 
-\item{check_inputs}{Logical (default \code{TRUE}). If \code{TRUE}, perform
-input validation.}
+\item{alternative}{Character string indicating the alternative hypothesis.
+Can be \code{"none"} (default), \code{"greater"}, \code{"less"}, or
+\code{"two.sided"}. TODO: describe better or drop and only have "none"}
 
-\item{w}{Numeric vector of weights (default: equal weights).}
+\item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
+The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
+in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument
+to \code{FALSE} might be dangerous.}
 
-\item{distr}{Character string specifying the null distribution:
-\code{"chisq"} (default) or \code{"f"}.}
+\item{w}{Numeric vector of nonnegative weights, same length as \code{estimates}.
+Defaults to equal weights.}
+
+\item{distr}{The distribution to use for the calculation of the p-value. Currently, the options are
+\code{"f"} (F-distribution) and \code{"chisq"} (Chi-squared distribution). Defaults to \code{"chisq"}.}
 }
 \value{
 A numeric vector of combined \emph{p}-values corresponding

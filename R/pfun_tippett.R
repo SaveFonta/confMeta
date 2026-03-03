@@ -5,23 +5,14 @@
 #' Tippett's method for combining \emph{p}-values across studies. 
 #' This method evaluates the minimum individual study \emph{p}-value.
 #'
-#' @param estimates Numeric vector of study-level effect estimates.
-#' @param SEs Numeric vector of corresponding standard errors.
-#' @param mu Numeric scalar or vector of null values for the overall effect
-#'     (default: 0). 
-#' @param heterogeneity Character string: \code{"none"} (default),
-#'     \code{"additive"}, or \code{"multiplicative"}. Determines whether
-#'     standard errors are adjusted for between-study heterogeneity using
-#'     \code{tau2} or \code{phi}.
-#' @param phi Multiplicative heterogeneity parameter (if applicable).
-#' @param tau2 Additive heterogeneity parameter (if applicable).
-#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE},
-#'     perform input validation.
-#' @param output_p Character string specifying the combined
-#'     \emph{p}-value type: \code{"two.sided"} (default) or \code{"one.sided"}.
-#'     This controls whether the final combined \emph{p}-value is symmetrized.
-#'     \strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}
-#'     function strictly requires \code{"two.sided"}.
+#' @template estimates
+#' @template SEs
+#' @template mu 
+#' @template heterogeneity 
+#' @template phi 
+#' @template tau2
+#' @template check_inputs
+#' @template output_p
 #' @param input_p Type of study-level \emph{p}-values used in the combination:
 #'     \code{"greater"} (default), \code{"less"}, or \code{"two.sided"}.
 #'     If \code{"greater"} or \code{"less"}, one-sided \emph{p}-values are

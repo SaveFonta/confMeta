@@ -1,4 +1,10 @@
-#' @param heterogeneity One of \code{c("none", "additive", "multiplicative")}. If \code{heterogeneity = "none"} p-values are returned for the 
-#' passed \code{se} without any adaption. If \code{heterogeneity = "additive"}, the standard errors \code{se} are reassigned the value of \code{sqrt(se^2 + tau2)} before
-#' computation of the p-values. If \code{heterogeneity = "multiplicative"}, the standard errors \code{se} are multiplied with the value of \code{phi} before
-#' computation of the p-values. Defaults to \code{"none"}.
+#' @param heterogeneity One of \code{c("none", "additive", "multiplicative")}. 
+#'     If \code{heterogeneity = "none"}, \emph{p}-values are returned for the 
+#'     passed \code{SEs} without any adaptation. 
+#'     If \code{heterogeneity = "additive"}, the standard errors are reassigned 
+#'     the value \eqn{\sqrt{SEs^2 + \text{tau2}}} before computation of the 
+#'     \emph{p}-values. 
+#'     If \code{heterogeneity = "multiplicative"}, the standard errors \code{SEs} 
+#'     are multiplied by \eqn{\sqrt{\text{phi}}} before computation of the 
+#'     \emph{p}-values. 
+#'     Defaults to \code{"none"}.

@@ -51,8 +51,10 @@ the intervals are suppressed. This argument is only relevant if \code{type}
 contains \code{"forest"} and will be ignored otherwise.}
 
 \item{drapery}{Logical. If \code{TRUE} (default), individual
-study effects are represented as drapery plots. If \code{FALSE} the studies
-are represented by a simple vertical line at their effect estimates.}
+study effects are represented as drapery plots in the \emph{p}-value function plot.
+If \code{FALSE} the studies are represented by a simple vertical line at their effect estimates.
+This argument is only relevant if \code{type}
+contains \code{"p"} and will be ignored otherwise.}
 
 \item{reference_methods}{Character vector of length 1, 2, 3 or 4.
 Specifies which reference meta-analysis methods should be shown in

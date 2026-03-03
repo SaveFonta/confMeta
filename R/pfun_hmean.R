@@ -4,27 +4,18 @@
 #' @description
 #' Combines study-level results using the harmonic mean combination method
 #' 
-#' @param estimates Numeric vector of study-level effect estimates.
-#' @param SEs Numeric vector of corresponding standard errors.
-#' @param mu Numeric scalar or vector of null values for the overall effect
-#'     (default: 0).
-#' @param heterogeneity Character string: \code{"none"} (default),
-#'     \code{"additive"}, or \code{"multiplicative"}. Determines whether
-#'     standard errors are adjusted for between-study heterogeneity using
-#'     \code{tau2} or \code{phi}.
-#' @param phi Multiplicative heterogeneity parameter (if applicable).
-#' @param tau2 Additive heterogeneity parameter (if applicable).
-#' @param check_inputs Logical (default \code{TRUE}). If \code{TRUE}, perform
-#'     input validation.
-#' @param w Numeric vector of weights (default: equal weights).
-#' @param distr Character string specifying the null distribution:
-#'     \code{"chisq"} (default) or \code{"f"}.
+#' @inheritParams p_tippett
+#' @param alternative Character string indicating the alternative hypothesis.
+#'     Can be \code{"none"} (default), \code{"greater"}, \code{"less"}, or
+#'     \code{"two.sided"}. TODO: describe better or drop and only have "none"
+#' @template w
+#' @template distr
 #' 
 #' 
 #' @details
 #' The harmonic mean statistic for \eqn{k} studies is defined as
 #' \deqn{x^2 = \frac{\sum_{i=1}^k \sqrt{w_i}}{\sum_{i=1}^k w_i/z_i^2},}
-#' where \eqn{z_i} and \eqn{{w_i}} are individual study *z*-values and weights,
+#' where \eqn{z_i} and \eqn{{w_i}} are individual study \emph{z}-values and weights,
 #' respectively. Under the global null hypothesis, each \eqn{z_i} is assumed to
 #' follow a standard normal distribution. The harmonic mean statistic then
 #' follows a chi-squared distribution with one degree of freedom. The combined

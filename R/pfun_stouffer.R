@@ -6,15 +6,15 @@
 #'
 #' @inheritParams p_tippett
 #' @param w Numeric vector of study weights. Defaults to \code{1/SEs} producing
-#'     the same *p*-value as meta-analsis
+#'     the same \emph{p}-value as meta-analysis
 #'
 #'
 #' @details
-#' Stouffer's *z*-statistic for \eqn{k} studies is defined as
+#' Stouffer's \emph{z}-statistic for \eqn{k} studies is defined as
 #' \deqn{z = \frac{\sum_{i=1}^k w_i z_i}{\sqrt{\sum_{i=1}^k w_i^2}},}
-#' where \eqn{i_i} and \eqn{{w_i}} are individual study \emph{z}-values and
+#' where \eqn{z_i} and \eqn{{w_i}} are individual study \emph{z}-values and
 #' weights, respectively. Under the global null hypothesis, each \eqn{z_i} is
-#' assumed to follow a standard normal distribution. Stouffer's *z*-statistic
+#' assumed to follow a standard normal distribution. Stouffer's \emph{z}-statistic
 #' then also follows a standard normal distribution. The combined \emph{p}-value
 #' is calculated as the probability of observing a value equal or greater than
 #' \eqn{z} from this distribution: \deqn{p_S = \Pr(Z > z)}

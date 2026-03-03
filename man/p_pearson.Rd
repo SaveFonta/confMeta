@@ -24,17 +24,25 @@ p_pearson(
 \item{mu}{Numeric scalar or vector of null values for the overall effect
 (default: 0).}
 
-\item{heterogeneity}{Character string: \code{"none"} (default),
-\code{"additive"}, or \code{"multiplicative"}. Determines whether
-standard errors are adjusted for between-study heterogeneity using
-\code{tau2} or \code{phi}.}
+\item{heterogeneity}{One of \code{c("none", "additive", "multiplicative")}.
+If \code{heterogeneity = "none"}, \emph{p}-values are returned for the
+passed \code{SEs} without any adaptation.
+If \code{heterogeneity = "additive"}, the standard errors are reassigned
+the value \eqn{\sqrt{SEs^2 + \text{tau2}}} before computation of the
+\emph{p}-values.
+If \code{heterogeneity = "multiplicative"}, the standard errors \code{SEs}
+are multiplied by \eqn{\sqrt{\text{phi}}} before computation of the
+\emph{p}-values.
+Defaults to \code{"none"}.}
 
-\item{phi}{Multiplicative heterogeneity parameter (if applicable).}
+\item{phi}{A numeric vector of length 1. Must be finite and larger than 0. The square root of the argument is used to scale the standard errors.}
 
-\item{tau2}{Additive heterogeneity parameter (if applicable).}
+\item{tau2}{A numeric vector of length 1. Additive heterogeneity parameter.}
 
-\item{check_inputs}{Logical (default \code{TRUE}). If \code{TRUE},
-perform input validation.}
+\item{check_inputs}{Either \code{TRUE} (default) or \code{FALSE}. Indicates whether or not to check the input arguments.
+The idea of this argument is that if the function is called a large amount of times in an automated manner as for example
+in simulations, performance might be increased by not checking inputs in every single iteration. However, setting the argument
+to \code{FALSE} might be dangerous.}
 
 \item{input_p}{Type of study-level \emph{p}-values used in the combination:
 \code{"greater"} (default), \code{"less"}, or \code{"two.sided"}.
