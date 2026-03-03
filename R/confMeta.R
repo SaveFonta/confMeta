@@ -37,6 +37,13 @@
 #' @param measure A character string indicating the effect measure to be used 
 #'     for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if 
 #'     \code{MH = TRUE}.
+#' @param method.tau Character string indicating which between-study variance 
+#'     estimator to use for random-effects and Hartung-Knapp meta-analysis 
+#'     (e.g., \code{"PM"}, \code{"REML"}, \code{"DL"}). Defaults to \code{"PM"}. 
+#'     See \code{meta::metagen()} for all available choices.
+#' @param adhoc.hakn.ci Character string indicating the variance correction 
+#'     method for the Hartung-Knapp confidence intervals (e.g., \code{"IQWiG6"}, 
+#'     \code{"HK"}). Defaults to \code{"IQWiG6"}. See \code{meta::metagen()} for choices.
 #' @param ... Additional arguments passed to \code{fun}. 
 #'     
 #' @return
@@ -132,6 +139,8 @@ confMeta <- function(
     MH = FALSE, 
     table_2x2 = NULL,
     measure = NULL,
+    method.tau = "PM", 
+    adhoc.hakn.ci = "IQWiG6",
     ...
 ) {
   
@@ -210,7 +219,9 @@ confMeta <- function(
     fun_name = fun_name,
     MH = MH, 
     table_2x2 = table_2x2,
-    measure = measure
+    measure = measure,
+    method.tau = method.tau,
+    adhoc.hakn.ci = adhoc.hakn.ci
   )
 }
 
@@ -229,7 +240,9 @@ new_confMeta <- function(
     fun_name,
     MH = FALSE, 
     table_2x2 = NULL,
-    measure = NULL
+    measure = NULL,
+    method.tau = "PM",
+    adhoc.hakn.ci = "IQWiG6"
 ) {
 
   # Calculate individual CIs (classic Wald type)
@@ -259,7 +272,9 @@ new_confMeta <- function(
     method = method,
     estimates = estimates,
     SEs = SEs,
-    conf_level = conf_level
+    conf_level = conf_level,
+    method.tau = method.tau,      
+    adhoc.hakn.ci = adhoc.hakn.ci 
   )
   
   # overwrite the FE method if MH = TRUE 
@@ -468,10 +483,10 @@ validate_confMeta <- function(confMeta) {
 
 #' @importFrom meta metagen
 #' @noRd
-get_obj_re <- function(estimates, SEs, conf_level) {
+get_obj_re <- function(estimates, SEs, conf_level, method.tau) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "REML",
+        level = conf_level, method.tau = method.tau,
         random = TRUE, common = FALSE
     )
 }
@@ -488,10 +503,10 @@ get_obj_fe <- function(estimates, SEs, conf_level) {
 
 #' @importFrom meta metagen
 #' @noRd
-get_obj_hk <- function(estimates, SEs, conf_level) {
+get_obj_hk <- function(estimates, SEs, conf_level, method.tau, adhoc.hakn.ci) {
     meta::metagen(
         TE = estimates, seTE = SEs, sm = "MD",
-        level = conf_level, method.tau = "PM", method.random.ci = "HK", adhoc.hakn.ci = "IQWiG6", #[MOD]--> "hakn = TRUE" is deprecated
+        level = conf_level, method.tau = method.tau, method.random.ci = "HK", adhoc.hakn.ci = adhoc.hakn.ci, #[MOD]--> "hakn = TRUE" is deprecated
         common = FALSE, random = TRUE
     )
 } # IMPORTANT --> reading the documentation of metagen we have that method.tau = gs("method.tau"), this mean that by default it will
@@ -596,7 +611,7 @@ get_method_names <- function() {
 }
 
 # Calculate everything
-get_stats_others <- function(method, estimates, SEs, conf_level) {
+get_stats_others <- function(method, estimates, SEs, conf_level, method.tau, adhoc.hakn.ci) {
     nms <- get_method_names()
     stopifnot(all(method %in% names(nms)))
     names(method) <- method
@@ -608,12 +623,15 @@ get_stats_others <- function(method, estimates, SEs, conf_level) {
                 "re" = get_obj_re(
                     estimates = estimates,
                     SEs = SEs,
-                    conf_level = conf_level
+                    conf_level = conf_level,
+                    method.tau = method.tau
                 ),
                 "hk" = get_obj_hk(
                     estimates = estimates,
                     SEs = SEs,
-                    conf_level = conf_level
+                    conf_level = conf_level,
+                    method.tau = method.tau,
+                    adhoc.hakn.ci = adhoc.hakn.ci
                 ),
                 "hc" = get_obj_hc(
                     estimates = estimates,

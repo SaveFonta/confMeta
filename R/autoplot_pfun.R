@@ -63,7 +63,7 @@
 #'   same x-axis limits as the forest plot. Defaults to \code{TRUE}.
 #' @param xlab Character string. Label for the x-axis. Defaults to \code{NULL} 
 #'   (renders as \eqn{\mu}).
-#' @param  n_breaks Numeric. Approximate number of tick marks to display 
+#' @param n_breaks Numeric. Approximate number of tick marks to display 
 #'   on the x-axis. Defaults to 7.
 #' @param bayesmeta An object of class \code{bayesmeta}, typically created using 
 #'     \code{bayesmeta::bayesmeta()}. When provided, the posterior median (or mean) and

@@ -15,6 +15,8 @@ confMeta(
   MH = FALSE,
   table_2x2 = NULL,
   measure = NULL,
+  method.tau = "PM",
+  adhoc.hakn.ci = "IQWiG6",
   ...
 )
 }
@@ -62,6 +64,15 @@ Mantel-Haenszel pooling. Required if \code{MH = TRUE}. Must contain columns:
 \item{measure}{A character string indicating the effect measure to be used
 for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if
 \code{MH = TRUE}.}
+
+\item{method.tau}{Character string indicating which between-study variance
+estimator to use for random-effects and Hartung-Knapp meta-analysis
+(e.g., \code{"PM"}, \code{"REML"}, \code{"DL"}). Defaults to \code{"PM"}.
+See \code{meta::metagen()} for all available choices.}
+
+\item{adhoc.hakn.ci}{Character string indicating the variance correction
+method for the Hartung-Knapp confidence intervals (e.g., \code{"IQWiG6"},
+\code{"HK"}). Defaults to \code{"IQWiG6"}. See \code{meta::metagen()} for choices.}
 
 \item{...}{Additional arguments passed to \code{fun}.}
 }

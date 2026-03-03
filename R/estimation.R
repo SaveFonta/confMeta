@@ -19,7 +19,10 @@
 #' @export
 #'
 #' @examples
-#'     # Estimating heterogeneity using the multiplicative model
+#'     # Example estimates and std. errors
+#'     estimates <- c(0.21, 0.53, 0.24, 0.32, 0.19)
+#'     SEs <- c(0.19, 0.39, 0.7, 1, 0.97)
+#'     
 #'     estimate_phi(estimates = estimates, SEs = SEs)
 #' @importFrom stats lm anova
 estimate_phi <- function(estimates, SEs) {

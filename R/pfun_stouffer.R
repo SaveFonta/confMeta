@@ -83,4 +83,5 @@ p_stouffer <- function(
       pstouffer <- 2 * pmin(pstouffer, 1 - pstouffer)
     }
 
+    return(pstouffer)
 }
