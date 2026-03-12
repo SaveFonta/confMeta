@@ -12,7 +12,8 @@
   scale_diamonds = TRUE,
   show_studies = TRUE,
   drapery = TRUE,
-  reference_methods = c("re", "hk", "hc"),
+  reference_methods_p = c("re"),
+  reference_methods_forest = c("re", "hk", "hc"),
   xlim = NULL,
   xlim_p = NULL,
   xlim_forest = NULL,
@@ -56,9 +57,14 @@ If \code{FALSE} the studies are represented by a simple vertical line at their e
 This argument is only relevant if \code{type}
 contains \code{"p"} and will be ignored otherwise.}
 
-\item{reference_methods}{Character vector of length 1, 2, 3 or 4.
-Specifies which reference meta-analysis methods should be shown in
-the plot. Valid options are any subset of
+\item{reference_methods_p}{Character vector controlling which reference
+meta-analysis methods are shown as baseline curves in the
+\emph{p}-value function plot. Valid options are \code{"fe"},
+\code{"re"}, or \code{c("fe", "re")} for both. Defaults to \code{"re"}.}
+
+\item{reference_methods_forest}{Character vector of length 1 to 4.
+Specifies which reference meta-analysis methods should be shown as
+diamonds in the forest plot. Valid options are any subset of
 \code{c("fe", "re", "hk", "hc")}, which correspond to:
 \itemize{
 \item \code{"fe"}: fixed-effect meta-analysis
@@ -66,8 +72,6 @@ the plot. Valid options are any subset of
 \item \code{"hk"}: Hartung-Knapp adjustment
 \item \code{"hc"}: Henmi-Copas adjustment
 }
-
-\strong{Note:} at most one of \code{"fe"} or \code{"re"} can be included at a time.
 Defaults to \code{c("re", "hk", "hc")}.}
 
 \item{xlim}{Numeric vector of length 2. Global limits for the x-axis.

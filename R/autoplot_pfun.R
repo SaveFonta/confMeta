@@ -40,18 +40,20 @@
 #'     If \code{FALSE} the studies are represented by a simple vertical line at their effect estimates.
 #'      This argument is only relevant if \code{type}
 #'     contains \code{"p"} and will be ignored otherwise.
-#' @param reference_methods Character vector of length 1, 2, 3 or 4.
-#'     Specifies which reference meta-analysis methods should be shown in
-#'     the plot. Valid options are any subset of
+#' @param reference_methods_p Character vector controlling which reference
+#'     meta-analysis methods are shown as baseline curves in the
+#'     \emph{p}-value function plot. Valid options are \code{"fe"},
+#'     \code{"re"}, or \code{c("fe", "re")} for both. Defaults to \code{"re"}.
+#' @param reference_methods_forest Character vector of length 1 to 4.
+#'     Specifies which reference meta-analysis methods should be shown as
+#'     diamonds in the forest plot. Valid options are any subset of
 #'     \code{c("fe", "re", "hk", "hc")}, which correspond to:
 #'     \itemize{
-#'       \item \code{"fe"}: fixed-effect meta-analysis  
-#'       \item \code{"re"}: random-effects meta-analysis  
-#'       \item \code{"hk"}: Hartung-Knapp adjustment  
-#'       \item \code{"hc"}: Henmi-Copas adjustment  
-#'     } 
-#'
-#' \strong{Note:} at most one of \code{"fe"} or \code{"re"} can be included at a time.
+#'       \item \code{"fe"}: fixed-effect meta-analysis
+#'       \item \code{"re"}: random-effects meta-analysis
+#'       \item \code{"hk"}: Hartung-Knapp adjustment
+#'       \item \code{"hc"}: Henmi-Copas adjustment
+#'     }
 #'     Defaults to \code{c("re", "hk", "hc")}.
 #' @param xlim Numeric vector of length 2. Global limits for the x-axis. 
 #'   If \code{NULL}, limits are calculated automatically.
@@ -89,7 +91,8 @@ autoplot.confMeta <- function(
     show_studies = TRUE,
     drapery = TRUE,
     # drapery_ma = c("fe"),
-    reference_methods = c("re", "hk", "hc"),
+    reference_methods_p      = c("re"),
+    reference_methods_forest = c("re", "hk", "hc"),
     xlim = NULL,
     xlim_p = NULL,
     xlim_forest = NULL,
@@ -101,15 +104,21 @@ autoplot.confMeta <- function(
 ) {
 
     # Check validity of reference methods
-    check_ref_methods(reference_methods = reference_methods) #w/ this fct, there is a mutual exclusiveness between re and fe, dont have a clue why 
-
-    # get the type of plot
-    type <- match.arg(type, several.ok = TRUE)
-    reference_methods <- match.arg(
-        reference_methods,
-        several.ok = TRUE,
-        choices = c("fe", "re", "hk", "hc") 
-    )
+  check_ref_methods(reference_methods = reference_methods_forest)
+  if (!all(reference_methods_p %in% c("fe", "re"))) {
+    stop("`reference_methods_p` can only contain \"fe\", \"re\", or both.")
+  }
+  type <- match.arg(type, several.ok = TRUE)
+  reference_methods_forest <- match.arg(
+    reference_methods_forest,
+    several.ok = TRUE,
+    choices = c("fe", "re", "hk", "hc")
+  )
+  reference_methods_p <- match.arg(
+    reference_methods_p,
+    several.ok = TRUE,
+    choices = c("fe", "re")
+  )
 
     # Check all the confMeta objects
     cms <- list(...)
@@ -196,7 +205,7 @@ autoplot.confMeta <- function(
         comp <- x$comparison_cis
         
         # create x axis only on the actual ref methods
-        allowed_methods <- map_ref_methods (reference_methods)
+        allowed_methods <- map_ref_methods (reference_methods_forest)
         
         keep <- rownames(comp)%in%allowed_methods
         comp_filtered <- comp[keep, , drop = FALSE]
@@ -229,7 +238,7 @@ autoplot.confMeta <- function(
         drapery = drapery, 
         xlim = xlim_p,
         xlab = xlab,
-        reference_methods = reference_methods, 
+        reference_methods = reference_methods_p, 
          n_breaks =  n_breaks,
         n_points = n_points
       )
@@ -243,7 +252,7 @@ autoplot.confMeta <- function(
         xlim = xlim_forest, 
         show_studies = show_studies, 
         scale_diamonds = scale_diamonds, 
-        reference_methods = reference_methods, 
+        reference_methods = reference_methods_forest, 
         xlab = xlab, 
          n_breaks =  n_breaks
       )
@@ -398,15 +407,6 @@ check_ref_methods <- function(reference_methods) {
         )
         stop(msg)
     }
-    # Check that there is only either fixed effect or random effects
-    if ("fe" %in% reference_methods && "re" %in% reference_methods) {
-        stop(
-            paste0(
-                "At the moment `reference_methods` can only contain either ",
-                "\"fe\" or \"re\" but not both."
-            )
-        )
-    }
 }
 
 # ==============================================================================
@@ -446,12 +446,8 @@ ggPvalueFunction <- function(
     # Get the function names (for legend)
     fun_names <- vapply(cms, "[[", i = "fun_name", character(1L))
     
-    # Add the reference methods and make factor levels (fe vs re)
-    fac_levels <- if ("fe" %in% reference_methods) {
-        c(map_ref_methods("fe"), fun_names)
-    } else if ("re" %in% reference_methods) {
-        c(map_ref_methods("re"), fun_names)
-    }
+    ref_base <- intersect(c("fe", "re"), reference_methods)
+    fac_levels <- c(map_ref_methods(ref_base), fun_names)
 
     # Calculate the p-values and CIs
     data <- lapply(seq_along(cms), function(x) {
@@ -557,27 +553,15 @@ ggPvalueFunction <- function(
         
         ## What reference method should we calculate drapery plot for:
         ## "fe" or "re"
-        index <- if ("fe" %in% reference_methods) 1L else 2L
-        
-        #NOTE: it is the black plot showed in the drapery. Default is RE
-        
-        ## In a further step, we might want to show more than 1, then just
-        ## uncomment the following
-        # index <- which(
-        #     rownames(ci_obj) %in% map_ref_methods(abbrevs = reference_methods)
-        # )
-        
-        rmaestimate <- rowMeans(ci_obj[index, , drop = FALSE]) #mean btw lower and upper bound of the chosen method to plot in black (i.e. central estimate)
-        
-        rmase <- (ci_obj[index, 2L] - ci_obj[index, 1L]) /  #now compute the s.e. of the chosen method using the inverse formula
+        ref_indices <- which(rownames(ci_obj) %in% map_ref_methods(intersect(c("fe", "re"), reference_methods)))
+        rmadf <- do.call("rbind", lapply(ref_indices, function(idx) {
+          rmaestimate <- rowMeans(ci_obj[idx, , drop = FALSE])
+          rmase <- (ci_obj[idx, 2L] - ci_obj[idx, 1L]) /
             (2 * stats::qnorm(p = (1 + cl) / 2))
-        
-        #Create the drapery for the baseline:
-        rmadf <- get_drapery_df(
-            estimates = rmaestimate,
-            SEs = rmase,
-            mu = const$muSeq
-        )
+          df <- get_drapery_df(estimates = rmaestimate, SEs = rmase, mu = const$muSeq)
+          df$study <- rownames(ci_obj)[idx]  # label by method name
+          df
+        }))
         rmadf$study <- factor(rmadf$study, levels = fac_levels)
     }
     
