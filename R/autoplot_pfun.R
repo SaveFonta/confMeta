@@ -160,12 +160,19 @@ autoplot.confMeta <- function(
     # I added the possibility to handle xlim_p and xlim_forest divvertently!
     
     # COLOR HANDLING
-    fun_names_shared <- vapply(cms, "[[", i = "fun_name", character(1L)) #take the fun_name from every confMeta object (Edgington, Edgington_w ...)
-    ref_base_p       <- intersect(c("fe", "re"), reference_methods_p)
-    fac_levels_p     <- c(map_ref_methods(ref_base_p), fun_names_shared) #This is the complete list of everything that needs a color 
+    fun_names_shared  <- vapply(cms, "[[", i = "fun_name", character(1L)) #take the fun_name from every confMeta object (Edgington, Edgington_w ...)
+    ref_base_p        <- intersect(c("fe", "re"), reference_methods_p)
+    ref_forest_only   <- setdiff(
+      map_ref_methods(reference_methods_forest),
+      map_ref_methods(ref_base_p)
+    )
+    fac_levels_all    <- c(map_ref_methods(ref_base_p), ref_forest_only, fun_names_shared)
+    shared_colors     <- c("#000000", scales::hue_pal()(length(fac_levels_all) - 1))
+    names(shared_colors) <- fac_levels_all #attach each method name to the color vector
+    
+    #This is the complete list of everything that needs a color 
     #we want one color x method -> first is black, then hue_pal() generates evenly sapced color
-    shared_colors    <- c("#000000", scales::hue_pal()(length(fac_levels_p) - 1)) 
-    names(shared_colors) <- fac_levels_p #attach each method name to the color vector
+    
     
     # xlim for p plot:
     if (!is.null(xlim_p)) {
