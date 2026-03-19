@@ -603,8 +603,8 @@ get_pval_hc <- function(obj, conf_level) {
 
 get_method_names <- function() {
     c(
-        "fe" = "Fixed effect",
-        "re" = "Random effects",
+        "fe" = "Fixed-effect",
+        "re" = "Random-effects",
         "hk" = "Hartung & Knapp",
         "hc" = "Henmi & Copas"
     )

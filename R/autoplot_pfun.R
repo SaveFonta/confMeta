@@ -119,6 +119,7 @@ autoplot.confMeta <- function(
     several.ok = TRUE,
     choices = c("fe", "re")
   )
+  
 
     # Check all the confMeta objects
     cms <- list(...)
@@ -158,6 +159,13 @@ autoplot.confMeta <- function(
     # if xlim not specified, builds a range that covers all CIs and add 5% of margin
     # I added the possibility to handle xlim_p and xlim_forest divvertently!
     
+    # COLOR HANDLING
+    fun_names_shared <- vapply(cms, "[[", i = "fun_name", character(1L)) #take the fun_name from every confMeta object (Edgington, Edgington_w ...)
+    ref_base_p       <- intersect(c("fe", "re"), reference_methods_p)
+    fac_levels_p     <- c(map_ref_methods(ref_base_p), fun_names_shared) #This is the complete list of everything that needs a color 
+    #we want one color x method -> first is black, then hue_pal() generates evenly sapced color
+    shared_colors    <- c("#000000", scales::hue_pal()(length(fac_levels_p) - 1)) 
+    names(shared_colors) <- fac_levels_p #attach each method name to the color vector
     
     # xlim for p plot:
     if (!is.null(xlim_p)) {
@@ -239,8 +247,10 @@ autoplot.confMeta <- function(
         xlim = xlim_p,
         xlab = xlab,
         reference_methods = reference_methods_p, 
-         n_breaks =  n_breaks,
-        n_points = n_points
+        n_breaks =  n_breaks,
+        n_points = n_points,
+        shared_colors = shared_colors
+        
       )
     }
     
@@ -254,7 +264,9 @@ autoplot.confMeta <- function(
         scale_diamonds = scale_diamonds, 
         reference_methods = reference_methods_forest, 
         xlab = xlab, 
-         n_breaks =  n_breaks
+        n_breaks =  n_breaks,
+        shared_colors = shared_colors
+        
       )
     }
     
@@ -417,7 +429,7 @@ check_ref_methods <- function(reference_methods) {
 #' @importFrom ggplot2 ggplot aes xlim geom_line geom_hline geom_vline
 #' @importFrom ggplot2 geom_point scale_y_continuous sec_axis geom_segment
 #' @importFrom ggplot2 theme theme_minimal labs element_text element_blank
-#' @importFrom ggplot2 xlim scale_color_discrete
+#' @importFrom ggplot2 xlim scale_color_manual
 #' @importFrom scales hue_pal
 ggPvalueFunction <- function(
     cms,
@@ -426,7 +438,8 @@ ggPvalueFunction <- function(
     xlab,
     reference_methods,
      n_breaks, 
-    n_points = n_points
+    n_points = n_points,
+    shared_colors
 ) {
  
   # Set some constants that are equal for all grid rows
@@ -588,10 +601,10 @@ ggPvalueFunction <- function(
       ggplot2::aes(x = x, y = y, color = group)
     ) +
       ggplot2::geom_hline(yintercept = 1 - const$conf_level, linetype = "dashed") + #line at CI
-      ggplot2::geom_vline(xintercept = 0, linetype = "solid") #line at mu = 0
+      ggplot2::geom_vline(xintercept = 0, linetype = "dashed") #line at mu = 0
     
     
-    # DEFINE THE axis scale!
+    # DEFINE THE axis scale!s
     # Changed completely the logic since sometimes the x axis was problematic in scaling, now pretty_breaks handles everything!
     
     p <- p +
@@ -628,7 +641,7 @@ ggPvalueFunction <- function(
     }
     if (0 > xlim[1L] && 0 < xlim[2L]) {
         # Vertical line at 0
-        p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "solid") +
+        p <- p + ggplot2::geom_vline(xintercept = 0, linetype = "dashed") +
             ggplot2::geom_point(
                 # Points at (x = 0, y = p_0) (it is the H0, put a point there)
                 data = lines[!is.na(lines$y0), ],
@@ -637,7 +650,7 @@ ggPvalueFunction <- function(
             )
     }
     p <- p +
-        ggplot2::geom_hline(yintercept = 0, linetype = "solid") + #horiz line at y=0
+        ggplot2::geom_hline(yintercept = 0, linetype = "dashed") + #horiz line at y=0
         ggplot2::geom_line(alpha = transparency) +
         ggplot2::scale_y_continuous(
             name = "p-value", #left axis 
@@ -691,10 +704,9 @@ ggPvalueFunction <- function(
         )
     
 
-    # Add desired coloring for curves
-    line_cols <- c("#000000", scales::hue_pal()(length(fac_levels) - 1))
-    p <- p + ggplot2::scale_color_discrete(type = line_cols)
-
+    # Add SHARED coloring for curves
+    p <- p + ggplot2::scale_color_manual(values = shared_colors)
+    
 
     
     
@@ -741,10 +753,10 @@ map_ref_methods <- function(abbrevs) {
     map_one <- function(abbrev) {
         switch(
             abbrev,
-            "re" = "Random effects",
+            "re" = "Random-effects",
             "hk" = "Hartung & Knapp",
             "hc" = "Henmi & Copas",
-            "fe" = "Fixed effect"
+            "fe" = "Fixed-effect"
         )
     }
     vapply(abbrevs, map_one, character(1L), USE.NAMES = FALSE)
@@ -768,7 +780,8 @@ ForestPlot <- function(
     reference_methods,
     xlim,
     xlab,
-     n_breaks
+    n_breaks,
+    shared_colors
 ) {
 
       # Make a data frame for the single studies
@@ -867,14 +880,12 @@ ForestPlot <- function(
         polygons$y[idx] <- polygons$y[idx] + method_spacing[i]
     }
     ## Manage colors
-    n_colors <- length(unique(polygons$color)) - 1L
-    if (n_colors > 0) {
-        colors <- scales::hue_pal()(n_colors)
-        col_idx <- with(polygons, unique(color[ci_exists & color != 0]))
-        colors <- c("gray20", colors[col_idx])
-    }
-    polygons$color <- factor(polygons$color)
-
+    polygons$color_hex <- ifelse(
+      polygons$name %in% names(shared_colors),
+      shared_colors[polygons$name],
+      "gray20"
+    )
+    
     # Make the plot
     p <- ggplot2::ggplot()
     
@@ -921,16 +932,16 @@ ForestPlot <- function(
             )
     }
     p <- p +
-        ggplot2::geom_polygon(
-            data = polygons[polygons$ci_exists == TRUE, ],
-            ggplot2::aes(
-                x = x,
-                y = y,
-                group = paste0(name, ".", id),
-                fill = color
-            ),
-            show.legend = FALSE
-        ) +
+      ggplot2::geom_polygon(
+        data = polygons[polygons$ci_exists == TRUE, ],
+        ggplot2::aes(
+          x = x,
+          y = y,
+          group = paste0(name, ".", id),
+          fill = color_hex
+        ),
+        show.legend = FALSE
+      ) +
         ggplot2::theme_minimal() +
         ggplot2::theme(
             axis.title.y = ggplot2::element_blank(),
@@ -948,8 +959,8 @@ ForestPlot <- function(
         # ggplot2::labs(
         #     x = bquote(mu)
         # ) +
-        ggplot2::scale_fill_discrete(type = colors)
-
+      ggplot2::scale_fill_identity()
+    
     if (is.null(xlab)) {
         p <- p +
             ggplot2::labs(
