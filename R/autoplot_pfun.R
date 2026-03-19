@@ -189,7 +189,7 @@ autoplot.confMeta <- function(
                   comp <- x$comparison_cis
                   
                   # For the p value plot, we only care about FE or RE. So we don't consider the other comparison method
-                  keep <- rownames(comp) %in% c("Fixed effect", "Random effects", "fe", "re")
+                  keep <- rownames(comp) %in% c("Fixed-effect", "Random-effects", "fe", "re")
                   comp_filtered <- comp[keep, , drop = FALSE]
                   
                   with(x, c(individual_cis, joint_cis, comp_filtered))
@@ -445,7 +445,7 @@ ggPvalueFunction <- function(
     xlab,
     reference_methods,
      n_breaks, 
-    n_points = n_points,
+    n_points,
     shared_colors
 ) {
  
@@ -579,10 +579,10 @@ ggPvalueFunction <- function(
           rmase <- (ci_obj[idx, 2L] - ci_obj[idx, 1L]) /
             (2 * stats::qnorm(p = (1 + cl) / 2))
           df <- get_drapery_df(estimates = rmaestimate, SEs = rmase, mu = const$muSeq)
-          df$study <- rownames(ci_obj)[idx]  # label by method name
+          df$group <- rownames(ci_obj)[idx]# label by method name
           df
         }))
-        rmadf$study <- factor(rmadf$study, levels = fac_levels)
+        rmadf$group <- factor(rmadf$group, levels = fac_levels)
     }
     
     
@@ -625,7 +625,7 @@ ggPvalueFunction <- function(
     #now add the plot for baseline method
     if (!drapery) { #only vertical lines if drapery FALSE
         p <- p + ggplot2::geom_vline(
-            xintercept = estimates,
+            xintercept = estimates, #or const$estimates
             linetype = "dashed"
         )
     } else { #otwise add the drapery
@@ -639,7 +639,7 @@ ggPvalueFunction <- function(
             ) +
             ggplot2::geom_line(
                 data = rmadf,
-                mapping = ggplot2::aes(x = x, y = y, color = study),
+                mapping = ggplot2::aes(x = x, y = y, color = group),
                 # color = "#00000099",
                 show.legend = TRUE
             )
