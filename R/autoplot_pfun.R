@@ -810,26 +810,6 @@ ForestPlot <- function(
       diamond_height = diamond_height
     )
 
-    ###########################################################################
-    # Quick fix, remove the below at some point                               #
-    ###########################################################################
-
-    rename_methods <- function(old_methods) {
-        rename_one <- function(old_method) {
-            switch(
-                old_method,
-                "Fixed effect" = "Fixed effect",
-                "Random effects" = "Random effects",
-                "Hartung & Knapp" = "Hartung & Knapp",
-                "Henmi & Copas" = "Henmi & Copas"
-            )
-        }
-        vapply(old_methods, rename_one, character(1L), USE.NAMES = FALSE)
-    }
-
-    old_methods_cis <- lapply(old_methods_cis, function(x) {
-        within(x, name <- rename_methods(name))
-    })
 
 
     reference_methods <- map_ref_methods(abbrevs = reference_methods)
