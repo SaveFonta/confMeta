@@ -120,7 +120,6 @@ where \eqn{x_i} are the \code{estimates}, \eqn{\sigma_i} the \code{SEs}, and
 Combined confidence intervals are found by inverting the \emph{p}-value function,
 identifying all \eqn{\mu} where the \emph{p}-value exceeds the significance level (1 - \code{conf_level}).
 
-\strong{Note:} Due to necessity in further analysis, the method for estimating the between-study variance \eqn{\tau^2} in the Hartung-Knapp method for random effects meta-analysis uses the Paule-Mandel estimator and not the REML estimator anymore.
 Also, the HK method uses \code{adhoc.hakn.ci = "IQWiG6"} by default, i.e., it uses variance correction if the HK confidence interval
 is narrower than the CI from the classic random effects model with the DerSimonian-Laird estimator (IQWiG, 2022).
 }
