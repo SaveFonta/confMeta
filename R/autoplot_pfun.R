@@ -778,6 +778,8 @@ map_ref_methods <- function(abbrevs) {
 #' @importFrom ggplot2 element_line scale_y_continuous labs scale_fill_discrete
 #' @importFrom ggplot2 annotate
 #' @importFrom scales hue_pal
+#' @importFrom rlang .data
+
 ForestPlot <- function(
     cms,
     diamond_height,
@@ -925,7 +927,7 @@ ForestPlot <- function(
           x = x,
           y = y,
           group = paste0(name, ".", id),
-          fill = color_hex
+          fill = .data$color_hex
         ),
         show.legend = FALSE
       ) +

@@ -3,13 +3,13 @@ Title: Confidence Curves and P-Value Functions for Meta-Analysis
 Version: 0.4.2
 Authors@R: c(
     person("Felix", "Hofmann", email = "felix@fshofmann.com",
-           role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3891-6239")),
+           role = c("aut"), comment = c(ORCID = "0000-0002-3891-6239")),
     person("Leonhard", "Held", email = "leonhard.held@uzh.ch", role = c("aut"),
            comment = c(ORCID = "0000-0002-8686-5325")),
     person("Samuel", "Pawel", email = "samuel.pawel@uzh.ch", role = c("aut"),
            comment = c(ORCID = "0000-0003-2779-320X")),
-    person("Saverio", "Fontana", email = "sfontan@ethz.ch", role = c("aut")
-           )
+    person("Saverio", "Fontana", email = "sfontan@ethz.ch", role = c("aut", "cre"),
+            comment = c(ORCID = "0009-0001-9116-7812"))
     )
 Description: Provides tools for the combination of individual study results in
     meta-analyses using the p-value function. Implements various p-value
@@ -28,7 +28,8 @@ Imports:
     patchwork,
     ReplicationSuccess,
     scales,
-    stats
+    stats,
+    rlang
 Suggests: 
     knitr,
     rmarkdown,

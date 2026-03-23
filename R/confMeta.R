@@ -708,9 +708,9 @@ overwrite_FE <- function(comparison, table_2x2, measure, conf_level = 0.95) {
     # NOTE FOR THE FUTURE --> In a revision, I was scared that I needed to add backtransf = TRUE, but backtranf is just related to
     #printouts and plots, so CIs are reported in the right scale
     
-    comparison$CI["Fixed effect", "lower"] <- MH_fe$lower.common
-    comparison$CI["Fixed effect", "upper"] <- MH_fe$upper.common
-    comparison$p_0["Fixed effect", "y"] <- MH_fe$pval.common 
+    comparison$CI["Fixed-effect", "lower"] <- MH_fe$lower.common
+    comparison$CI["Fixed-effect", "upper"] <- MH_fe$upper.common
+    comparison$p_0["Fixed-effect", "y"] <- MH_fe$pval.common 
  
     comparison
   }, error = function(e) {
