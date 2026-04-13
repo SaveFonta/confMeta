@@ -102,7 +102,6 @@
 #' Barrow, D. L., & Smith, P. W. (1979). Spline notation applied to a volume
 #' problem. *The American Mathematical Monthly*, 86(1): 50-51.
 #' \doi{10.1080/00029890.1979.11994730}
-
 #' 
 #' 
 #' @examples

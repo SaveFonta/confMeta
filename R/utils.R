@@ -2,6 +2,7 @@
 # Wrapper around integrate                                                     #
 ################################################################################
 #' @importFrom stats integrate
+#' @noRd
 
 integrate_f <- function (max_iter, ...) {
   exponent <- 0.25

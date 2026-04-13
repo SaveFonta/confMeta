@@ -438,6 +438,7 @@ check_ref_methods <- function(reference_methods) {
 #' @importFrom ggplot2 theme theme_minimal labs element_text element_blank
 #' @importFrom ggplot2 xlim scale_color_manual
 #' @importFrom scales hue_pal
+#' @noRd
 ggPvalueFunction <- function(
     cms,
     xlim,
@@ -725,6 +726,7 @@ ggPvalueFunction <- function(
 # Calculate the drapery lines, i.e. p-value functions of single studies, that are plotted as 
 # grey dashed lines
 #' @importFrom stats pnorm
+#' @noRd
 get_drapery_df <- function(estimates, SEs, mu) {
   
     # get lenghts
@@ -779,6 +781,7 @@ map_ref_methods <- function(abbrevs) {
 #' @importFrom ggplot2 annotate
 #' @importFrom scales hue_pal
 #' @importFrom rlang .data
+#' @noRd
 
 ForestPlot <- function(
     cms,
