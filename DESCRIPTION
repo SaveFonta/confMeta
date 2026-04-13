@@ -12,10 +12,13 @@ Authors@R: c(
            comment = c(ORCID = "0000-0003-2779-320X"))
     )
 Description: Provides tools for the combination of individual study results in
-    meta-analyses using the p-value function. Implements various p-value
-    combination methods and contains functionality for the visualization of
-    results.
+    meta-analyses using 'p-value' functions. Implements various combination methods 
+    including those by Fisher, Stouffer, Tippett, Edgington along with 
+    weighted generalizations. Contains functionality for the visualization 
+    and calculation of confidence curves and drapery plots to summarize 
+    evidence across studies.
 License: GPL (>= 3)
+Language: en-US
 BugReports: https://github.com/SaveFonta/confMeta/issues
 URL: https://github.com/SaveFonta/confMeta
 Encoding: UTF-8

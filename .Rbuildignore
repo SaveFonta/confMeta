@@ -18,3 +18,5 @@ test_cases
 ^LICENSE\.md$
 ^Meta$
 \.lintr
+^cran-comments\.md$
+^\.github$
