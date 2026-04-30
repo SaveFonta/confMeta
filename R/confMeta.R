@@ -37,10 +37,15 @@
 #' @param measure A character string indicating the effect measure to be used 
 #'     for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if 
 #'     \code{MH = TRUE}.
-#' @param method.tau Character string indicating which between-study variance 
-#'     estimator to use for random-effects and Hartung-Knapp meta-analysis 
-#'     (e.g., \code{"PM"}, \code{"REML"}, \code{"DL"}). Defaults to \code{"PM"}. 
+#' @param method.tau.re Character string indicating which between-study variance 
+#'     estimator to use for random-effects meta-analysis 
+#'     (e.g., \code{"PM"}, \code{"REML"}, \code{"DL"}). Defaults to \code{"REML"}. 
 #'     See \code{meta::metagen()} for all available choices.
+#' @param method.tau.hk Character string indicating which between-study variance 
+#'     estimator to use for the Hartung-Knapp meta-analysis. Defaults to \code{"REML"}.
+#' @param method.tau.het Character string indicating which between-study variance 
+#'     estimator to use for calculating the general heterogeneity statistics in 
+#'     \code{heterogeneity}. Defaults to \code{"REML"}.
 #' @param adhoc.hakn.ci Character string indicating the variance correction 
 #'     method for the Hartung-Knapp confidence intervals (e.g., \code{"IQWiG6"}, 
 #'     \code{"HK"}). Defaults to \code{"IQWiG6"}. See \code{meta::metagen()} for choices.
@@ -138,7 +143,9 @@ confMeta <- function(
     MH = FALSE, 
     table_2x2 = NULL,
     measure = NULL,
-    method.tau = "PM", 
+    method.tau.re = "REML",   
+    method.tau.hk = "REML",   
+    method.tau.het = "REML",
     adhoc.hakn.ci = "IQWiG6",
     ...
 ) {
@@ -219,7 +226,9 @@ confMeta <- function(
     MH = MH, 
     table_2x2 = table_2x2,
     measure = measure,
-    method.tau = method.tau,
+    method.tau.re = method.tau.re,   
+    method.tau.hk = method.tau.hk,   
+    method.tau.het = method.tau.het, 
     adhoc.hakn.ci = adhoc.hakn.ci
   )
 }
@@ -240,7 +249,9 @@ new_confMeta <- function(
     MH = FALSE, 
     table_2x2 = NULL,
     measure = NULL,
-    method.tau = "PM",
+    method.tau.re = "REML",   
+    method.tau.hk = "REML",   
+    method.tau.het = "REML", 
     adhoc.hakn.ci = "IQWiG6"
 ) {
 
@@ -272,14 +283,15 @@ new_confMeta <- function(
     estimates = estimates,
     SEs = SEs,
     conf_level = conf_level,
-    method.tau = method.tau,      
+    method.tau.re = method.tau.re,   
+    method.tau.hk = method.tau.hk,  
     adhoc.hakn.ci = adhoc.hakn.ci 
   )
   
   # overwrite the FE method if MH = TRUE 
   if (MH == TRUE) comparison <- overwrite_FE (comparison = comparison, table_2x2 = table_2x2, measure = measure, conf_level = conf_level) 
   
-  metagen_obj <- metagen_wrap(estimates, SEs, conf_level = conf_level)
+  metagen_obj <- metagen_wrap(estimates, SEs, conf_level = conf_level, method.tau.het = method.tau.het)
   
   
   heterogeneity <- data.frame(
@@ -484,7 +496,7 @@ validate_confMeta <- function(confMeta) {
 #' @noRd
 get_obj_re <- function(estimates, SEs, conf_level, method.tau) {
     meta::metagen(
-        TE = estimates, seTE = SEs, sm = "MD",
+        TE = estimates, seTE = SEs, sm = "",
         level = conf_level, method.tau = method.tau,
         random = TRUE, common = FALSE
     )
@@ -494,7 +506,7 @@ get_obj_re <- function(estimates, SEs, conf_level, method.tau) {
 #' @noRd
 get_obj_fe <- function(estimates, SEs, conf_level) {
     meta::metagen(
-        TE = estimates, seTE = SEs, sm = "MD",
+        TE = estimates, seTE = SEs, sm = "",
         level = conf_level, method.tau = "REML", #note that here method.tau doesn't change anything 
         random = FALSE, common = TRUE
     )
@@ -504,17 +516,11 @@ get_obj_fe <- function(estimates, SEs, conf_level) {
 #' @noRd
 get_obj_hk <- function(estimates, SEs, conf_level, method.tau, adhoc.hakn.ci) {
     meta::metagen(
-        TE = estimates, seTE = SEs, sm = "MD",
+        TE = estimates, seTE = SEs, sm = "",
         level = conf_level, method.tau = method.tau, method.random.ci = "HK", adhoc.hakn.ci = adhoc.hakn.ci, #[MOD]--> "hakn = TRUE" is deprecated
         common = FALSE, random = TRUE
     )
-} # IMPORTANT --> reading the documentation of metagen we have that method.tau = gs("method.tau"), this mean that by default it will
-# try to find a method.tau in the env, that can be actually modified using settings.meta(method.tau = "PM"), even though
-# it can be useful, this would mean that at the beginning of every confMeta session, we should set the method, and it is not
-# always practical and straightforward to new users of the package. So I decided to force it to PM for the moment.
-# by default when loading the package, the general setting is REML (can see this using meta::settings.meta()$method.tau)
-
-#I also added the ad.hoc correction
+} 
 
 #' @importFrom metafor hc rma
 #' @noRd
@@ -610,7 +616,8 @@ get_method_names <- function() {
 }
 
 # Calculate everything
-get_stats_others <- function(method, estimates, SEs, conf_level, method.tau, adhoc.hakn.ci) {
+get_stats_others <- function(method, estimates, SEs, conf_level, method.tau.re,   
+                             method.tau.hk, adhoc.hakn.ci) {
     nms <- get_method_names()
     stopifnot(all(method %in% names(nms)))
     names(method) <- method
@@ -623,13 +630,13 @@ get_stats_others <- function(method, estimates, SEs, conf_level, method.tau, adh
                     estimates = estimates,
                     SEs = SEs,
                     conf_level = conf_level,
-                    method.tau = method.tau
+                    method.tau = method.tau.re
                 ),
                 "hk" = get_obj_hk(
                     estimates = estimates,
                     SEs = SEs,
                     conf_level = conf_level,
-                    method.tau = method.tau,
+                    method.tau = method.tau.hk,
                     adhoc.hakn.ci = adhoc.hakn.ci
                 ),
                 "hc" = get_obj_hc(
@@ -732,12 +739,12 @@ overwrite_FE <- function(comparison, table_2x2, measure, conf_level = 0.95) {
 # NOTE: I am aware that "metagen_wrap" and "get_obj_re" do the same call to "metagen"
 # But I wanted them to keep them separate to have more control on the estimator used in each one of them 
 # if in the future we want to change them 
-#???
-metagen_wrap <- function(estimates, SEs, conf_level = 0.95) {
+
+metagen_wrap <- function(estimates, SEs, conf_level = 0.95, method.tau.het = "REML") {
   meta::metagen(
     TE = estimates, seTE = SEs,
     level = conf_level,
-    method.tau = "REML",
+    method.tau = method.tau.het,
     random = TRUE, common = FALSE
   )
 }
