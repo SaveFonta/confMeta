@@ -15,7 +15,9 @@ confMeta(
   MH = FALSE,
   table_2x2 = NULL,
   measure = NULL,
-  method.tau = "PM",
+  method.tau.re = "REML",
+  method.tau.hk = "REML",
+  method.tau.het = "REML",
   adhoc.hakn.ci = "IQWiG6",
   ...
 )
@@ -65,10 +67,17 @@ Mantel-Haenszel pooling. Required if \code{MH = TRUE}. Must contain columns:
 for Mantel-Haenszel pooling (e.g., "OR", "RR", "RD"). Required if
 \code{MH = TRUE}.}
 
-\item{method.tau}{Character string indicating which between-study variance
-estimator to use for random-effects and Hartung-Knapp meta-analysis
-(e.g., \code{"PM"}, \code{"REML"}, \code{"DL"}). Defaults to \code{"PM"}.
+\item{method.tau.re}{Character string indicating which between-study variance
+estimator to use for random-effects meta-analysis
+(e.g., \code{"PM"}, \code{"REML"}, \code{"DL"}). Defaults to \code{"REML"}.
 See \code{meta::metagen()} for all available choices.}
+
+\item{method.tau.hk}{Character string indicating which between-study variance
+estimator to use for the Hartung-Knapp meta-analysis. Defaults to \code{"REML"}.}
+
+\item{method.tau.het}{Character string indicating which between-study variance
+estimator to use for calculating the general heterogeneity statistics in
+\code{heterogeneity}. Defaults to \code{"REML"}.}
 
 \item{adhoc.hakn.ci}{Character string indicating the variance correction
 method for the Hartung-Knapp confidence intervals (e.g., \code{"IQWiG6"},
