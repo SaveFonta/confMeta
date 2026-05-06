@@ -55,6 +55,9 @@
 #'       \item \code{"hc"}: Henmi-Copas adjustment
 #'     }
 #'     Defaults to \code{c("re", "hk", "hc")}.
+#' @param ref_labels A named character vector to customize the labels of the reference 
+#'     methods in the plot legends and axes (e.g., \code{c("fe" = "Fixed-effect (IV)", 
+#'     "re" = "Random-effects (DL)")}). Defaults to \code{NULL}.
 #' @param xlim Numeric vector of length 2. Global limits for the x-axis. 
 #'   If \code{NULL}, limits are calculated automatically.
 #' @param xlim_p Numeric vector of length 2. Specific x-axis limits for the 
@@ -93,6 +96,7 @@ autoplot.confMeta <- function(
     # drapery_ma = c("fe"),
     reference_methods_p      = c("re"),
     reference_methods_forest = c("re", "hk", "hc"),
+    ref_labels = NULL,
     xlim = NULL,
     xlim_p = NULL,
     xlim_forest = NULL,
@@ -119,6 +123,21 @@ autoplot.confMeta <- function(
     several.ok = TRUE,
     choices = c("fe", "re")
   )
+  
+  
+  # Check for ref_labels
+  valid_method_keys <- c("fe", "re", "hk", "hc")
+  
+  if (!is.null(ref_labels)) { 
+    if (!is.character(ref_labels) || is.null (names(ref_labels))) {
+      stop("'ref_labels' must be a named character vector, e.g. c(fe = 'Fixed-effect (IV)', re = 'Random-effects (REML)')")
+    }
+    invalid_keys <- setdiff(names(ref_labels), valid_method_keys)
+    if (length(invalid_keys) > 0) {
+      stop(paste0("Invalid names in `ref_labels`: ", paste(invalid_keys, collapse = ", "),
+                  ". Must be one of: ", paste(valid_method_keys, collapse = ", "), "."))
+    }
+  }
   
 
     # Check all the confMeta objects
@@ -163,10 +182,10 @@ autoplot.confMeta <- function(
     fun_names_shared  <- vapply(cms, "[[", i = "fun_name", character(1L)) #take the fun_name from every confMeta object (Edgington, Edgington_w ...)
     ref_base_p        <- intersect(c("fe", "re"), reference_methods_p)
     ref_forest_only   <- setdiff(
-      map_ref_methods(reference_methods_forest),
-      map_ref_methods(ref_base_p)
+      map_ref_methods(reference_methods_forest, labels = ref_labels),
+      map_ref_methods(ref_base_p, labels = ref_labels)
     )
-    fac_levels_all    <- c(map_ref_methods(ref_base_p), ref_forest_only, fun_names_shared)
+    fac_levels_all    <- c(map_ref_methods(ref_base_p, labels = ref_labels), ref_forest_only, fun_names_shared)
     shared_colors     <- c("#000000", scales::hue_pal()(length(fac_levels_all) - 1))
     names(shared_colors) <- fac_levels_all #attach each method name to the color vector
     
@@ -256,7 +275,9 @@ autoplot.confMeta <- function(
         reference_methods = reference_methods_p, 
         n_breaks =  n_breaks,
         n_points = n_points,
-        shared_colors = shared_colors
+        shared_colors = shared_colors,
+        ref_labels = ref_labels
+        
         
       )
     }
@@ -272,7 +293,9 @@ autoplot.confMeta <- function(
         reference_methods = reference_methods_forest, 
         xlab = xlab, 
         n_breaks =  n_breaks,
-        shared_colors = shared_colors
+        shared_colors = shared_colors,
+        ref_labels = ref_labels
+        
         
       )
     }
@@ -438,6 +461,7 @@ check_ref_methods <- function(reference_methods) {
 #' @importFrom ggplot2 theme theme_minimal labs element_text element_blank
 #' @importFrom ggplot2 xlim scale_color_manual
 #' @importFrom scales hue_pal
+#' @importFrom stats setNames
 #' @noRd
 ggPvalueFunction <- function(
     cms,
@@ -447,7 +471,8 @@ ggPvalueFunction <- function(
     reference_methods,
      n_breaks, 
     n_points,
-    shared_colors
+    shared_colors,
+    ref_labels
 ) {
  
   # Set some constants that are equal for all grid rows
@@ -468,8 +493,8 @@ ggPvalueFunction <- function(
     fun_names <- vapply(cms, "[[", i = "fun_name", character(1L))
     
     ref_base <- intersect(c("fe", "re"), reference_methods)
-    fac_levels <- c(map_ref_methods(ref_base), fun_names)
-
+    fac_levels <- c(map_ref_methods(ref_base, labels = ref_labels), fun_names)
+    
     # Calculate the p-values and CIs
     data <- lapply(seq_along(cms), function(x) {
         
@@ -575,12 +600,18 @@ ggPvalueFunction <- function(
         ## What reference method should we calculate drapery plot for:
         ## "fe" or "re"
         ref_indices <- which(rownames(ci_obj) %in% map_ref_methods(intersect(c("fe", "re"), reference_methods)))
+        
+        default_to_custom_p <- setNames(
+          map_ref_methods(c("fe", "re", "hk", "hc"), labels = ref_labels),
+          map_ref_methods(c("fe", "re", "hk", "hc"))
+        )
+        
         rmadf <- do.call("rbind", lapply(ref_indices, function(idx) {
           rmaestimate <- rowMeans(ci_obj[idx, , drop = FALSE])
           rmase <- (ci_obj[idx, 2L] - ci_obj[idx, 1L]) /
             (2 * stats::qnorm(p = (1 + cl) / 2))
           df <- get_drapery_df(estimates = rmaestimate, SEs = rmase, mu = const$muSeq)
-          df$group <- rownames(ci_obj)[idx]# label by method name
+          df$group <- default_to_custom_p[rownames(ci_obj)[idx]]  # label by method name, maybe I should wrap it in unname? Not sure, future development
           df
         }))
         rmadf$group <- factor(rmadf$group, levels = fac_levels)
@@ -758,17 +789,21 @@ get_drapery_df <- function(estimates, SEs, mu) {
     )
 }
 
-map_ref_methods <- function(abbrevs) {
-    map_one <- function(abbrev) {
-        switch(
-            abbrev,
-            "re" = "Random-effects",
-            "hk" = "Hartung & Knapp",
-            "hc" = "Henmi & Copas",
-            "fe" = "Fixed-effect"
-        )
-    }
-    vapply(abbrevs, map_one, character(1L), USE.NAMES = FALSE)
+map_ref_methods <- function(abbrevs, labels = NULL) {
+  defaults <- c(
+    re = "Random-effects",
+    hk = "Hartung & Knapp",
+    hc = "Henmi & Copas",
+    fe = "Fixed-effect"
+  )
+  
+  # UPDATED FUNCTION: drop the switch and set the default dictionary, then if we have labels provided
+  # replace them with the names we have
+  if (!is.null(labels)) {
+    defaults[names(labels)] <- labels
+  }
+  unname(defaults[abbrevs])
+  
 }
 
 # ==============================================================================
@@ -793,7 +828,8 @@ ForestPlot <- function(
     xlim,
     xlab,
     n_breaks,
-    shared_colors
+    shared_colors,
+    ref_labels
 ) {
 
       # Make a data frame for the single studies
@@ -824,7 +860,19 @@ ForestPlot <- function(
 
 
 
-    reference_methods <- map_ref_methods(abbrevs = reference_methods)
+    # Rename the default names to ref_labels!
+    # first creates named vector (like Fixed effect --> Fixed effect (IV))
+    default_to_custom <- setNames(
+      map_ref_methods(c("fe", "re", "hk", "hc"), labels = ref_labels),
+      map_ref_methods(c("fe", "re", "hk", "hc"))
+    )
+    
+    #replace
+    old_methods_cis$CIs$name <- default_to_custom[old_methods_cis$CIs$name] # ? maybe wrap those i unname? 
+    old_methods_cis$p_0$name <- default_to_custom[old_methods_cis$p_0$name]
+    
+    
+    reference_methods <- map_ref_methods(abbrevs = reference_methods, labels = ref_labels)
 
     keep_cis <- with(old_methods_cis, CIs$name %in% reference_methods)
     keep_p0 <- with(old_methods_cis, p_0$name %in% reference_methods)
@@ -946,7 +994,9 @@ ForestPlot <- function(
         ) +
         ggplot2::scale_y_continuous(
             breaks = spacing,
-            labels = c(studyCIs$name, "", unique(polygons$name))
+            labels = c(studyCIs$name, "", unique(polygons$name)),
+            limits = c(min(spacing) - v_space/2, max(spacing) + v_space/2) # this fixes the problem where that the last polygon was always too close to the x axis! 
+            
         ) +
         # ggplot2::labs(
         #     x = bquote(mu)

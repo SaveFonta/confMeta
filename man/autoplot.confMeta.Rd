@@ -14,6 +14,7 @@
   drapery = TRUE,
   reference_methods_p = c("re"),
   reference_methods_forest = c("re", "hk", "hc"),
+  ref_labels = NULL,
   xlim = NULL,
   xlim_p = NULL,
   xlim_forest = NULL,
@@ -73,6 +74,10 @@ diamonds in the forest plot. Valid options are any subset of
 \item \code{"hc"}: Henmi-Copas adjustment
 }
 Defaults to \code{c("re", "hk", "hc")}.}
+
+\item{ref_labels}{A named character vector to customize the labels of the reference
+methods in the plot legends and axes (e.g., \code{c("fe" = "Fixed-effect (IV)", 
+    "re" = "Random-effects (DL)")}). Defaults to \code{NULL}.}
 
 \item{xlim}{Numeric vector of length 2. Global limits for the x-axis.
 If \code{NULL}, limits are calculated automatically.}
