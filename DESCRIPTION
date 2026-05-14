@@ -1,6 +1,6 @@
 Package: confMeta
 Title: Confidence Curves and P-Value Functions for Meta-Analysis
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Saverio", "Fontana", email = "savefontana@gmail.com", role = c("aut", "cre"),
             comment = c(ORCID = "0009-0001-9116-7812")),
