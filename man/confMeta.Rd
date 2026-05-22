@@ -108,9 +108,10 @@ other methods are fixed effect (IV or Mantel-Haenszel), random effects (IV),
 Hartung & Knapp, and Henmi & Copas.
 \item \code{comparison_p_0}: The same as in element \code{p_0} but for the comparison
 methods (fixed effect, random effects, Hartung & Knapp, Henmi & Copas).
-\item \code{heterogeneity}: A data frame containing heterogeneity statistics
-(Cochran's Q, \emph{p}-value for Q, \eqn{I^2}, \eqn{\tau^2}) calculated
-using the REML estimator.
+\item \code{heterogeneity}: A data frame with columns \code{Q} (Cochran's Q),
+\code{p_Q} (p-value for Q), \code{I2} (\eqn{I^2}), \code{Tau} (\eqn{\tau}),
+\code{I2_lower}, and \code{I2_upper}, computed using the estimator defined
+by \code{method.tau.het}.
 \item \code{table_2x2}: The 2x2 table data frame (if provided), otherwise \code{NULL}.
 }
 }
