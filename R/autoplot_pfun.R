@@ -151,17 +151,19 @@ autoplot.confMeta <- function(
     ses <- lapply(cms, "[[", i = "SEs")
     lvl <- lapply(cms, "[[", i = "conf_level")
     nms <- lapply(cms, "[[", i = "study_names")
+    ks <- lapply(cms, "[[", i = "k_studies")
     ok <- c(
         check_equal(ests),
         check_equal(ses),
         check_equal(lvl),
-        check_equal(nms)
+        check_equal(nms),
+        check_equal(ks)
     )
     if (any(!ok)) {
         stop(
             paste0(
                 "For plotting, all confMeta objects must have the same ",
-                "'estimates', 'SEs', 'study_names', and 'conf_level' elements."
+                "'estimates', 'SEs', 'study_names', 'conf_level' and 'k_studies' elements."
             )
         )
     }
@@ -340,34 +342,19 @@ ggplot2::autoplot
 # ==============================================================================
 
 check_cms <- function(cms) {
-
-    l_cms <- length(cms)
-    counter <- 0L
-    message <- NA_character_
-
-    while (is.na(message) && counter < l_cms) {
-        counter <- counter + 1L
-        y <- tryCatch(
-            {
-                validate_confMeta(cms[[counter]])
-            },
-            error = function(e) conditionMessage(e)
-        )
-        if (!is.null(y)) message <- y
+  for (i in seq_along(cms)) {
+    msg <- tryCatch(
+      validate_confMeta(cms[[i]]),
+      error = function(e) conditionMessage(e)
+    )
+    if (!is.null(msg)) {
+      stop(
+        paste0("Problem found in confMeta object number ", i, ": ", msg),
+        call. = FALSE
+      )
     }
-
-    if (!is.na(message)) {
-        stop(
-            paste0(
-                "Problem found in confMeta object number ",
-                counter,
-                ": ",
-                message
-            ),
-            call. = FALSE
-        )
-    }
-    invisible(NULL)
+  }
+  invisible(NULL)
 }
 
 check_unique_names <- function(cms) {
@@ -382,23 +369,9 @@ check_unique_names <- function(cms) {
 }
 
 check_equal <- function(x) {
-
-    # Order-agnostic
-    x <- lapply(x, sort, decreasing = FALSE)
-    # Get the first for comparison
-    comp <- x[[1L]]
-    all(
-        do.call(
-            "c",
-            lapply(
-                x,
-                function(x, comp) {
-                    all(x == comp)
-                },
-                comp = comp
-            )
-        )
-    )
+  x    <- lapply(x, sort, decreasing = FALSE)
+  comp <- x[[1L]]
+  all(vapply(x, function(xi) all(xi == comp), logical(1L)))
 }
 
 check_TF <- function(x) {
@@ -495,7 +468,7 @@ ggPvalueFunction <- function(
     ref_base <- intersect(c("fe", "re"), reference_methods)
     fac_levels <- c(map_ref_methods(ref_base, labels = ref_labels), fun_names)
     
-    # Calculate the p-values and CIs
+    # Calculate the p-values and CIs by looping along each cm object
     data <- lapply(seq_along(cms), function(x) {
         
         cm <- cms[[x]]
@@ -503,6 +476,8 @@ ggPvalueFunction <- function(
         fun_name <- cm$fun_name
         alpha <- 1 - const$conf_level
         w <- if (!is.null(cm$w)) cm$w else NULL
+        k <- cm$k_studies
+        
         
         
         # use the new call for the function 
@@ -511,21 +486,21 @@ ggPvalueFunction <- function(
           estimates = cm$estimates,
           SEs = cm$SEs,
           mu = const$muSeq,
-          w = w
+          w = w,
+          k = k 
         )
         
         
         ################################################################################################################
         #         ######## NOTE FOR WHO CARES 
-        # (!!) here we call just those arguments, cause the others are already saved inside p_fun as default parameters 
-        #thanks to make_p_fun() (e.g. heterogeneity, approx, tau2, neff...)
+        # (!!) here we call just those arguments, cause the others are already saved inside p_fun since it is a closure 
+        #    thanks to make_p_fun() (e.g. heterogeneity, approx, tau2, neff...)
         #
-        #just remember that w in this closure is by default (1,...1) so this is extremely necessary
         #############################################################################################à##################
         
         
         
-        #now we have a vector p val of length 10.000 (one for each mu) 
+        # now we have a vector p val of length 10.000 (one for each mu) 
         
         
         pval <- pmin(pmax(pval, 0), 1) #sometimes due to approx error are a tiny bit smaller than 0, fix to not have any error messages
@@ -538,7 +513,6 @@ ggPvalueFunction <- function(
         df1 <- data.frame(
             x = const$muSeq,
             y = pval,
-            p_val_fun = cm$fun_name,
             y0 = y0, # p value at mu = 0
             group = factor(fun_name, levels = fac_levels), #to plot different lines each method
             stringsAsFactors = FALSE,
@@ -548,7 +522,6 @@ ggPvalueFunction <- function(
         df2 <- data.frame(
             xmin = CIs[, 1L],
             xmax = CIs[, 2L],
-            p_val_fun = fun_name,
             # y = rep(1 - conf_level, nrow(CIs$CI)) + factor * const$eps,
             y = rep(alpha, nrow(CIs)), #horiz segment at confidence level
             group = factor(fun_name, levels = fac_levels),
@@ -567,58 +540,82 @@ ggPvalueFunction <- function(
     #now we have the data object (e.g. data[[1]] = list(df1, df2) is the first ConfMeta object
     # data[[2]] = list(df1, df2) second ConfMeta obj etc...)
     
-    # Extract the data frame for the lines with p-value functions
+    # Create the whole data frame for the lines with p-value functions
     # as well as the data frame for the error bars
-    plot_data <- lapply(
-        list(lines = 1L, errorbars = 2L),
-        function(z, data) do.call("rbind", lapply(data, "[[", i = z)),
-        data = data
-    )
-    lines <- plot_data[["lines"]]
-    errorbars <- plot_data[["errorbars"]]
+    lines     <- do.call("rbind", lapply(data, "[[", 1L))
+    errorbars <- do.call("rbind", lapply(data, "[[", 2L))
 
     
     
-    #if you print errorbars:
-    #xmin     xmax   y   ymax   ymin
-    # 1   -2.4671   1.9013 0.05 0.075 0.025
-    # means that the graph will be drawed: an horiz segm from mu=-2.47 to mu=1.9, positioned at level 
-    # p = 0.05, with two vertical ticks from 0.025 to 0.075
+    ## if you print errorbars:
+    #       xmin     xmax           y    group       ymax  ymin
+    # -0.09517928 1.032893        0.05  Fisher       0.075 0.025 
+    #  0.28089910 1.148117       0.05  Edgington     0.075 0.025 
+
+    # means that the graph for Fisher will be drawed: an horiz segm from mu=-0.095 to mu=1.03, positioned at level y = 0.05, with two vertical ticks from 0.025 to 0.075
 
     # Calculate the drapery lines if TRUE (by default)
+    # dp is just a df with two columns: x, y and the study name (if names are nto provided, just the number of the study)
     if (drapery) {
         dp <- get_drapery_df(
             estimates = const$estimates,
             SEs = const$SEs,
-            mu = const$muSeq
+            mu = const$muSeq,
+            k = cms[[1L]]$k_studies
+            
         )
-        ## also compute the RMA p-value function
+        
+        
+        ## also compute the p-value function for the comparison methods
+        
         ### Object containing CIs for the reference methods
-        ci_obj <- cms[[1L]]$comparison_cis
+        #NOTE--> this is the exact reason why we must use the same k for all the cms object we input
+        # cause otw the comparison methods plotted are the ones of the first object. 
+        
+        # IN GENERAL REMEMBER --> the comparison results CANNOT vary between the cms provided to the plotting function 
+        #they must be all equal!
+        
+        ci_obj <- cms[[1L]]$comparison_cis   
         cl <- cms[[1L]]$conf_level
         
-        ## What reference method should we calculate drapery plot for:
+        ## What reference method should we calculate thedrapery plot for:
         ## "fe" or "re"
-        ref_indices <- which(rownames(ci_obj) %in% map_ref_methods(intersect(c("fe", "re"), reference_methods)))
+        ref_names <- intersect(
+          map_ref_methods(c("fe", "re")),          # all possible default names
+          map_ref_methods(reference_methods)       # only those requested
+        )
+        ref_names <- ref_names[ref_names %in% rownames(ci_obj)]
         
-        default_to_custom_p <- setNames(
+        # Map from default name -> custom label (for legend)
+        default_to_label <- setNames(
           map_ref_methods(c("fe", "re", "hk", "hc"), labels = ref_labels),
           map_ref_methods(c("fe", "re", "hk", "hc"))
         )
         
-        rmadf <- do.call("rbind", lapply(ref_indices, function(idx) {
-          rmaestimate <- rowMeans(ci_obj[idx, , drop = FALSE])
-          rmase <- (ci_obj[idx, 2L] - ci_obj[idx, 1L]) /
-            (2 * stats::qnorm(p = (1 + cl) / 2))
-          df <- get_drapery_df(estimates = rmaestimate, SEs = rmase, mu = const$muSeq)
-          df$group <- default_to_custom_p[rownames(ci_obj)[idx]]  # label by method name, maybe I should wrap it in unname? Not sure, future development
+
+        
+        
+
+          # since we only have lower and upper in ci_obj, we extract from it the method we want
+          # e.g. fe or re. Then compute the mean of lower and upper as the estimate, and reverse engegneer the se. 
+          
+          # then use get_drapery_df 
+        
+        rmadf <- do.call("rbind", lapply(ref_names, function(nm) {
+          rmaestimate <- mean(ci_obj[nm, ])
+          rmase       <- (ci_obj[nm, 2L] - ci_obj[nm, 1L]) /
+            (2 * stats::qnorm((1 + cl) / 2))
+          df       <- get_drapery_df(estimates = rmaestimate, SEs = rmase, mu = const$muSeq)
+          df$study <- NULL
+          df$group <- default_to_label[nm]
+          
           df
         }))
         rmadf$group <- factor(rmadf$group, levels = fac_levels)
+        
     }
     
-    
-    #now dp and rmdaf are two similar df, one for my method, the other for the basline method  
+    # now dp and rmdaf are two similar df, one for my methods, the other for the baseline method  
 
     # Define function to convert breaks from primary y-axis to
     # breaks for secondary y-axis
@@ -638,18 +635,16 @@ ggPvalueFunction <- function(
     p <- ggplot2::ggplot(
       data = lines,
       ggplot2::aes(x = x, y = y, color = group)
-    ) +
-      ggplot2::geom_hline(yintercept = 1 - const$conf_level, linetype = "dashed") + #line at CI
+    ) + 
+      ggplot2::geom_hline(yintercept = 1 - const$conf_level, linetype = "dashed") + # significance treshold
       ggplot2::geom_vline(xintercept = 0, linetype = "dashed") #line at mu = 0
     
     
-    # DEFINE THE axis scale!s
-    # Changed completely the logic since sometimes the x axis was problematic in scaling, now pretty_breaks handles everything!
-    
+    # DEFINE THE axis scale!
+
     p <- p +
       ggplot2::scale_x_continuous(
-        # limits = xlim, old version
-        breaks = scales::pretty_breaks(n = 7),  #7 number is just arbitrary
+        breaks = scales::pretty_breaks(n = 7),  # 7 number is just arbitrary
         minor_breaks = NULL
       ) +
       ggplot2::coord_cartesian(xlim = xlim, ylim = c(0, 1), expand = FALSE) # this allows us to ZOOM in the plot, not cut it 
@@ -755,30 +750,35 @@ ggPvalueFunction <- function(
 }
 
 # Calculate the drapery lines, i.e. p-value functions of single studies, that are plotted as 
-# grey dashed lines
+# grey dashed lines in the back
 #' @importFrom stats pnorm
 #' @noRd
-get_drapery_df <- function(estimates, SEs, mu) {
-  
-    # get lenghts
+get_drapery_df <- function(estimates, SEs, mu, k = rep(1, length(estimates) ) ) {
+
+      # get lenghts
     l_t <- length(estimates) #n studies
-    l_m <- length(mu) 
-    l_tot <- l_t * l_m #total n points to generate
+    l_m <- length(mu) # n point on grid (e.g. 1000 or 10000)
+    l_tot <- l_t * l_m # total n points to generate
     
     # Initialize vectors
     x_dp <- rep(mu, times = l_t)  #create the grids [mu1,...,mu10000, mu1, ..., mu10000, ..] repetead for each study
     y_dp <- study <- numeric(l_tot)
     
     # Indices to loop over
-    idx <- seq_len(l_m)
+    idx <- seq_len(l_m) # from 1 to 1000
     nms <- names(estimates)
     
-    # Loop on each study
+    # Loop over each study
     for (i in seq_along(estimates)) {
-        y_dp[idx] <- 2 *
-            (1 - stats::pnorm(abs(estimates[i] - mu) / SEs[i])) #compute bilateral p value function for study i
-        study[idx] <- if (is.null(nms)) rep(i, l_m) else rep(nms[i], l_m) # assing identificator, if the studies have names uses them, otwise use index
-        idx <- idx + l_m
+      
+      # Raw two-sided p-value curve for study i
+      p_raw <- 2 * (1 - stats::pnorm(abs(estimates[i] - mu) / SEs[i])) # creates 1000 p values
+      
+      # Apply best-of-k adjustment (identity when k[i] == 1)
+      y_dp[idx] <- 1 - (1 - p_raw)^k[i] # in the y_dp vector, which is of length 1000* (number of studies), put the computed p values
+      
+      study[idx] <- if (is.null(nms)) rep(i, l_m) else rep(nms[i], l_m)
+      idx <- idx + l_m  # move to the next indeces, i.e. at the start idx is from 1 to 1000, then becomes from 1001 to 2000
     }
     #combine studies in a single df
     data.frame( 
@@ -832,12 +832,17 @@ ForestPlot <- function(
     ref_labels
 ) {
 
-      # Make a data frame for the single studies
+  
+     # # Make a data frame for the single studies
+     # Also here we make from just the first object, since all cms object must have the same individual cis
+     # cannot provide different k !!
     cm <- cms[[1L]]
+    
     studyCIs <- data.frame(
         lower = cm$individual_cis[, 1L],
         upper = cm$individual_cis[, 2L],
-        estimate = cm$estimates,
+        estimate          = cm$adjusted_estimates,  # bias-corrected estimate
+        estimate_raw      = cm$estimates,            # original value
         name = cm$study_names,
         plottype = 0L,
         color = 0L,
@@ -954,22 +959,34 @@ ForestPlot <- function(
     }
     
     if (show_studies) {
+      p <- p +
+        ggplot2::geom_errorbar(
+          orientation = "y",
+          data = studyCIs,
+          ggplot2::aes(
+            y = y,
+            xmin = lower,
+            xmax = upper,
+          ),
+          width = diamond_height,
+          show.legend = FALSE
+        ) +
+        # Adjusted (bias-corrected) point estimate — filled circle
+        ggplot2::geom_point(
+          data = studyCIs,
+          ggplot2::aes(x = estimate, y = y),
+          shape = 16L
+        )
+      # When any k_i > 1, also show the raw reported value as an open circle
+      if (any(cm$k_studies != 1)) {
         p <- p +
-            ggplot2::geom_errorbar(
-                orientation = "y",
-                data = studyCIs,
-                ggplot2::aes(
-                    y = y,
-                    xmin = lower,
-                    xmax = upper,
-                ),
-                width = diamond_height, #this parameter was inside for older ggplot (called height), now deprecated
-                show.legend = FALSE
-            ) +
-            ggplot2::geom_point(
-                data = studyCIs,
-                ggplot2::aes(x = estimate, y = y)
-            )
+          ggplot2::geom_point(
+            data = studyCIs,
+            ggplot2::aes(x = estimate_raw, y = y),
+            shape = 1L,
+            color = "grey40"
+          )
+      }
     }
     p <- p +
       ggplot2::geom_polygon(
@@ -1039,7 +1056,7 @@ get_CI_new_methods <- function(
 
     out <- lapply(seq_along(cms), function(r) {
 
-        # Get one of the cms
+        # Get  the cms
         cm <- cms[[r]]
 
         # Calculate polygons
@@ -1047,6 +1064,15 @@ get_CI_new_methods <- function(
 
         if (ci_exists) {
             # Calculate the polygons for the diamond
+          
+            # Basically gives back df 3 columns: x,y,id. If there is only one CI, then id == 1, then we have something like:
+          #          row3(x3,+y3)
+          #     row2 (x2,+y2)   row4(x4,+y4)
+          # row1 (x1,0)                 row5(x5,0)
+          #     row8(x2,-y2)   row6(x4,-y4)
+          #          row7(x3,-y3)
+          
+          # since the polygon is bult from left to right following the row order
             polygons <- calculate_polygon(
                 cm = cm,
                 diamond_height = diamond_height,
@@ -1088,13 +1114,16 @@ get_CI_new_methods <- function(
             p_max = p_max
         )
     })
-
-    # Reorganize list
+    
+    
+    # So out is a list containing each MA method used. e.g. out[[1]] = Edginton, out[[2]] = Fisher ... etc
+    
+    
     CIs <- do.call("rbind", lapply(out, "[[", i = 1L))
     p_0 <- do.call("rbind", lapply(out, "[[", i = 2L))
     p_max <- do.call("rbind", lapply(out, "[[", i = 3L))
 
-    # Return
+    # Return a list of 3 objects 
     list(CIs = CIs, p_0 = p_0, p_max = p_max)
 }
 
@@ -1173,110 +1202,103 @@ calculate_polygon <- function(
     scale_diamonds
 ) {
 
-    # If gamma == NA, there is either one or no CI
-    no_ci <- if (all(is.na(cm$joint_cis))) TRUE else FALSE
-    no_gamma <- if (all(is.na(cm$gamma))) TRUE else FALSE
+     if (all(is.na(cm$joint_cis))) return(NULL)
+  
+  
+  
+  no_gamma <- all(is.na(cm$gamma))
+  
+  # ------------------------------------------------------------------
+  # Evaluate the p-value function at the key x-coordinates
+  # (estimates, CI boundaries, maxima, minima) to get their heights.
+  #
+  # Point types:
+  #   0 = lower CI boundary
+  #   1 = local minimum (gamma)
+  #   2 = estimate or local maximum
+  #   3 = upper CI boundary
+  # ------------------------------------------------------------------
+  
+  # p-value at each study estimate (evaluated at mu = estimate_i)
+  f_estimates <- call_pfun(
+    fun       = cm$p_fun,
+    estimates = cm$estimates,
+    SEs       = cm$SEs,
+    mu        = cm$estimates,
+    w         = cm$w,
+    k         = cm$k_studies
+  )
+  
+  nrep <- nrow(cm$joint_cis)
+  
+  pt_eval <- rbind(
+    cbind(cm$p_max,                                              2L),  # maxima
+    cbind(cm$estimates,     f_estimates,  rep(2L, length(cm$estimates))),  # estimates
+    cbind(cm$joint_cis[, 1L], 0,          rep(0L, nrep)),                 # lower CI
+    cbind(cm$joint_cis[, 2L], 0,          rep(3L, nrep))                  # upper CI
+  )
+  
+  if (!no_gamma) {
+    pt_eval <- rbind(pt_eval, cbind(cm$gamma, 1L))  # local minima
+  }
+  
+  colnames(pt_eval) <- c("x", "y", "type")
+  rownames(pt_eval) <- NULL
+  
+  # --- remove duplicates, keep only points inside the
+  # CI, then sort by x so the polygon traces left to right.
 
-    # Which points to evaluate for the diamonds (all maxima, minima, estimates)
-    # type of point
-    # 0 = lower ci
-    # 1 = minimum
-    # 2 = estimate or maximum
-    # 3 = upper ci
+  pt_eval <- pt_eval[!duplicated(pt_eval), ]
+  
+  inside_ci <- vapply(
+    pt_eval[, "x"],
+    function(xi) any(xi >= cm$joint_cis[, 1L] & xi <= cm$joint_cis[, 2L]),
+    logical(1L)
+  )
+  pt_eval <- pt_eval[inside_ci, ]
+  pt_eval <- pt_eval[order(pt_eval[, "x"]), ]
+  
+  
+  # ---- scale y so the tallest point reaches diamond_height / 2.
 
+  x    <- pt_eval[, "x"]
+  y    <- pt_eval[, "y"]
+  type <- pt_eval[, "type"]
+  
+  if (scale_diamonds) y <- y / max(y)
+  y_scaled <- y * diamond_height / 2
+  
+  
+  # ---  Assign a polygon id to each CI segment.---
+
+  
+  lower_idx <- which(type == 0L)
+  upper_idx <- which(type == 3L)
+  
+  # in case we need to build more than one polygon (disconnected CI), assign to each one of those an id
+  id <- integer(length(x))
+  for (i in seq_along(lower_idx)) {
+    id[lower_idx[i]:upper_idx[i]] <- i
+  }
+  
+  # Each CI segment becomes a closed polygon: top edge (left to right)
+  # then bottom edge (right to left, mirrored).
+
+  do.call("rbind", lapply(unique(id), function(seg_id) {
+    pts   <- id == seg_id
+    x_seg <- x[pts]
+    y_seg <- y_scaled[pts]
+    n     <- length(x_seg)
     
-    pt_eval <- with(
-        cm,
-        {
-          f_estimates <- call_pfun(
-            fun = p_fun,
-            estimates = estimates,
-            SEs = SEs,
-            mu = estimates,
-            w = w
-          )
-
-            nrep <- nrow(joint_cis)
-            m <- rbind(
-                cbind(p_max, 2),  #max --> type 2
-                matrix(
-                    c(estimates, f_estimates, rep(2, length(cm$estimates))), #estimates --> type 2
-                    ncol = 3L
-                ),
-                matrix(c(joint_cis[, 1L], rep(0, 2 * nrep)), ncol = 3L), #lower CI --> type 0
-                matrix(
-                    c(joint_cis[, 2L], rep(0, nrep), rep(3, nrep)), #upper CI --> type 3
-                    ncol = 3L
-                )
-            )
-            if (!no_gamma) m <- rbind(m, cbind(gamma, 1)) #gamma --> type 1
-            m
-        }
+    # Top edge: left to right at +y
+    # Bottom edge: right to left at -y (excluding x_seg[-c(1L, n)] and the y since are the diamond edges and must be counted once)
+    
+    data.frame(
+      x  = c(x_seg,               rev(x_seg[-c(1L, n)])),
+      y  = c(y_seg,              -rev(y_seg[-c(1L, n)])),
+      id = seg_id
     )
-
-    # Remove duplicates
-    pt_eval <- pt_eval[!duplicated(pt_eval), ]
-
-    # Remove those not in CI
-    idx <- vapply(
-        pt_eval[, 1L],
-        function(x, cis) any(x >= cis[, 1L] & x <= cis[, 2L]),
-        logical(1L),
-        cis = cm$joint_cis
-    )
-    pt_eval <- pt_eval[idx, ]
-
-    # Sort these by x-values
-    o <- order(pt_eval[, 1L], decreasing = FALSE)
-    pt_eval <- pt_eval[o, ]
-
-    if (no_ci) {
-        return(NULL)
-    } else {
-        x <- pt_eval[, 1L]
-        y <- pt_eval[, 2L]
-        type <- pt_eval[, 3L]
-        # rescale the diamonds if needed (such that the max height is always 1)
-        if (scale_diamonds) {
-            scale_factor <- 1 / max(y)
-            y <- y * scale_factor
-        }
-        # Assign polygon id
-        is_upper <- which(type == 3L)
-        is_lower <- which(type == 0L)
-        id <- vector("numeric", length(x))
-        counter <- 1L
-        for (i in seq_along(is_upper)) {
-            id[is_lower[i]:is_upper[i]] <- counter
-            counter <- counter + 1L
-        }
-        # Arrange this such that it gives back a data.frame
-        # that can be used with ggplot
-        as.data.frame(
-            do.call(
-                "rbind",
-                lapply(
-                    unique(id),
-                    function(z) {
-                        idx <- id == z
-                        x_sub <- x[idx]
-                        y_sub <- y[idx] * diamond_height / 2
-                        l <- length(x_sub)
-                        mat <- matrix(
-                            NA_real_,
-                            ncol = 3,
-                            nrow = 2L * l - 2L
-                        )
-                        colnames(mat) <- c("x", "y", "id")
-                        mat[, 1L] <- c(x_sub, rev(x_sub[-c(1L, l)]))
-                        mat[, 2L] <- c(-y_sub, rev(y_sub[-c(1L, l)]))
-                        mat[, 3L] <- z
-                        mat
-                    }
-                )
-            )
-        )
-    }
+  }))
 }
 
 
@@ -1284,17 +1306,23 @@ calculate_polygon <- function(
 
 
 # ------------------------------------------------------------------------------
-# Helper to call p_val function since we added weights
+# Helper to call p_val function since we added weights and k
 # ------------------------------------------------------------------------------
 
-call_pfun <- function(fun, estimates, SEs, mu, w = NULL) {
+call_pfun <- function(fun, estimates, SEs, mu, w = NULL, k = NULL) {
   args <- names(formals(fun))
   
-  # if 'w' exists in the arguments and we have a valide w--> pass 
-  if ("w" %in% args && !is.null(w)) {
+  # if 'w' and 'k' exist in the arguments and we have a valid w or k--> pass 
+  has_w <- "w" %in% args && !is.null(w)
+  has_k <- "k" %in% args && !is.null(k)
+  
+  if (has_w && has_k) {
+    fun(estimates = estimates, SEs = SEs, mu = mu, w = w, k = k)
+  } else if (has_w) {
     fun(estimates = estimates, SEs = SEs, mu = mu, w = w)
+  } else if (has_k) {
+    fun(estimates = estimates, SEs = SEs, mu = mu, k = k)
   } else {
-    # otwise ignore weigths
     fun(estimates = estimates, SEs = SEs, mu = mu)
   }
 }

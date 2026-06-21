@@ -94,48 +94,27 @@ p_edgington <- function(
     check_inputs = TRUE,
     input_p = "greater",
     output_p = "two.sided",
-    approx = TRUE
+    approx = TRUE,
+    k = rep(1, length(estimates))
 ) {
 
-    # check inputs
-    if (check_inputs) {
-        check_inputs_p_value(
-            estimates = estimates,
-            SEs = SEs,
-            mu = mu,
-            heterogeneity = heterogeneity,
-            phi = phi,
-            tau2 = tau2
-        )
-      check_output_p_arg(output_p = output_p)
-    }
-
-    # recycle `se` if needed
-    if (length(SEs) == 1L) SEs <- rep(SEs, length(estimates))
-
-    # adjust se based on heterogeneity model
-    SEs <- adjust_se(
-      SEs = SEs,
-      heterogeneity = heterogeneity,
-      phi = phi,
-      tau2 = tau2
-    )
-
-    # Get length
-    n <- length(estimates)
-
-    # get the z-values
-    z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-    
-    # convert them to p-values
-    p <- switch(input_p,
-                "two.sided" = 2 * stats::pnorm(abs(z), lower.tail = FALSE),
-                "greater"   = stats::pnorm(z, lower.tail = FALSE),
-                "less"      = stats::pnorm(z, lower.tail = TRUE),
-                stop("input_p must be 'greater','less','two.sided'")
-    )
-    
-    p <- as.matrix(p)
+  
+  # Obtain the matrix of p values of dimension (n_studies x n_mu)
+  p <- body_p_value_fun(estimates = estimates,
+                        SEs = SEs,
+                        mu = mu,
+                        heterogeneity = heterogeneity,
+                        phi = phi,
+                        tau2 = tau2,
+                        check_inputs = check_inputs,
+                        input_p = input_p,
+                        output_p = output_p,
+                        k = k)
+  
+  
+  # Get length
+  n <- length(estimates) # same as doing  n <- nrow(p)
+  
     
     # sum up the p-values and calculate the probability
     sp <- pirwinhall(q = colSums(p), n = n, approx = approx)

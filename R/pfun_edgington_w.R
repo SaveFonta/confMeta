@@ -130,50 +130,27 @@ p_edgington_w <- function(
     w = rep(1, length(estimates)),
     approx = TRUE,
     approx_rule = "neff",                
-    neff_cut = 12
+    neff_cut = 12,
+    k = rep(1, length(estimates))
 ){
-  # -------------------------
-  # Input checks
-  # -------------------------
-  if (check_inputs) {
-    check_inputs_p_value(estimates = estimates, SEs = SEs, 
-                                    mu = mu, heterogeneity = heterogeneity, 
-                                    phi = phi, tau2 = tau2)
-    check_output_p_arg(output_p = output_p)
-    check_w_arg(w = w, estimates = estimates)
-    }
+  # w-specific check not handled by body_p_value_fun
+  if (check_inputs) check_w_arg(w = w, estimates = estimates)
   
-  # Recycle SEs if only one provided
-  if (length(SEs) == 1L) {
-    SEs <- rep(SEs, length(estimates))
-  }
+ # Obtain the matrix of p values of dimension (n_studies x n_mu)
+  p <- body_p_value_fun(estimates = estimates,
+                        SEs = SEs,
+                        mu = mu,
+                        heterogeneity = heterogeneity,
+                        phi = phi,
+                        tau2 = tau2,
+                        check_inputs = check_inputs,
+                        input_p = input_p,
+                        output_p = output_p,
+                        k = k)
   
-  n <- length(estimates)
+  # Get length
+  n <- length(estimates) # same as doing  n <- nrow(p)
   
-  stopifnot(length(SEs) == n)
-  stopifnot(length(w) == n, all(is.finite(w)), all(w > 0), all(SEs > 0))
-  
-  # Optionally adjust SEs for heterogeneity
-  if (heterogeneity != "none") {
-    SEs <- adjust_se(SEs = SEs, heterogeneity = heterogeneity,
-                                phi = phi, tau2 = tau2)
-  }
-  
-  # Compute z-values (matrix: n x length(mu))
-  z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-  
-  # Convert to p-values depending on input_p
-  p <- switch(input_p,
-              "two.sided" = 2 * stats::pnorm(abs(z), lower.tail = FALSE),
-              "greater"   = stats::pnorm(z, lower.tail = FALSE),
-              "less"      = stats::pnorm(z, lower.tail = TRUE),
-              stop("input_p must be 'greater','less','two.sided'")
-  )
-  
-  p <- as.matrix(p)
-  
-  #p is a matrix with --> each row a different study
-  #each column p value associated to a different mu
 
     # Case 1: unweighted -> Irwin–Hall distribution (classic edgington)
   if (all(w == 1)) {
@@ -276,4 +253,24 @@ cdf_weighted_uniform <- function(ew, w, wTv, signv, n, denom){
   dif <- ew - wTv[idx] 
   sum(signv[idx] * dif^n) / denom
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

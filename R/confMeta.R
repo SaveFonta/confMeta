@@ -144,6 +144,7 @@ confMeta <- function(
     MH = FALSE, 
     table_2x2 = NULL,
     measure = NULL,
+    k_studies      = NULL,          # NEW
     method.tau.re = "REML",   
     method.tau.hk = "REML",   
     method.tau.het = "REML",
@@ -172,6 +173,17 @@ confMeta <- function(
   if (inherits(conf_level, "numeric")) conf_level <- as.double(conf_level)
   study_names <- as.character(study_names)
   
+  # We don't allow k_studies to be NULL, if it is NULL, then we give all 1
+  if (is.null(k_studies)) {
+    k_studies <- rep(1L, length(estimates))
+  } else {
+    k_studies <- as.double(k_studies)
+    if (length(k_studies) == 1L)
+      k_studies <- rep(k_studies, length(estimates))
+  }
+  
+  # extract the input_p, necessary to run the best-of-k adjustment in new_confMeta
+  input_p_resolved <- resolve_input_p(fun = fun, ell = ell)
   
   # run input checks
   validate_inputs(
@@ -182,23 +194,20 @@ confMeta <- function(
     fun = fun,
     fun_name = fun_name,
     ell = ell,
-    w = w #[MOD]
+    w = w,
+    k_studies = k_studies
   )
+  
+  
+
   
   
   # Add input checks for MH
   if (MH) {
-    if (is.null(table_2x2)) {
-      stop("When MH = TRUE, 'table_2x2' must be provided.")
-    }
-    if (is.null(measure)) {
-      stop("When MH = TRUE, 'measure' must be provided.")
-    }
+    if (is.null(table_2x2)) stop("When MH = TRUE, 'table_2x2' must be provided.")
+    if (is.null(measure)) stop("When MH = TRUE, 'measure' must be provided.")
     # Force data.frame, otw matrix can break this
-    if (!is.data.frame(table_2x2)) {
-      table_2x2 <- as.data.frame(table_2x2)
-    }
-    
+    if (!is.data.frame(table_2x2)) table_2x2 <- as.data.frame(table_2x2)
     
     # Check table_2x2 structure
     required_cols <- c("ai", "bi", "ci", "di", "n1i", "n2i")
@@ -217,7 +226,7 @@ confMeta <- function(
   )
   
   new_confMeta(
-    estimates = estimates,
+    estimates = estimates, 
     SEs = SEs,
     w = w,  # [MOD] can be NULL, new_confMeta will take care
     study_names = study_names,
@@ -227,6 +236,8 @@ confMeta <- function(
     MH = MH, 
     table_2x2 = table_2x2,
     measure = measure,
+    k_studies =  k_studies,
+    input_p        = input_p_resolved,
     method.tau.re = method.tau.re,   
     method.tau.hk = method.tau.hk,   
     method.tau.het = method.tau.het, 
@@ -242,7 +253,7 @@ confMeta <- function(
 new_confMeta <- function(
     estimates = double(),
     SEs = double(),
-    w = NULL,   # [MOD] 
+    w = NULL,    
     study_names = character(),
     conf_level = double(1L),
     p_fun,
@@ -250,56 +261,96 @@ new_confMeta <- function(
     MH = FALSE, 
     table_2x2 = NULL,
     measure = NULL,
+    k_studies = rep (1L, length(estimates)), 
     method.tau.re = "REML",   
     method.tau.hk = "REML",   
     method.tau.het = "REML", 
-    adhoc.hakn.ci = "IQWiG6"
+    adhoc.hakn.ci = "IQWiG6", 
+    input_p = "greater"
 ) {
+  
 
-  # Calculate individual CIs (classic Wald type)
-  alpha <- 1 - conf_level
-  se_term <- stats::qnorm(1 - alpha / 2) * SEs 
-  individual_cis <- matrix(
-    c(
-      estimates - se_term,
-      estimates + se_term
-    ), 
-    ncol = 2L,
-    dimnames = list(study_names, c("lower", "upper"))
+  # Need to adjust the estimates based on 'best of k'
+  # Of course, if k = c(1,...,1), the code just compute Wald CI and adjusted_estimates == estimates
+
+  adj <- adjusted_individual_cis(estimates = estimates,
+                                 SEs = SEs, conf_level = conf_level, k = k_studies, input_p = input_p)
+  
+  individual_cis     <- adj[, c("lower", "upper"), drop = FALSE]
+  adjusted_estimates <- adj[, "adjusted_estimate"] 
+
+
+
+  
+  # ------------------------------------------------------------------
+  # get_ci needs original_estimates for the optimization grid and for all p_fun evaluations.
+  # k_studies is passed, so make_function can forward it
+  # to p_fun, which handles the correction using the k argument
+  # ------------------------------------------------------------------
+  joint_cis <- get_ci(
+    estimates = estimates,   # raw values for p_fun and grid
+    SEs       = SEs,
+    w         = w,
+    k         = k_studies,            # forwarded to p_fun via make_function
+    conf_level = conf_level,
+    p_fun     = p_fun
   )
   
-  # Calculate the joint CIs with the p-value function
-  joint_cis <- get_ci(
-    estimates = estimates,
-    SEs = SEs,
-    w = w,  # [MOD] if not null, will be used
-    conf_level = conf_level,
-    p_fun = p_fun
-  )
+
+  # When any k_i > 1, compute the effective mean and SE of the adjusted
+  # confidence density for each study to compute reference methods
+  # and heterogeneity statistics instead of the raw (estimates, SEs)
+  
+  # When all k == 1, confidence_density_mean_se returns (estimates, SEs)
+  if (any(k_studies != 1)) {
+    eff <- confidence_density_mean_se(
+      estimates = estimates,
+      SEs       = SEs,
+      k         = k_studies,
+      input_p   = input_p
+    )
+    eff_estimates <- eff[, "mean"]
+    eff_SEs       <- eff[, "se"]
+  } else {
+    eff_estimates <- estimates
+    eff_SEs       <- SEs
+  }
   
   # Calculate joint CIs with the comparison methods
-  method <- c("fe", "re", "hk", "hc")
   comparison <- get_stats_others(
-    method = method,
-    estimates = estimates,
-    SEs = SEs,
-    conf_level = conf_level,
-    method.tau.re = method.tau.re,   
-    method.tau.hk = method.tau.hk,  
-    adhoc.hakn.ci = adhoc.hakn.ci 
+    method        = c("fe", "re", "hk", "hc"),
+    estimates     = eff_estimates,
+    SEs           = eff_SEs,
+    conf_level    = conf_level,
+    method.tau.re = method.tau.re,
+    method.tau.hk = method.tau.hk,
+    adhoc.hakn.ci = adhoc.hakn.ci
   )
   
   # overwrite the FE method if MH = TRUE 
-  if (MH == TRUE) comparison <- overwrite_FE (comparison = comparison, table_2x2 = table_2x2, measure = measure, conf_level = conf_level) 
+  if (MH) {
+    comparison <- overwrite_FE(
+      comparison = comparison,
+      table_2x2  = table_2x2,
+      measure    = measure,
+      conf_level = conf_level
+    )
+  }
   
-  metagen_obj <- metagen_wrap(estimates, SEs, conf_level = conf_level, method.tau.het = method.tau.het)
+
   
+  metagen_obj <- metagen_wrap(
+    estimates      = eff_estimates,
+    SEs            = eff_SEs,
+    conf_level     = conf_level,
+    method.tau.het = method.tau.het
+  )
   
   heterogeneity <- data.frame(
-    Q = metagen_obj$Q,
-    p_Q = metagen_obj$pval.Q,
-    I2 = metagen_obj$I2,
-    Tau = metagen_obj$tau,
+    Q        = metagen_obj$Q,
+    p_Q      = metagen_obj$pval.Q,
+    I2       = metagen_obj$I2,
+    Tau      = metagen_obj$tau,
     I2_lower = metagen_obj$lower.I2,
     I2_upper = metagen_obj$upper.I2,
     stringsAsFactors = FALSE
@@ -307,12 +358,15 @@ new_confMeta <- function(
   
   
   
+  
   # Return object
   structure(
     list(
-      estimates = estimates,
+      estimates = estimates, 
+      adjusted_estimates = adjusted_estimates,  # corrected medians
       SEs = SEs,
       w = w,   # [MOD] 
+      k_studies          = k_studies, 
       study_names = study_names,
       conf_level = conf_level,
       p_fun = p_fun,
@@ -342,48 +396,38 @@ validate_inputs <- function(
     fun,
     fun_name,
     ell,
-    w = NULL
+    w         = NULL,
+    k_studies = NULL
 ) {
   if (is.null(w)) {
-    check_equal_length(             # estimates, SEs, study_names should
-      estimates = estimates,        # have same length
-      SEs = SEs,
-      study_names = study_names
-    )
-  } else {         
-    check_equal_length(
-      estimates = estimates,
-      SEs = SEs,
-      study_names = study_names,
-      w = w
-    )
+    check_equal_length(estimates = estimates, SEs = SEs,
+                       study_names = study_names)
+  } else {
+    check_equal_length(estimates = estimates, SEs = SEs,
+                       study_names = study_names, w = w)
   }
-  check_length_1(x = conf_level)         # conf_level must be of length 1
-  check_length_1(x = fun_name)           # fun_name must be of length 1
-  
-  # Check validity of values
-  check_all_finite(x = estimates)        # no NAs, NaNs etc in estimates
-  check_all_finite(x = SEs)              # no NAs, NaNs etc in SEs
-  check_all_finite(x = conf_level)       # no NAs, NaNs etc in conf_level
+  check_length_1(x = conf_level)
+  check_length_1(x = fun_name)
+  check_all_finite(x = estimates)
+  check_all_finite(x = SEs)
+  check_all_finite(x = conf_level)
   if (!is.null(w)) {
-    check_all_finite(x = w)             
-    if (any(w < 0)) {
-      stop("Weights (w) must be non-negative.") #[MOD] 
-    }
-  }  
-  check_prob(x = conf_level)             # conf_level must be between 0 & 1
-  check_fun_args(fun = fun, ell = ell)   # function must have correct args
-  
-  # Check the function and its arguments
+    check_all_finite(x = w)
+    if (any(w < 0)) stop("Weights (w) must be non-negative.")
+  }
+  check_prob(x = conf_level)
+  check_fun_args(fun = fun, ell = ell)
+  # k_studies is always resolved to a vector before validate_inputs is called
+  check_k_arg(k = k_studies, estimates = estimates)
   invisible(NULL)
 }
 
 # Validator function
 validate_confMeta <- function(confMeta) {
   
-  # All valid names (aggiunto w)
   cm_elements <- c(
     "estimates",
+    "adjusted_estimates",
     "SEs",
     "study_names",
     "conf_level",
@@ -398,97 +442,97 @@ validate_confMeta <- function(confMeta) {
     "aucc_ratio",
     "comparison_cis",
     "comparison_p_0",
-    "w",   
+    "w",
+    "k_studies",
     "heterogeneity",
-    "table_2x2"  
+    "table_2x2"
   )
   
   ok <- cm_elements %in% names(confMeta)
   if (!all(ok)) {
     miss <- cm_elements[!ok]
-    msg <- paste0(
-      "The confMeta object is missing components: ",
-      format_elements(miss)
-    )
-    stop(msg)
+    stop(paste0("The confMeta object is missing components: ",
+                format_elements(miss)))
   }
   
-  # type checks
-  with(
-    confMeta,
-    {
-      # Check types
-      check_type(x = estimates, "double", val = TRUE)
-      check_type(x = SEs, "double", val = TRUE)
-      check_type(x = study_names, "character", val = TRUE)
-      check_type(x = fun_name, "character", val = TRUE)
-      check_type(x = conf_level, "double", val = TRUE)
-      check_type(x = individual_cis, "double", val = TRUE)
-      check_type(x = joint_cis, "double", val = TRUE)
-      check_type(x = gamma, "double", val = TRUE)
-      check_type(x = p_max, "double", val = TRUE)
-      check_type(x = p_0, "double", val = TRUE)
-      check_type(x = aucc, "double", val = TRUE)
-      check_type(x = aucc_ratio, "double", val = TRUE)
-      check_type(x = comparison_cis, "double", val = TRUE)
-      check_type(x = comparison_p_0, "double", val = TRUE)
-      if (!is.null(w)) check_type(x = w, "double", val = TRUE)   # [MOD]
-      check_is_function(x = p_fun)
-      
-      # Check classes
-      check_class(x = individual_cis, class = "matrix", val = TRUE)
-      check_class(x = joint_cis, class = "matrix", val = TRUE)
-      check_class(x = gamma, class = "matrix", val = TRUE)
-      check_class(x = p_max, class = "matrix", val = TRUE)
-      check_class(x = p_0, class = "matrix", val = TRUE)
-      check_class(x = aucc, class = "numeric", val = TRUE)
-      check_class(x = aucc_ratio, class = "numeric", val = TRUE)
-      check_class(x = comparison_cis, "matrix", val = TRUE)
-      check_class(x = comparison_p_0, "matrix", val = TRUE)
-      
-      # Check validity of values
-      check_all_finite(x = estimates, val = TRUE)
-      check_all_finite(x = SEs, val = TRUE)
-      check_all_finite(x = conf_level, val = TRUE)
-      if (!is.null(w)) check_all_finite(x = w, val = TRUE)         # [MOD]
-      check_prob(x = conf_level, val = TRUE)
-      check_fun_args(
-        fun = p_fun,
-        ell = list(),
-        val = TRUE
+  with(confMeta, {
+    
+    # Type checks
+    check_type(x = estimates,          "double",    val = TRUE)
+    check_type(x = adjusted_estimates, "double",    val = TRUE)
+    check_type(x = SEs,                "double",    val = TRUE)
+    check_type(x = study_names,        "character", val = TRUE)
+    check_type(x = fun_name,           "character", val = TRUE)
+    check_type(x = conf_level,         "double",    val = TRUE)
+    check_type(x = individual_cis,     "double",    val = TRUE)
+    check_type(x = joint_cis,          "double",    val = TRUE)
+    check_type(x = gamma,              "double",    val = TRUE)
+    check_type(x = p_max,              "double",    val = TRUE)
+    check_type(x = p_0,               "double",    val = TRUE)
+    check_type(x = aucc,              "double",    val = TRUE)
+    check_type(x = aucc_ratio,        "double",    val = TRUE)
+    check_type(x = comparison_cis,    "double",    val = TRUE)
+    check_type(x = comparison_p_0,    "double",    val = TRUE)
+    if (!is.null(w)) check_type(x = w, "double",  val = TRUE)
+    
+    check_is_function(x = p_fun)
+    
+    # Class checks
+    check_class(x = individual_cis,  class = "matrix",  val = TRUE)
+    check_class(x = joint_cis,       class = "matrix",  val = TRUE)
+    check_class(x = gamma,           class = "matrix",  val = TRUE)
+    check_class(x = p_max,           class = "matrix",  val = TRUE)
+    check_class(x = p_0,            class = "matrix",  val = TRUE)
+    check_class(x = aucc,           class = "numeric", val = TRUE)
+    check_class(x = aucc_ratio,     class = "numeric", val = TRUE)
+    check_class(x = comparison_cis, class = "matrix",  val = TRUE)
+    check_class(x = comparison_p_0, class = "matrix",  val = TRUE)
+    
+    # Value checks
+    check_all_finite(x = estimates,  val = TRUE)
+    check_all_finite(x = SEs,        val = TRUE)
+    check_all_finite(x = conf_level, val = TRUE)
+    if (!is.null(w)) check_all_finite(x = w, val = TRUE)
+    check_prob(x = conf_level, val = TRUE)
+    check_fun_args(fun = p_fun, ell = list(), val = TRUE)
+    
+    # BUG 2 & 3 FIX: correct argument names for k_studies checks
+    if (!is.null(k_studies))
+      check_k_arg(k = k_studies, estimates = estimates)
+    
+    # Length checks — BUG 3 FIX: k_studies not k
+    if (is.null(w)) {
+      check_equal_length(
+        estimates          = estimates,
+        adjusted_estimates = adjusted_estimates,
+        SEs                = SEs,
+        study_names        = study_names,
+        k_studies          = k_studies
       )
-      
-      # Check lengths
-      if (is.null(w)) { #[MOD]
-        check_equal_length(
-          estimates = estimates,
-          SEs = SEs,
-          study_names = study_names
-        )
-      } else {
-        check_equal_length(
-          estimates = estimates,
-          SEs = SEs,
-          study_names = study_names,
-          w = w
-        )
-      }
-      check_length_1(x = conf_level)
-      check_length_1(x = fun_name)
-      check_length_1(x = aucc)
-      check_length_1(x = aucc_ratio)
-      
-      if (!is.null(table_2x2)) {
-        check_class(x = table_2x2, class = "data.frame", val = TRUE)
-      }
-      
-      invisible(NULL)
+    } else {
+      check_equal_length(
+        estimates          = estimates,
+        adjusted_estimates = adjusted_estimates,
+        SEs                = SEs,
+        study_names        = study_names,
+        w                  = w,
+        k_studies          = k_studies
+      )
     }
-  )
+    
+    check_length_1(x = conf_level)
+    check_length_1(x = fun_name)
+    check_length_1(x = aucc)
+    check_length_1(x = aucc_ratio)
+    
+    if (!is.null(table_2x2))
+      check_class(x = table_2x2, class = "data.frame", val = TRUE)
+    
+    invisible(NULL)
+  })
   
   invisible(NULL)
 }
-
 # ==============================================================================
 # Calculate the CIs using the other methods ====================================
 # ==============================================================================
