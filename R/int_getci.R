@@ -2,18 +2,20 @@ get_ci <- function(
     estimates,
     SEs,
     w = NULL,   # [MOD] 
+    k = NULL, 
     conf_level,
     p_fun) {
       # Keep a copy of estimates and SEs for later (AUCC calculation)
       orig_est <- estimates
       orig_se  <- SEs
       orig_w   <- w              # [MOD]
+      orig_k <- k
       
       # f(mu) = p(mu) - alpha
       alpha <- 1 - conf_level
       
       # Get the function we need to optimise
-      # This is calls the p-value function with specified
+      # This calls the p-value function with specified
       # args and subtracts alpha
       # IMPORTANT: f is built on the FULL data (including duplicates)
       f <- make_function(
@@ -21,16 +23,12 @@ get_ci <- function(
         SEs       = orig_se,
         w         = orig_w,   # [MOD] 
         alpha     = alpha,
-        p_fun     = p_fun
+        p_fun     = p_fun,
+        k = orig_k
       ) 
       # now f accepts as input only mu (H0) 
       
-      ### CHANGED!!: 
-      # the old version used to take unique and order for the opimization step, this created
-      #big troubles, both since it removed one study if two studies had the same estimate, both 
-      # cause ordering was not easy to handle. 
-      #
-      #NOW: build a separate x-grid just for optimization; do NOT touch SEs/w
+      
       x_grid <- sort(unique(zapsmall(orig_est))) #zapsmall deletes machine precision difference in number, I got once an error where two numbers where treated as the same even though machine precision different
       
       #NOTE--> we need this grid for the optimization (i.e. finding roots of f - alfa (the CI limits) and
@@ -54,7 +52,16 @@ get_ci <- function(
         dimnames = list(NULL, c("x", "y", "status"))
       )
       
-      ## search for local maxima in between adjacent grid points
+      ## Now the grid is made up of the ordered estimates:
+      
+      # E1----E2-----E3-----E4
+      
+      #where lower esttimate = E1, then there is E2, etc ...
+      
+      #find_optima looks at the segment "----" in between the different estimates, and find
+      # the maxima of f there. This mean that the the 'maxima' matrix has one less row than the estimates_mat
+      
+      
       maxima <- find_optima(
         f         = f,
         estimates = estimates_mat[, 1L],
@@ -63,15 +70,18 @@ get_ci <- function(
       
       ## Find out which of these maxima is relevant
       # i.e. it has a higher p-value than both the next smaller and the next larger estimate
+      
+      # basically we are in the situa:
+      #        E1--M1---E2---M3---E4, and for each M we are checking if f(M1) > f(E1) and f(E2)
+      
       isRelevant_max <- is_relevant(
         f_estimates = estimates_mat[, 2L],
         f_extremum  = maxima[, 2L],
         maximum     = TRUE
       )
       
-      ## For searching CIs: add the relevant maxima to the grid
-      ## Here, we only care about the maxima since they might be > 0
-      ## even though none of the estimates are
+      ## add the relevant maxima to the estimates_mat, then reorder the matrix 
+      # by x coordinate (since we added the max at the bottom)
       
       if (any(isRelevant_max)) {
         estimates_mat <- rbind(estimates_mat, maxima[isRelevant_max, , drop = FALSE])
@@ -90,9 +100,9 @@ get_ci <- function(
         c(x = estimates[idx], y = f_estimates[idx] + alpha),
         ncol = 2L,
         dimnames = list(NULL, c("x", "y"))
-      )
+      ) # y should be approx 1, while x is the estimate value corresponding to tat maximum (estimate)
       
-      # ---- AUCC (unchanged, uses orig_* with ALL studies) ----
+      # ---- AUCC  ----
       #IDEA:
       #integrate the function p_fun(mu) on the Real line.
       #   - 'a' = integral from -∞ to x_max (point where p_fun has the max)
@@ -108,6 +118,9 @@ get_ci <- function(
       } else {
         #I know it's a bit of a dumb way to pass the weight argument for the integration but I don't 
         #know how to do it in another way, this is also the most intuitive I guess 
+        
+        
+        
         if (is.null(orig_w)) { 
           #  --> unweighted case (w is not provided)
           a <- integrate_f(
@@ -115,6 +128,7 @@ get_ci <- function(
             p_fun,
             estimates  = orig_est,
             SEs        = orig_se,
+            k = orig_k,
             lower      = -Inf,
             upper      = p_max[, "x"],
             subdivisions = 1000L
@@ -124,6 +138,7 @@ get_ci <- function(
             p_fun,
             estimates  = orig_est,
             SEs        = orig_se,
+            k = orig_k,
             lower      = p_max[, "x"],
             upper      = Inf,
             subdivisions = 1000L
@@ -135,6 +150,7 @@ get_ci <- function(
             p_fun,
             estimates  = orig_est,
             SEs        = orig_se,
+            k = orig_k,
             w          = orig_w,
             lower      = -Inf,
             upper      = p_max[, "x"],
@@ -145,6 +161,7 @@ get_ci <- function(
             p_fun,
             estimates  = orig_est,
             SEs        = orig_se,
+            k = orig_k,
             w          = orig_w,
             lower      = p_max[, "x"],
             upper      = Inf,
@@ -164,6 +181,10 @@ get_ci <- function(
           (b - a) / aucc
         }
       }
+      
+      
+      
+      # --- CI ----
       
       if (all(f_estimates <= 0)) {
         # No CI exists  
@@ -186,12 +207,12 @@ get_ci <- function(
         colnames(out$gamma) <- c("x", "y")
       } else {
         # If the CI does exist:
-        # 1. Determine the smallest and largest estimate where f(estimate) > 0
-        # 2. Find the lower and upper bounds based on these estimates
-        # 3. Corners/Cusps are always at estimates. Thus, we search between
-        #    the lower bound, estimate_min, all the estimates in between and
-        #    finally estimate_max and the upper bound, this is implemented in
-        #    the function get_CI
+        # 1. Determine the smallest and largest estimate where f(estimate) > 0 (i.e. where results are significant9
+        #
+        # 2. Find the lower and upper bounds starting to look between these estimates, 
+        #
+        # 3. Look for "holes" in the p values function, where maybe the f deeps below alpha
+        #    in between lower and upper --> would mean two or more disjoint CI (almost never happens)
         
         # 1.
         estimates_pos <- which(f_estimates > 0)
@@ -200,18 +221,21 @@ get_ci <- function(
         estimates_min <- estimates[idx_min]
         estimates_max <- estimates[idx_max]
         
-        ### CHANGED:
         step <- max(orig_se) #searching step 
         
+        # 2.
+        # These use uniroot and starting from estimate_min, it subtract step_size and searches for the
+        # zero, so that it find the lower CI (remember f = p - alpha))
+
         lower <- find_lower(
           f            = f,
           estimates_min = estimates_min,
-          SEs_min       = step
+          step_size       = step
         )
         upper <- find_upper(
           f            = f,
           estimates_max = estimates_max,
-          SEs_max       = step
+          step_size       = step
         )
         
         # 3.
@@ -222,14 +246,16 @@ get_ci <- function(
         f_estimates <- f_estimates[idx_min:idx_max]
         
         ## Get the number of intervals between these estimates
-        
         n_intervals <- length(estimates) - 1L
         
-        ## For the intervals in the middle, compute the minimum and the
-        ## corresponding p-value
+        ## For the intervals in between each estimate, compute the minimum of that specific interval "---" 
+        #and the corresponding p-value. 
+        
+        # Our goal is to be sure f doesn't deep below zero in the CI interval! 
         if (n_intervals == 0) {
           gam <- matrix(NA_real_, ncol = 2L, nrow = 1L)
-        } else {
+        } else { 
+           ## for each segment, store le lowest point
           gam <- t(
             vapply(
               seq_len(n_intervals),
@@ -247,30 +273,25 @@ get_ci <- function(
         }
         colnames(gam) <- c("x", "y")
         
-        # Whereever the p-value function is negative at the minimum,
-        # search for the two roots. Also add the lower and upper bound
-        # If there is no minimum (i.e. only one estimate is positive),
-        # then, we can also just use lower & upper for the CI
+
         minima <- gam[, 2L]
+        
         # only search roots if there is more than one positive f(estimate)
         # and there is at least one negative minimum
         one_pos_theta_only <- length(minima) == 1L && is.na(minima)
         exist_neg_minima   <- any(minima < 0, na.rm = TRUE)
         search_roots       <- !one_pos_theta_only && exist_neg_minima
         
+        #In a normal CI, search_root == FALSE and the CI is just lower and upper.
+        ## but for complicated p value function, may happen
+        
         if (search_roots) {
-          # Now that we know all the minima between the smallest and largest
-          # positive estimate, we need to apply an algorithm to find the
-          # roots. These exist if the minimum between two estimates i
-          # and j is negative and both f(estimate[i]) and f(estimate[j])
-          # are positive.
-          
-          # In order to find the correct intervals to search, we first
-          # need to find all negative minima and then for each of them
+
+          # get_search_interval finds all negative minima and then for each of them
           # the closest smaller estimate where f_estimate > 0 and the
-          # closest larger estimate where f_estimate > 0. This is
-          # is implemented in the functions get_search_interval and
-          # find_closest_thetas
+          # closest larger estimate where f_estimate > 0. 
+          
+          # so we know that the root is somewhere between this estimate and that estimate
           intervals <- get_search_interval(
             x_max = estimates,
             y_max = f_estimates,
@@ -420,10 +441,10 @@ find_closest_thetas <- function(minimum, x_max, y_max) {
 
 #' @importFrom stats uniroot
 #' @noRd
-find_lower <- function(estimates_min, SEs_min, f) {
-    lower <- estimates_min - SEs_min
+find_lower <- function(estimates_min, step_size, f) {
+    lower <- estimates_min - step_size
     while (f(lower) > 0) {
-        lower <- lower - SEs_min
+        lower <- lower - step_size
     }
     stats::uniroot(
         f = f,
@@ -434,10 +455,10 @@ find_lower <- function(estimates_min, SEs_min, f) {
 
 #' @importFrom stats uniroot
 #' @noRd
-find_upper <- function(estimates_max, SEs_max, f) {
-    upper <- estimates_max + SEs_max
+find_upper <- function(estimates_max, step_size, f) {
+    upper <- estimates_max + step_size
     while (f(upper) > 0) {
-        upper <- upper + SEs_max
+        upper <- upper + step_size
     }
     stats::uniroot(
         f = f,
@@ -446,6 +467,25 @@ find_upper <- function(estimates_max, SEs_max, f) {
     )$root
 }
 
+
+## Just an idea for the future:
+# find_lower <- function(estimates_min, step_size, f) {
+#   lower <- estimates_min - step_size
+#   multiplier <- 1
+  
+  # Expand the search bracket geometrically 
+#   while (f(lower) > 0) {
+#     multiplier <- multiplier * 2
+#     lower <- lower - (step_size * multiplier)
+#   }
+  
+#   stats::uniroot(
+#    f = f,
+#     lower = lower,
+#     upper = estimates_min
+#   )$root
+# }
+
 ################################################################################
 # Helper function that returns a function to optimize                          #
 ################################################################################
@@ -453,23 +493,18 @@ find_upper <- function(estimates_max, SEs_max, f) {
 # Fix the arguments (estimates, SEs, w, mu) in p_fun,  Outputs a new function that has 
 # only the argument mu, then SUBSTRACT ALPHA
 
-#Note, previously do.call was used. Check this: https://stackoverflow.com/questions/17629499/do-call-20-slower-than-a-normal-call-in-r
-make_function <- function(
-    estimates,
-    SEs,
-    w = NULL,   # [MOD], note some p_fun don't have the weight
-    alpha,
-    p_fun
-) {
-  # Pre-check if w is needed 
-  if (!is.null(w)) {
-    function(mu) {
-      p_fun(estimates = estimates, SEs = SEs, w = w, mu = mu) - alpha
-    }
+make_function <- function(estimates, SEs, w = NULL, alpha, p_fun, k = NULL) {
+  if (!is.null(w) && !is.null(k)) {
+    function(mu) p_fun(estimates = estimates, SEs = SEs, mu = mu, w = w, k = k) - alpha
+  } else if (!is.null(w)) {
+    function(mu) p_fun(estimates = estimates, SEs = SEs, mu = mu, w = w) - alpha
+  } else if (!is.null(k)) {
+    function(mu) p_fun(estimates = estimates, SEs = SEs, mu = mu, k = k) - alpha
   } else {
-    function(mu) {
-      p_fun(estimates = estimates, SEs = SEs, mu = mu) - alpha
-    }
+    function(mu) p_fun(estimates = estimates, SEs = SEs, mu = mu) - alpha
   }
 }
+
+
+
 

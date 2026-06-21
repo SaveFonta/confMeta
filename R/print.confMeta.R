@@ -2,11 +2,15 @@
 #' @noRd
 print.confMeta <- function(x, ...) {
   
-  k <- length(x$estimates)
+  n <- length(x$estimates)
   cat("  Meta-Analysis with p-value combination\n")
   cat("-----------------------------------------\n")
-  cat("Number of studies: ", k, "\n")
+  cat("Number of studies: ", n, "\n")
   cat("Combination method:", x$fun_name, "\n\n")
+  
+  if (any(x$k_studies != 1)) {
+    cat("Best-of-k adjustment applied \n\n")
+  }
   
   point_est <- round(x$p_max[1, "x"], 3)
   conf_pct  <- x$conf_level * 100
