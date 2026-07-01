@@ -625,6 +625,97 @@ adjust_for_best_k <- function(p, k) {
 
 
 
+
+
+# ------------------------------------------------------------------------------
+# best-out-of-k for methods that use Z scores and not p values
+#
+# The idea is z->p->adjust->z.
+# The formula depends on input_p because the direction determines which
+# tail of the normal distribution the one-sided p-value uses
+#
+# Derivations:
+#
+#   "greater": p_i = 1 - Phi(z_i)
+#              p_adj = 1 - (1 - p_i)^k = 1 - (1 - 1 - Phi(z_i))^k = 1 - Phi(z_i)^k
+#              z_adj = Phi^{-1}(1 - p_adj) = (replace p_adj) =  Phi^{-1}(Phi(z_i)^k)
+#
+#   "less":    p_i = Phi(z_i)
+#              p_adj = 1 - (1 - p_i)^k = 1 - (1 - Phi(z_i))^k = 1 - (Phi(-z_i))^k 
+#              z_adj = Phi^{-1}(p_adj) = (replace p_adj) = Phi^{-1}(1 - (Phi(-z_i))^k =  -Phi^{-1}(Phi(-z_i)^k)
+#
+#   "two.sided": p_i = 2*Phi(-|z_i|)
+#              p_adj = 1 - (1 - 2*Phi(-|z_i|))^k
+#              z_adj = Phi^{-1}(1 - p_adj) * sign(z_i)
+# not sure baout two sided, but not relevant actually
+# ------------------------------------------------------------------------------
+
+#' @importFrom stats pnorm qnorm
+#' @noRd
+adjust_z_for_best_k <- function(z, k, input_p) {
+  z <- as.matrix(z)
+  switch(
+    input_p,
+    "greater" = {
+      #stats::qnorm(stats::pnorm(z)^k)
+      stats::qnorm(k * stats::pnorm(z, log.p = TRUE), log.p = TRUE)
+    },
+    "less" = {
+      #-stats::qnorm(stats::pnorm(-z)^k)
+      -stats::qnorm(k * stats::pnorm(-z, log.p = TRUE), log.p = TRUE)
+    },
+    "two.sided" = { #didn't use log space, but no function that combines z values can be two sided for now, so we never get to this block 
+            p_two <- 2 * stats::pnorm(-abs(z))
+            p_adj <- 1 - (1 - p_two)^k
+            stats::qnorm(1 - p_adj) * sign(z)
+    },
+    stop("input_p must be 'greater', 'less', or 'two.sided'")
+  )
+}
+
+
+
+
+
+
+
+
+# ------------------------------------------------------------------------------
+# Returns a single character string: "greater", "less", or "two.sided".
+# ------------------------------------------------------------------------------
+
+#' @noRd
+resolve_input_p <- function(fun, ell) {
+  
+  
+  # note that since we use remove_unused, if the p_function doesnt have a input_p parameter,
+  # even if the user specify it in the confMeta call, it gets deleted, and it will fall to the other cases 
+
+  # if input_p is specified by user
+  
+  if ("input_p" %in% names(ell)) {
+    return(ell[["input_p"]])
+  }
+  
+  # fun's own default for input_p, if it has one
+  f <- formals(fun)
+  if ("input_p" %in% names(f)) {
+    default_val <- f[["input_p"]]
+
+    resolved <- tryCatch(eval(default_val), error = function(e) NULL)
+    if (!is.null(resolved) && is.character(resolved)) {
+      return(resolved[1L])
+    }
+  }
+  
+  # fun has no input_p argument (e.g. p_hmean) -> "greater"
+  "greater"
+}
+
+
+
+
+
 # ------------------------------------------------------------------------------
 # Adjusted individual study summaries
 #
@@ -668,8 +759,8 @@ adjusted_individual_cis <- function(estimates, SEs, conf_level, k, input_p) {
   
   if (input_p == "two.sided") {
     
-
-
+    
+    
     z_alpha           <- stats::qnorm((1 + (1 - alpha)^(1 / k)) / 2)
     lower             <- estimates - SEs * z_alpha
     adjusted_estimate <- estimates
@@ -702,90 +793,6 @@ adjusted_individual_cis <- function(estimates, SEs, conf_level, k, input_p) {
     )
   )
 }  
-
-
-
-# ------------------------------------------------------------------------------
-# best-out-of-k for methods that use Z scores and not p values
-#
-# The idea is z->p->adjust->z.
-# The formula depends on input_p because the direction determines which
-# tail of the normal distribution the one-sided p-value occupies.
-#
-# Derivations:
-#
-#   "greater": p_i = 1 - Phi(z_i)
-#              p_adj = 1 - (1 - p_i)^k = 1 - (1 - 1 - Phi(z_i))^k = 1 - Phi(z_i)^k
-#              z_adj = Phi^{-1}(Phi(z_i)^k)
-#
-#   "less":    p_i = Phi(z_i)
-#              z_adj = -Phi^{-1}(Phi(-z_i)^k)
-#
-#   "two.sided": p_i = 2*Phi(-|z_i|)
-#              p_adj = 1 - (1 - 2*Phi(-|z_i|))^k
-#              z_adj = Phi^{-1}(1 - p_adj) * sign(z_i)
-#
-# ------------------------------------------------------------------------------
-
-#' @importFrom stats pnorm qnorm
-#' @noRd
-adjust_z_for_best_k <- function(z, k, input_p) {
-  z <- as.matrix(z)
-  switch(
-    input_p,
-    "greater" = {
-      #stats::qnorm(stats::pnorm(z)^k)
-      stats::qnorm(k * stats::pnorm(z, log.p = TRUE), log.p = TRUE)
-    },
-    "less" = {
-      #-stats::qnorm(stats::pnorm(-z)^k)
-      -stats::qnorm(k * stats::pnorm(-z, log.p = TRUE), log.p = TRUE)
-    },
-    "two.sided" = { #didn't use log space, but no function that combines z values can be two sided for now, so we never get to this block 
-            p_two <- 2 * stats::pnorm(-abs(z))
-            p_adj <- 1 - (1 - p_two)^k
-            stats::qnorm(1 - p_adj) * sign(z)
-    },
-    stop("input_p must be 'greater', 'less', or 'two.sided'")
-  )
-}
-
-
-
-
-# ------------------------------------------------------------------------------
-# Returns a single character string: "greater", "less", or "two.sided".
-# ------------------------------------------------------------------------------
-
-#' @noRd
-resolve_input_p <- function(fun, ell) {
-  
-  # if input_p is specified by user
-  # note that since we use remove_unused, if the p_function doesnt have a input_p parameter,
-  # even if the user specify it in the confMeta call, it gets deleted, and it will fall to the other cases 
-
-  if ("input_p" %in% names(ell)) {
-    return(ell[["input_p"]])
-  }
-  
-  # fun's own default for input_p, if it has one
-  f <- formals(fun)
-  if ("input_p" %in% names(f)) {
-    default_val <- f[["input_p"]]
-
-    resolved <- tryCatch(eval(default_val), error = function(e) NULL)
-    if (!is.null(resolved) && is.character(resolved)) {
-      return(resolved[1L])
-    }
-  }
-  
-  # fun has no input_p argument (e.g. p_hmean) -> "greater"
-  "greater"
-}
-
-
-
-
 
 
 

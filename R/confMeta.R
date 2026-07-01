@@ -14,6 +14,13 @@
 #'     names ("Study 1", "Study 2", ...) are used. Otherwise a vector that can
 #'     be coerced to type \code{character}. Must be of the same length as
 #'     arguments \code{estimates} and \code{SEs}. 
+#' @param k_studies Numeric vector giving, for each study, the number of
+#'     experiments \eqn{k_i} from which the most significant was reported
+#'     (best-of-k selective reporting). Must be of the same length as
+#'     \code{estimates} with all entries \eqn{> 0}; a scalar is recycled.
+#'     If \code{NULL} (the default), all \eqn{k_i = 1} and no adjustment is
+#'     applied, recovering the standard analysis. See the \emph{Best-of-k
+#'     selective reporting adjustment} section below.
 #' @param conf_level The confidence level (numeric scalar between 0 and 1).
 #' @param fun A function that combines estimates and SEs into a combined \emph{p}-value. 
 #'     The function must accept arguments \code{estimates}, \code{SEs}, and \code{mu}. 
@@ -49,15 +56,24 @@
 #' @param adhoc.hakn.ci Character string indicating the variance correction 
 #'     method for the Hartung-Knapp confidence intervals (e.g., \code{"IQWiG6"}, 
 #'     \code{"HK"}). Defaults to \code{"IQWiG6"}. See \code{meta::metagen()} for choices.
-#' @param ... Additional arguments passed to \code{fun}. 
+#' @param ... Additional arguments passed to \code{fun}. For example \code{input_p}, 
+#' \code{output_p} or \code{w} for the chosen fun; see the relevant p-value function.
 #'     
 #' @return
 #' An S3 object of class \code{confMeta} containing the following elements:
 #' \itemize{
 #'  \item \code{estimates}, \code{SEs}, \code{w}, \code{study_names}, \code{conf_level}: Values 
 #'  used to build the object.
-#'  \item \code{individual_cis}: Matrix of Wald-type confidence intervals for each study.
-#'   \item \code{p_fun}: The \emph{p}-value function used for combined inference.
+#'  \item \code{adjusted_estimates}: Best-of-k adjusted point
+#'    estimates for each study. Equal to \code{estimates} when
+#'    \code{k_studies} is a vector of ones.
+#'  \item \code{k_studies}: The vector of per-study best-of-k used.
+#'  \item \code{aucc}, \code{aucc_ratio}: Area under the confidence curve and
+#'    its left/right balance ratio.
+#'  \item \code{individual_cis}: Matrix of confidence intervals for each study.
+#'    Best-of-k adjusted when any \eqn{k_i > 1}; standard Wald intervals
+#'    otherwise.
+#'  \item \code{p_fun}: The \emph{p}-value function used for combined inference.
 #'   \item \code{joint_cis}: Combined confidence interval(s). Calculated
 #'     by finding the values where the \emph{p}-value function is larger
 #'     than the significant level (\code{1 - conf_level}).
@@ -69,29 +85,78 @@
 #'     \emph{p}-value.
 #'   \item \code{p_0}: The value of the \emph{p}-value at \eqn{\mu = 0}.
 #'   \item \code{comparison_cis}: Combined confidence intervals calculated with other
-#'     methods. These can be used for comparison purposes. Currently, these
-#'     other methods are fixed effect (IV or Mantel-Haenszel), random effects (IV), 
-#'     Hartung & Knapp, and Henmi & Copas.
+#'     methods, for comparison purposes. Currently these are fixed effect
+#'     (IV or Mantel-Haenszel), random effects (IV), Hartung & Knapp, and
+#'     Henmi & Copas. When any \eqn{k_i > 1}, these methods are computed
+#'     from the mean and standard deviation of each study's best-of-k adjusted
+#'     confidence density (obtained by numerical integration) rather than from
+#'     the raw \code{estimates} and \code{SEs}, since the adjusted confidence
+#'     density is non-normal. When all \eqn{k_i > 1}, the raw values are
+#'     used and the results are unchanged.
 #'   \item \code{comparison_p_0}: The same as in element \code{p_0} but for the comparison
-#'     methods (fixed effect, random effects, Hartung & Knapp, Henmi & Copas).
+#'     methods (fixed effect, random effects, Hartung & Knapp, Henmi & Copas). Like \code{comparison_cis}, 
+#'     these are based on the best-of-k adjusted confidence-density mean and SD when
+#'     any \eqn{k_i > 1}.
 #'   \item \code{heterogeneity}: A data frame with columns \code{Q} (Cochran's Q),
 #'   \code{p_Q} (p-value for Q), \code{I2} (\eqn{I^2}), \code{Tau} (\eqn{\tau}),
 #'   \code{I2_lower}, and \code{I2_upper}, computed using the estimator defined
-#'   by \code{method.tau.het}.
+#'   by \code{method.tau.het}. When any \eqn{k_i > 1}, computed from the
+#'   adjusted confidence-density mean and SD (see \code{comparison_cis}).
 #'   \item \code{table_2x2}: The 2x2 table data frame (if provided), otherwise \code{NULL}.
 #' }
 #'     
 #' @section Confidence intervals:
-#' Individual confidence intervals are calculated as:
+#' Individual confidence intervals (in the absence of a best-of-k adjustment,
+#' i.e. all \eqn{k_i = 1}) are the standard Wald intervals:
 #' \deqn{x_i \pm \Phi^{-1}(1 - \alpha/2) \cdot \sigma_i}
 #' where \eqn{x_i} are the \code{estimates}, \eqn{\sigma_i} the \code{SEs}, and 
-#' \eqn{\alpha = 1 - \mathrm{conf\_level}}.
+#' \eqn{\alpha = 1 - \mathrm{conf\_level}}. The best-of-k case is described in
+#' the section below.
+#'
+#' Combined confidence intervals are found by inverting the combined
+#' \emph{p}-value function, identifying all \eqn{\mu} where the \emph{p}-value
+#' exceeds the significance level (\code{1 - conf_level}). 
 #' 
-#' Combined confidence intervals are found by inverting the \emph{p}-value function, 
-#' identifying all \eqn{\mu} where the \emph{p}-value exceeds the significance level (1 - \code{conf_level}).
+#' The HK method uses \code{adhoc.hakn.ci = "IQWiG6"} by default, i.e., it uses
+#' variance correction if the HK confidence interval is narrower than the CI
+#' from the classic random effects model with the DerSimonian-Laird estimator
+#' (IQWiG, 2022).
 #' 
-#' Also, the HK method uses \code{adhoc.hakn.ci = "IQWiG6"} by default, i.e., it uses variance correction if the HK confidence interval
-#' is narrower than the CI from the classic random effects model with the DerSimonian-Laird estimator (IQWiG, 2022).
+#' @section Best-of-k adjustment:
+#' When \code{k_studies} contains values other than 1, \code{confMeta} adjusts
+#' for selective reporting, where the reported result of study \eqn{i} is the
+#' most significant out of \eqn{k_i} independent experiments. Under the global
+#' null, the smallest of \eqn{k_i} independent uniform \emph{p}-values has
+#' distribution function
+#' \deqn{F_{k_i}(p) = 1 - (1 - p)^{k_i},}
+#' so transforming each study \emph{p}-value by \eqn{p \mapsto F_{k_i}(p)}
+#' restores uniformity under the null. The
+#' adjustment enters the object in three distinct ways:
+#'\itemize{
+#'  \item \strong{Combined \emph{p}-value function.} The combined \emph{p}-value
+#'     function, and everything derived from it (\code{joint_cis}, \code{p_0},
+#'     \code{p_max}, \code{gamma}), is computed from the transformed individual study
+#'     \emph{p}-values.
+#' \item \strong{Individual studies.} \code{individual_cis} and
+#'     \code{adjusted_estimates} are obtained by inverting the adjusted
+#'     confidence distribution of each study. For one-sided selection
+#'     (\code{input_p = "greater"} or \code{"less"}) the point estimate is the
+#'     median of the adjusted distribution,
+#'     \deqn{\tilde{\theta}_i = \hat{\theta}_i - \sigma_i\,\Phi^{-1}\!\big(0.5^{1/k_i}\big)}
+#'     (for \code{"greater"}; mirrored for \code{"less"}), which shrinks the
+#'     estimate toward the null, and the interval is asymmetric. For two-sided
+#'     selection (\code{input_p = "two.sided"}) there is no shrinkage
+#'     (\eqn{\tilde{\theta}_i = \hat{\theta}_i}) and the interval widens
+#'     symmetrically,
+#'     \deqn{\hat{\theta}_i \pm \sigma_i\,\Phi^{-1}\!\Big(\tfrac{1 + (1-\alpha)^{1/k_i}}{2}\Big).}
+#'     All expressions reduce to the standard Wald interval when \eqn{k_i = 1}.
+#' \item \strong{Comparison methods} The reference
+#'     methods (\code{comparison_cis}, \code{comparison_p_0}) and the
+#'     heterogeneity statistics assume normal study inputs, but the adjusted
+#'     confidence density is skewed. Each study is therefore summarised by the
+#'     mean and standard deviation of its adjusted confidence density, computed
+#'     by numerical integration, and these are used to compute the reference methods. 
+#' }
 #' 
 #' @examples
 #'# Simulate effect estimates and standard errors
@@ -144,7 +209,7 @@ confMeta <- function(
     MH = FALSE, 
     table_2x2 = NULL,
     measure = NULL,
-    k_studies      = NULL,          # NEW
+    k_studies      = NULL,          
     method.tau.re = "REML",   
     method.tau.hk = "REML",   
     method.tau.het = "REML",
@@ -365,8 +430,8 @@ new_confMeta <- function(
       estimates = estimates, 
       adjusted_estimates = adjusted_estimates,  # corrected medians
       SEs = SEs,
-      w = w,   # [MOD] 
-      k_studies          = k_studies, 
+      w = w,   
+      k_studies = k_studies, 
       study_names = study_names,
       conf_level = conf_level,
       p_fun = p_fun,

@@ -15,6 +15,7 @@
   reference_methods_p = c("re"),
   reference_methods_forest = c("re", "hk", "hc"),
   ref_labels = NULL,
+  show_unadjusted = TRUE,
   xlim = NULL,
   xlim_p = NULL,
   xlim_forest = NULL,

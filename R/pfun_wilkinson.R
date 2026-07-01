@@ -8,8 +8,8 @@
 #' @inheritParams p_tippett
 #'
 #' @details
-#' The Wilkinson combined \emph{p}-value for \eqn{k} studies is defined as:
-#' \deqn{p_W = \max\{p_1, \dots, p_k\}^k} 
+#' The Wilkinson combined \emph{p}-value for \eqn{n} independent studies is defined as:
+#' \deqn{p_W = \max\{p_1, \dots, p_n\}^n} 
 #'
 #' Under the global null hypothesis, each \eqn{p_i} is assumed to be 
 #' uniformly distributed on \eqn{[0, 1]}.
@@ -24,6 +24,8 @@
 #' 1 minus the Tippett combined \emph{p}-value for the "less" alternative.
 #'
 #' @inheritSection p_tippett Output p-value
+#' 
+#' @inheritSection p_tippett Best-of-k adjustment
 #'
 #' @inherit p_tippett return
 #'
@@ -62,6 +64,17 @@
 #'     output_p = "two.sided",
 #'     input_p = "greater"
 #' )
+#' 
+#' # Best-of-k adjustment: each study is the most significant of k = 3 experiments
+#' p_wilkinson(
+#'     estimates = estimates,
+#'     SEs = SEs,
+#'     mu = mu,
+#'     heterogeneity = "none",
+#'     output_p = "two.sided",
+#'     input_p = "greater",
+#'     k = rep(3,n)
+#' )
 p_wilkinson <- function(
     estimates,
     SEs,
@@ -71,49 +84,27 @@ p_wilkinson <- function(
     tau2 = NULL,
     check_inputs = TRUE,
     input_p = "greater",
-    output_p = "two.sided"
+    output_p = "two.sided",
+    k = rep(1, length(estimates))
 ) {
   
-  # check inputs
-  if (check_inputs) {
-    check_inputs_p_value(
-      estimates = estimates,
-      SEs = SEs,
-      mu = mu,
-      heterogeneity = heterogeneity,
-      phi = phi,
-      tau2 = tau2
-    )
-    check_output_p_arg(output_p = output_p)
-    
-  }
   
-  # recycle `se` if needed
-  if (length(SEs) == 1L) SEs <- rep(SEs, length(estimates))
+  # Obtain the matrix of p values of dimension (n_studies x n_mu)
+  p <- body_p_value_fun(estimates = estimates,
+                         SEs = SEs,
+                         mu = mu,
+                         heterogeneity = heterogeneity,
+                         phi = phi,
+                         tau2 = tau2,
+                         check_inputs = check_inputs,
+                         input_p = input_p,
+                         output_p = output_p,
+                         k = k)
   
-  # adjust se based on heterogeneity model
-  SEs <- adjust_se(
-    SEs = SEs,
-    heterogeneity = heterogeneity,
-    phi = phi,
-    tau2 = tau2
-  )
   
-  # Get lengths
-  n <- length(estimates)
+  # Get length
+  n <- length(estimates) # same as doing  n <- nrow(p)
   
-  # get the z-values
-  z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-  
-  # convert them to p-values
-  p <- switch(input_p,
-              "two.sided" = 2 * stats::pnorm(abs(z), lower.tail = FALSE),
-              "greater"   = stats::pnorm(z, lower.tail = FALSE),
-              "less"      = stats::pnorm(z, lower.tail = TRUE),
-              stop("input_p must be 'greater','less','two.sided'")
-  )
-  
-  p <- as.matrix(p)
   
   #max(p)^n
   sp <- apply(p, 2L, max)^n

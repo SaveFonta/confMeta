@@ -97,6 +97,7 @@ autoplot.confMeta <- function(
     reference_methods_p      = c("re"),
     reference_methods_forest = c("re", "hk", "hc"),
     ref_labels = NULL,
+    show_unadjusted = TRUE,
     xlim = NULL,
     xlim_p = NULL,
     xlim_forest = NULL,
@@ -296,7 +297,8 @@ autoplot.confMeta <- function(
         xlab = xlab, 
         n_breaks =  n_breaks,
         shared_colors = shared_colors,
-        ref_labels = ref_labels
+        ref_labels = ref_labels,
+        show_unadjusted = show_unadjusted
         
         
       )
@@ -829,7 +831,8 @@ ForestPlot <- function(
     xlab,
     n_breaks,
     shared_colors,
-    ref_labels
+    ref_labels,
+    show_unadjusted 
 ) {
 
   
@@ -837,10 +840,13 @@ ForestPlot <- function(
      # Also here we make from just the first object, since all cms object must have the same individual cis
      # cannot provide different k !!
     cm <- cms[[1L]]
+    z_crit <- stats::qnorm(1 - (1 - cm$conf_level) / 2)
     
     studyCIs <- data.frame(
         lower = cm$individual_cis[, 1L],
         upper = cm$individual_cis[, 2L],
+        lower_unadj       = cm$estimates - z_crit * cm$SEs,  # Wald lower
+        upper_unadj       = cm$estimates + z_crit * cm$SEs,  # Wald upper
         estimate          = cm$adjusted_estimates,  # bias-corrected estimate
         estimate_raw      = cm$estimates,            # original value
         name = cm$study_names,
@@ -959,6 +965,30 @@ ForestPlot <- function(
     }
     
     if (show_studies) {
+      if (show_unadjusted && any(cm$k_studies != 1)) {
+        
+        y_offset <- diamond_height * 0.7   # vertical shift to avoid overlap
+        
+        p <- p +
+          # unadjusted (Wald) CI 
+          ggplot2::geom_errorbar(
+            orientation = "y",
+            data = studyCIs,
+            ggplot2::aes(y = y + y_offset, xmin = lower_unadj, xmax = upper_unadj),
+            width     = diamond_height * 0.5,
+            linewidth = 0.3,
+            color     = "grey80",
+            show.legend = FALSE
+          ) +
+          # raw reported estimate -> open circle 
+          ggplot2::geom_point(
+            data = studyCIs,
+            ggplot2::aes(x = estimate_raw, y = y + y_offset),
+            shape = 1L,
+            color = "grey50"
+          )
+      }
+      
       p <- p +
         ggplot2::geom_errorbar(
           orientation = "y",
@@ -971,23 +1001,14 @@ ForestPlot <- function(
           width = diamond_height,
           show.legend = FALSE
         ) +
-        # Adjusted (bias-corrected) point estimate — filled circle
+        # Adjusted (bias-corrected) point estimate -> filled circle
         ggplot2::geom_point(
           data = studyCIs,
           ggplot2::aes(x = estimate, y = y),
           shape = 16L
         )
-      # When any k_i > 1, also show the raw reported value as an open circle
-      if (any(cm$k_studies != 1)) {
-        p <- p +
-          ggplot2::geom_point(
-            data = studyCIs,
-            ggplot2::aes(x = estimate_raw, y = y),
-            shape = 1L,
-            color = "grey40"
-          )
-      }
-    }
+    }     
+      
     p <- p +
       ggplot2::geom_polygon(
         data = polygons[polygons$ci_exists == TRUE, ],

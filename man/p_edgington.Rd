@@ -14,7 +14,8 @@ p_edgington(
   check_inputs = TRUE,
   input_p = "greater",
   output_p = "two.sided",
-  approx = TRUE
+  approx = TRUE,
+  k = rep(1, length(estimates))
 )
 }
 \arguments{
@@ -56,8 +57,14 @@ This controls whether the final combined \emph{p}-value is symmetrized.
 \strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}}
 
 \item{approx}{Logical (default \code{TRUE}). If \code{TRUE}, use a normal
-approximation for the sum of \emph{p}-values when \eqn{k\geq 12} to
+approximation for the sum of \emph{p}-values when \eqn{n\geq 12} to
 avoid numerical overflow issues.}
+
+\item{k}{A numeric vector specifying the number of candidate studies
+from which each reported estimate was selected as the "best" (most significant).
+Defaults to \code{1} for all studies, which implies no selection bias (standard
+unadjusted meta-analysis). Must be of the same length as \code{estimates} and
+\code{SEs} (or length 1, which will be recycled).}
 }
 \value{
 A numeric vector of combined \emph{p}-values corresponding
@@ -73,8 +80,8 @@ by the Irwin–Hall distribution. For a weighted generalization of this
 procedure, see \code{\link{p_edgington_w}}.
 }
 \details{
-The classical Edgington statistic is defined for \eqn{k} studies as
-\deqn{S = \sum_{i=1}^k p_i,}
+The classical Edgington statistic is defined for \eqn{n} independent studies as
+\deqn{S = \sum_{i=1}^n p_i,}
 where \eqn{p_i} are individual study \emph{p}-values. Under the global null
 hypothesis, each \eqn{p_i} is assumed to be
 uniformly distributed on \eqn{[0, 1]}.
@@ -95,11 +102,11 @@ one of two ways:
 \itemize{
 \item \strong{Exact Method:} The function uses the exact Irwin-Hall distribution
 to compute the combined \emph{p}-value:
-\deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{k}{j} (S - j)^k}
-\item \strong{Normal Approximation:} For a large number of studies (\eqn{k \geq 12}),
+\deqn{p_E = \frac{1}{n!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{n}{j} (S - j)^n}
+\item \strong{Normal Approximation:} For a large number of studies (\eqn{n \geq 12}),
 the distribution of the sum is approximated by a Normal distribution with:
-\deqn{\mathrm{E}[S] = \frac{k}{2}}
-\deqn{\mathrm{Var}(S) = \frac{k}{12}}
+\deqn{\mathrm{E}[S] = \frac{n}{2}}
+\deqn{\mathrm{Var}(S) = \frac{n}{12}}
 }
 }
 
@@ -118,6 +125,20 @@ returns the inherently one-sided combined \emph{p}-value \eqn{p_c}
 \item If \code{input_p} is \code{"two.sided"}, the input \eqn{p_i}
 are already two-sided, and no further symmetrization is applied.
 }
+}
+
+\section{Best-of-k adjustment}{
+
+The \code{k} argument adjusts for selective reporting, where the
+reported result of study \eqn{i} is the most significant out of
+\eqn{k_i} independent experiments. Under the global null hypothesis the
+smallest of \eqn{k_i} independent uniform \emph{p}-values has
+distribution function \eqn{F_{k_i}(p) = 1 - (1 - p)^{k_i}}, so each
+study \emph{p}-value is transformed by
+\deqn{p_i \mapsto 1 - (1 - p_i)^{k_i}}
+before combination. The adjusted
+\emph{p}-values are again uniformly distributed on \eqn{[0, 1]} under the
+null, so the null distribution used by the combination is unchanged.
 }
 
 \examples{
@@ -142,6 +163,18 @@ p_edgington(
     output_p = "two.sided",
     input_p = "greater",
     approx = TRUE
+)
+
+# Best-of-k adjustment: each study is the most significant of k = 3 experiments
+p_edgington(
+    estimates = estimates,
+    SEs = SEs,
+    mu = mu,
+    heterogeneity = "none",
+    output_p = "two.sided",
+    input_p = "greater",
+    approx = TRUE,
+    rep(3, n)
 )
 }
 \references{

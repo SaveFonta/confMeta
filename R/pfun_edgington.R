@@ -12,12 +12,12 @@
 #'
 #' @inheritParams p_tippett
 #' @param approx Logical (default \code{TRUE}). If \code{TRUE}, use a normal
-#'     approximation for the sum of \emph{p}-values when \eqn{k\geq 12} to 
+#'     approximation for the sum of \emph{p}-values when \eqn{n\geq 12} to 
 #'     avoid numerical overflow issues.
 #'
 #' @details
-#' The classical Edgington statistic is defined for \eqn{k} studies as
-#' \deqn{S = \sum_{i=1}^k p_i,}
+#' The classical Edgington statistic is defined for \eqn{n} independent studies as
+#' \deqn{S = \sum_{i=1}^n p_i,}
 #' where \eqn{p_i} are individual study \emph{p}-values. Under the global null 
 #' hypothesis, each \eqn{p_i} is assumed to be 
 #' uniformly distributed on \eqn{[0, 1]}. 
@@ -37,14 +37,16 @@
 #' \itemize{
 #'   \item \strong{Exact Method:} The function uses the exact Irwin-Hall distribution 
 #'     to compute the combined \emph{p}-value:
-#'     \deqn{p_E = \frac{1}{k!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{k}{j} (S - j)^k}
-#'   \item \strong{Normal Approximation:} For a large number of studies (\eqn{k \geq 12}), 
+#'     \deqn{p_E = \frac{1}{n!} \sum_{j=0}^{\lfloor S \rfloor} (-1)^j \binom{n}{j} (S - j)^n}
+#'   \item \strong{Normal Approximation:} For a large number of studies (\eqn{n \geq 12}), 
 #'     the distribution of the sum is approximated by a Normal distribution with:
-#'     \deqn{\mathrm{E}[S] = \frac{k}{2}}
-#'     \deqn{\mathrm{Var}(S) = \frac{k}{12}}
+#'     \deqn{\mathrm{E}[S] = \frac{n}{2}}
+#'     \deqn{\mathrm{Var}(S) = \frac{n}{12}}
 #' }
 #'
 #' @inheritSection p_tippett Output p-value
+#' 
+#' @inheritSection p_tippett Best-of-k adjustment
 #'
 #' @inherit p_tippett return
 #'
@@ -83,6 +85,18 @@
 #'     output_p = "two.sided",
 #'     input_p = "greater",
 #'     approx = TRUE
+#' )
+#' 
+#' # Best-of-k adjustment: each study is the most significant of k = 3 experiments
+#' p_edgington(
+#'     estimates = estimates,
+#'     SEs = SEs,
+#'     mu = mu,
+#'     heterogeneity = "none",
+#'     output_p = "two.sided",
+#'     input_p = "greater",
+#'     approx = TRUE,
+#'     rep(3, n)
 #' )
 p_edgington <- function(
     estimates,

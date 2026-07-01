@@ -13,7 +13,8 @@ p_fisher(
   tau2 = NULL,
   check_inputs = TRUE,
   input_p = "greater",
-  output_p = "two.sided"
+  output_p = "two.sided",
+  k = rep(1, length(estimates))
 )
 }
 \arguments{
@@ -53,6 +54,12 @@ combined.}
 \emph{p}-value type: \code{"two.sided"} (default) or \code{"one.sided"}.
 This controls whether the final combined \emph{p}-value is symmetrized.
 \strong{Note:} To construct valid \emph{p}-value functions, the \code{\link{confMeta}}}
+
+\item{k}{A numeric vector specifying the number of candidate studies
+from which each reported estimate was selected as the "best" (most significant).
+Defaults to \code{1} for all studies, which implies no selection bias (standard
+unadjusted meta-analysis). Must be of the same length as \code{estimates} and
+\code{SEs} (or length 1, which will be recycled).}
 }
 \value{
 A numeric vector of combined \emph{p}-values corresponding
@@ -64,15 +71,15 @@ The method transforms the individual study \emph{p}-values using the natural
 logarithm and evaluates the sum against a chi-squared distribution.
 }
 \details{
-The Fisher test statistic for \eqn{k} studies is defined as:
-\deqn{f = -2 \sum_{i=1}^k \log(p_i)}
+The Fisher test statistic for \eqn{n} independent studies is defined as:
+\deqn{f = -2 \sum_{i=1}^n \log(p_i)}
 
 Under the global null hypothesis, each \eqn{p_i} is assumed to be
 uniformly distributed on \eqn{[0, 1]}. The test statistic \eqn{f} therefore follows a
-chi-squared distribution with \eqn{2k} degrees of freedom: \eqn{\chi^2_{2k}}.
+chi-squared distribution with \eqn{2n} degrees of freedom: \eqn{\chi^2_{2n}}.
 The combined \emph{p}-value, \eqn{p_F}, is calculated as the probability of observing a
 value strictly greater than \eqn{f} from this distribution:
-\deqn{p_F = \Pr(\chi^2_{2k} > f)}
+\deqn{p_F = \Pr(\chi^2_{2n} > f)}
 
 \strong{Important note on orientation:} Unlike Edgington's method, Fisher's method
 is \emph{not} orientation-invariant. The combined \emph{p}-value depends on
@@ -100,6 +107,20 @@ are already two-sided, and no further symmetrization is applied.
 }
 }
 
+\section{Best-of-k adjustment}{
+
+The \code{k} argument adjusts for selective reporting, where the
+reported result of study \eqn{i} is the most significant out of
+\eqn{k_i} independent experiments. Under the global null hypothesis the
+smallest of \eqn{k_i} independent uniform \emph{p}-values has
+distribution function \eqn{F_{k_i}(p) = 1 - (1 - p)^{k_i}}, so each
+study \emph{p}-value is transformed by
+\deqn{p_i \mapsto 1 - (1 - p_i)^{k_i}}
+before combination. The adjusted
+\emph{p}-values are again uniformly distributed on \eqn{[0, 1]} under the
+null, so the null distribution used by the combination is unchanged.
+}
+
 \examples{
 # Simulating estimates and standard errors
 n <- 15
@@ -123,6 +144,16 @@ p_fisher(
      input_p = "greater"
 )
 
+# Best-of-k adjustment: each study is the most significant of k = 3 experiments
+ p_fisher(
+     estimates = estimates,
+     SEs = SEs,
+     mu = mu,
+     heterogeneity = "none",
+     output_p = "two.sided",
+     input_p = "greater",
+     rep = (3,n)
+)
 }
 \references{
 Fisher R.A. \emph{Statistical Methods for Research Workers}. 4th ed. Oliver & Boyd; 1932.

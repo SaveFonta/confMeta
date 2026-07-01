@@ -17,11 +17,12 @@
 #'     \code{"greater"} (default), \code{"less"}, or \code{"two.sided"}.
 #'     If \code{"greater"} or \code{"less"}, one-sided \emph{p}-values are
 #'     combined.
+#' @template k     
 #'
 #' @details
-#' The Tippett combined \emph{p}-value, \eqn{p_T}, for \eqn{k} studies is 
+#' The Tippett combined \emph{p}-value, \eqn{p_T}, for \eqn{n} independent studies is 
 #' defined directly as:
-#' \deqn{p_T = 1 - (1 - \min\{p_1, \dots, p_k\})^k}
+#' \deqn{p_T = 1 - (1 - \min\{p_1, \dots, p_k\})^n}
 #'
 #' Under the global null hypothesis, each \eqn{p_i} is assumed to be 
 #' uniformly distributed on \eqn{[0, 1]}.
@@ -49,6 +50,19 @@
 #'   \item If \code{input_p} is \code{"two.sided"}, the input \eqn{p_i}
 #'     are already two-sided, and no further symmetrization is applied. 
 #' }
+#' 
+#' @section Best-of-k adjustment:
+#' The \code{k} argument adjusts for selective reporting, where the
+#' reported result of study \eqn{i} is the most significant out of
+#' \eqn{k_i} independent experiments. Under the global null hypothesis the
+#' smallest of \eqn{k_i} independent uniform \emph{p}-values has
+#' distribution function \eqn{F_{k_i}(p) = 1 - (1 - p)^{k_i}}, so each
+#' study \emph{p}-value is transformed by
+#' \deqn{p_i \mapsto 1 - (1 - p_i)^{k_i}}
+#' before combination. The adjusted
+#' \emph{p}-values are again uniformly distributed on \eqn{[0, 1]} under the
+#' null, so the null distribution used by the combination is unchanged.
+#' 
 #'
 #' @return A numeric vector of combined \emph{p}-values corresponding 
 #'   to each value of \code{mu}.
@@ -87,6 +101,15 @@
 #'      output_p = "two.sided",
 #'      input_p = "greater"
 #' )
+#' 
+#' Best-of-k adjustment: each study is the most significant of k = 3 experiments
+#' p_tippett(
+#'      estimates = estimates,
+#'      SEs = SEs,
+#'      mu = mu,
+#'      input_p = "greater",
+#'      k = rep(3, n)
+#' )
 p_tippett <- function(
     estimates,
     SEs,
@@ -96,51 +119,32 @@ p_tippett <- function(
     tau2 = NULL,
     check_inputs = TRUE,
     input_p = "greater",
-    output_p = "two.sided"
+    output_p = "two.sided",
+    k = rep(1, length(estimates))
 ) {
   
-  # check inputs
-  if (check_inputs) {
-    check_inputs_p_value(
-      estimates = estimates,
-      SEs = SEs,
-      mu = mu,
-      heterogeneity = heterogeneity,
-      phi = phi,
-      tau2 = tau2
-    )
-    check_output_p_arg(output_p = output_p)
-  }
   
-  # recycle `se` if needed
-  if (length(SEs) == 1L) SEs <- rep(SEs, length(estimates))
+  # Obtain the matrix of p values of dimension (n_studies x n_mu)
+  p <- body_p_value_fun(estimates = estimates,
+                         SEs = SEs,
+                         mu = mu,
+                         heterogeneity = heterogeneity,
+                         phi = phi,
+                         tau2 = tau2,
+                         check_inputs = check_inputs,
+                         input_p = input_p,
+                         output_p = output_p,
+                         k = k)
   
-  # adjust se based on heterogeneity model
-  SEs <- adjust_se(
-    SEs = SEs,
-    heterogeneity = heterogeneity,
-    phi = phi,
-    tau2 = tau2
-  )
   
   # Get length
-  n <- length(estimates)
+  n <- length(estimates) # same as doing  n <- nrow(p)
   
-  # get the z-values
-  z <- get_z(estimates = estimates, SEs = SEs, mu = mu)
-  
-  # convert them to p-values
-  p <- switch(input_p,
-              "two.sided" = 2 * stats::pnorm(abs(z), lower.tail = FALSE),
-              "greater"   = stats::pnorm(z, lower.tail = FALSE),
-              "less"      = stats::pnorm(z, lower.tail = TRUE),
-              stop("input_p must be 'greater','less','two.sided'")
-  )
-  
-  p <- as.matrix(p)
   
   # Calculate the Tippett statistic
-  sp <- 1 - (1 - apply(p, 2L, min))^n
+  ## sp <- 1 - (1 - apply(p, 2L, min))^n
+  min_p <- apply(p, 2L, min)
+  sp <- -expm1(n * log1p(-min_p))
   
   # Symmetrize to two-sided ONLY if requested and if inputs weren't already two-sided
   if (output_p == "two.sided" && input_p != "two.sided") {
@@ -148,3 +152,4 @@ p_tippett <- function(
   }
   return(sp)
 }
+

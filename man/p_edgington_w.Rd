@@ -17,7 +17,8 @@ p_edgington_w(
   w = rep(1, length(estimates)),
   approx = TRUE,
   approx_rule = "neff",
-  neff_cut = 12
+  neff_cut = 12,
+  k = rep(1, length(estimates))
 )
 }
 \arguments{
@@ -73,6 +74,12 @@ size criterion (see Details).}
 normal approximation is used when \eqn{n \geq 12}. If
 \code{approx_rule="neff"}, normal approximation is used when
 \eqn{\|w\|_2^4 / \|w\|_4^4 \geq 12}.}
+
+\item{k}{A numeric vector specifying the number of candidate studies
+from which each reported estimate was selected as the "best" (most significant).
+Defaults to \code{1} for all studies, which implies no selection bias (standard
+unadjusted meta-analysis). Must be of the same length as \code{estimates} and
+\code{SEs} (or length 1, which will be recycled).}
 }
 \value{
 A numeric vector of combined \emph{p}-values corresponding
@@ -88,8 +95,8 @@ If all weights are equal, this reduces to the classical Edgington
 procedure, where the null distribution is given by the Irwin–Hall distribution.
 }
 \details{
-The weighted Edgington statistic is defined for \eqn{k} studies as
-\deqn{S = \sum_{i=1}^k w_i p_i,}
+The weighted Edgington statistic is defined for \eqn{n} independent studies as
+\deqn{S = \sum_{i=1}^n w_i p_i,}
 where \eqn{w_i} are positive study weights and \eqn{p_i} are individual
 study \emph{p}-values. Under the global null hypothesis, each \eqn{p_i} is assumed to be
 uniformly distributed on \eqn{[0, 1]}.
@@ -101,16 +108,16 @@ is computed in one of two ways:
 \itemize{
 \item \strong{Exact Method:} The function uses the exact Barrow-Smith
 inclusion-exclusion formula to compute the CDF.
-\deqn{F(t) = \frac{1}{k! \prod_{i=1}^k w_i} \sum_{v \in \{0,1\}^k} (-1)^{\sum v_j} (t - w^T v)^k \mathbf{I}_{\{t - w^T v \ge 0\}}}
-This method is computationally intensive and is infeasible for \eqn{k > 18}
+\deqn{F(t) = \frac{1}{n! \prod_{i=1}^n w_i} \sum_{v \in \{0,1\}^n} (-1)^{\sum v_j} (t - w^T v)^n \mathbf{I}_{\{t - w^T v \ge 0\}}}
+This method is computationally intensive and is infeasible for \eqn{n > 18}
 studies, at which point the function will stop with an error if
 \code{approx = FALSE} is used.
 
 \item \strong{Normal Approximation:} For a large number of studies or
 sufficiently balanced weights, \eqn{S} is approximated by a Normal
 distribution with:
-\deqn{\mathrm{E}[S] = \frac{1}{2}\sum_{i=1}^k w_i}
-\deqn{\mathrm{Var}(S) = \frac{1}{12}\sum_{i=1}^k w_i^2}
+\deqn{\mathrm{E}[S] = \frac{1}{2}\sum_{i=1}^n w_i}
+\deqn{\mathrm{Var}(S) = \frac{1}{12}\sum_{i=1}^n w_i^2}
 }
 }
 
@@ -164,6 +171,20 @@ are already two-sided, and no further symmetrization is applied.
 }
 }
 
+\section{Best-of-k adjustment}{
+
+The \code{k} argument adjusts for selective reporting, where the
+reported result of study \eqn{i} is the most significant out of
+\eqn{k_i} independent experiments. Under the global null hypothesis the
+smallest of \eqn{k_i} independent uniform \emph{p}-values has
+distribution function \eqn{F_{k_i}(p) = 1 - (1 - p)^{k_i}}, so each
+study \emph{p}-value is transformed by
+\deqn{p_i \mapsto 1 - (1 - p_i)^{k_i}}
+before combination. The adjusted
+\emph{p}-values are again uniformly distributed on \eqn{[0, 1]} under the
+null, so the null distribution used by the combination is unchanged.
+}
+
 \examples{
 n <- 10
 estimates <- rnorm(n)
@@ -179,6 +200,19 @@ p_edgington_w(
     w = weights,
     approx = TRUE,
     approx_rule = "neff"
+)
+
+# Best-of-k adjustment: each study is the most significant of k = 3 experiments
+p_edgington_w(
+    estimates = estimates,
+    SEs = SEs,
+    mu = 0,
+    output_p = "two.sided",
+    input_p = "greater",
+    w = weights,
+    approx = TRUE,
+    approx_rule = "neff",
+    k = rep(3,n)
 )
 }
 \references{

@@ -13,7 +13,8 @@ p_hmean(
   heterogeneity = "none",
   check_inputs = TRUE,
   w = rep(1, length(estimates)),
-  distr = "chisq"
+  distr = "chisq",
+  k = rep(1, length(estimates))
 )
 }
 \arguments{
@@ -49,6 +50,12 @@ Defaults to equal weights.}
 
 \item{distr}{The distribution to use for the calculation of the p-value. Currently, the options are
 \code{"f"} (F-distribution) and \code{"chisq"} (Chi-squared distribution). Defaults to \code{"chisq"}.}
+
+\item{k}{A numeric vector specifying the number of candidate studies
+from which each reported estimate was selected as the "best" (most significant).
+Defaults to \code{1} for all studies, which implies no selection bias (standard
+unadjusted meta-analysis). Must be of the same length as \code{estimates} and
+\code{SEs} (or length 1, which will be recycled).}
 }
 \value{
 A numeric vector of combined \emph{p}-values corresponding
@@ -58,16 +65,24 @@ to each value of \code{mu}.
 Combines study-level results using the harmonic mean combination method
 }
 \details{
-The harmonic mean statistic for \eqn{k} studies is defined as
-\deqn{x^2 = \frac{\sum_{i=1}^k \sqrt{w_i}}{\sum_{i=1}^k w_i/z_i^2},}
-where \eqn{z_i} and \eqn{{w_i}} are individual study \emph{z}-values and weights,
+The harmonic mean statistic for \eqn{n} independent studies is defined as
+\deqn{x^2 = \frac{(\sum_{i=1}^n \sqrt{w_i})^2}{\sum_{i=1}^n w_i/z_i^2},}
+where \eqn{z_i} and \eqn{{w_i}} are the individual study \emph{z}-values and weights,
 respectively. Under the global null hypothesis, each \eqn{z_i} is assumed to
 follow a standard normal distribution. The harmonic mean statistic then
 follows a chi-squared distribution with one degree of freedom. The combined
-\emph{p}-value is calculated as the probability of observing a value equal or
-greater than \eqn{x^2} from this distribution: \deqn{p_H = \Pr(\chi^2_{1} >
-x^2)}
+\emph{p}-value is the probability of observing a value equal to or
+greater than \eqn{x^2}: \deqn{p_H = \Pr(\chi^2_{1} > x^2).}
 }
+\section{Best-of-k adjustment}{
+
+The harmonic mean method does \strong{not} support the best-of-k adjustment.
+The statistic depends on the \emph{z}-values only through \eqn{z_i^2}, which
+discards their sign and hence the direction of selection. The \code{k} argument is therefore accepted only for interface
+consistency with the other combination functions: it must equal 1 for every
+study (the default).
+}
+
 \examples{
 estimates <- c(0.5, 0.8, 0.3)
 SEs <- c(0.1, 0.2, 0.1)

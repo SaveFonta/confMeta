@@ -70,38 +70,22 @@ estimate_phi <- function(estimates, SEs) {
 #'     estimate_tau2(estimates = estimates, SEs = SEs)
 #' @importFrom meta metagen
 estimate_tau2 <- function(estimates, SEs, ...) {
-
-    # get names of ... arguments
-    dotargs <- as.list(match.call()[-1])
-    dotargs <- dotargs[!(names(dotargs) %in% c("estimates", "SEs"))]
-    argnames <- names(dotargs)
-
-    # set default arguments that can be overwritten by user via the ... argument
-    # default args to be set
-    default_args <- c(
-        "sm" = "sm",
-        "method.tau" = "method.tau",
-        "control" = "control"
-    )
-    # keep only those that are not set by user
-    default_args <- default_args[!(default_args %in% argnames)]
-    # put all of the not overwritten defaults into a list
-    args <- lapply(default_args, function(x) {
-        if (x == "sm") value <- "MD"
-        if (x == "method.tau") value <- "REML"
-        if (x == "control") value <- list(maxiter = 1e5, stepadj = 0.25)
-        return(value)
-    })
-
-    # set thetahat and se to the list
-    args$TE <- estimates
-    args$seTE <- SEs
-
-    # append user set arguments
-    args <- append(args, dotargs)
-
-    # generate call to metagen and evaluate
-    cc <- eval(as.call(append(list(meta::metagen), args)))
-
-    return(cc$tau2)
+  
+  # Capture dot arguments 
+  args <- list(TE = estimates,
+               seTE = SEs, ...)
+  
+  # Set defaults ONLY if the user hasn't provided them in ...
+  if (is.null(args$sm)) args$sm <- "MD"
+  if (is.null(args$method.tau)) args$method.tau <- "REML"
+  if (is.null(args$control)) args$control <- list(maxiter = 1e5, stepadj = 0.25)
+  
+  
+  # Run meta::metagen using do.call
+  cc <- do.call(meta::metagen, args)
+  
+  return(cc$tau2)
 }
+
+
+# this is old code, maybe there is a smarter way to write it TO DO

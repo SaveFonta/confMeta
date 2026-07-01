@@ -25,8 +25,8 @@
 #'     \eqn{\|w\|_2^4 / \|w\|_4^4 \geq 12}.
 #'
 #' @details
-#' The weighted Edgington statistic is defined for \eqn{k} studies as
-#' \deqn{S = \sum_{i=1}^k w_i p_i,}
+#' The weighted Edgington statistic is defined for \eqn{n} independent studies as
+#' \deqn{S = \sum_{i=1}^n w_i p_i,}
 #' where \eqn{w_i} are positive study weights and \eqn{p_i} are individual
 #' study \emph{p}-values. Under the global null hypothesis, each \eqn{p_i} is assumed to be 
 #' uniformly distributed on \eqn{[0, 1]}.
@@ -37,16 +37,16 @@
 #' \itemize{
 #'    \item **Exact Method:** The function uses the exact Barrow-Smith
 #'      inclusion-exclusion formula to compute the CDF.
-#'      \deqn{F(t) = \frac{1}{k! \prod_{i=1}^k w_i} \sum_{v \in \{0,1\}^k} (-1)^{\sum v_j} (t - w^T v)^k \mathbf{I}_{\{t - w^T v \ge 0\}}}
-#'      This method is computationally intensive and is infeasible for \eqn{k > 18}
+#'      \deqn{F(t) = \frac{1}{n! \prod_{i=1}^n w_i} \sum_{v \in \{0,1\}^n} (-1)^{\sum v_j} (t - w^T v)^n \mathbf{I}_{\{t - w^T v \ge 0\}}}
+#'      This method is computationally intensive and is infeasible for \eqn{n > 18}
 #'      studies, at which point the function will stop with an error if
 #'      \code{approx = FALSE} is used.
 #'
 #'    \item **Normal Approximation:** For a large number of studies or
 #'      sufficiently balanced weights, \eqn{S} is approximated by a Normal
 #'      distribution with:
-#'      \deqn{\mathrm{E}[S] = \frac{1}{2}\sum_{i=1}^k w_i}
-#'      \deqn{\mathrm{Var}(S) = \frac{1}{12}\sum_{i=1}^k w_i^2}
+#'      \deqn{\mathrm{E}[S] = \frac{1}{2}\sum_{i=1}^n w_i}
+#'      \deqn{\mathrm{Var}(S) = \frac{1}{12}\sum_{i=1}^n w_i^2}
 #' }
 #'
 #'
@@ -83,6 +83,8 @@
 #' 
 #'
 #' @inheritSection p_tippett Output p-value
+#' 
+#' @inheritSection p_tippett Best-of-k adjustment
 #'
 #' @inherit p_tippett return
 #' 
@@ -119,6 +121,19 @@
 #'     w = weights,
 #'     approx = TRUE,
 #'     approx_rule = "neff"
+#' )
+#' 
+#' # Best-of-k adjustment: each study is the most significant of k = 3 experiments
+#' p_edgington_w(
+#'     estimates = estimates,
+#'     SEs = SEs,
+#'     mu = 0,
+#'     output_p = "two.sided",
+#'     input_p = "greater",
+#'     w = weights,
+#'     approx = TRUE,
+#'     approx_rule = "neff",
+#'     k = rep(3,n)
 #' )
 p_edgington_w <- function(
     estimates, SEs, mu = 0, 
