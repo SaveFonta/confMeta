@@ -42,11 +42,10 @@
 #'     contains \code{"p"} and will be ignored otherwise.
 #' @param reference_methods_p Character vector controlling which reference
 #'     meta-analysis methods are shown as baseline curves in the
-#'     \emph{p}-value function plot. Valid options are \code{"fe"},
+#'     \emph{p}-value function plot, or \code{NULL} to show none. Valid options are \code{"fe"},
 #'     \code{"re"}, or \code{c("fe", "re")} for both. Defaults to \code{"re"}.
-#' @param reference_methods_forest Character vector of length 1 to 4.
-#'     Specifies which reference meta-analysis methods should be shown as
-#'     diamonds in the forest plot. Valid options are any subset of
+#' @param reference_methods_forest Character vector of length specifying which reference meta-analysis methods to shows as
+#'     diamonds in the forest plot, or \code{NULL} (equivalently \code{character(0)}) to show none. Valid options are any subset of
 #'     \code{c("fe", "re", "hk", "hc")}, which correspond to:
 #'     \itemize{
 #'       \item \code{"fe"}: fixed-effect meta-analysis
@@ -58,6 +57,13 @@
 #' @param ref_labels A named character vector to customize the labels of the reference 
 #'     methods in the plot legends and axes (e.g., \code{c("fe" = "Fixed-effect (IV)", 
 #'     "re" = "Random-effects (DL)")}). Defaults to \code{NULL}.
+#' @param show_unadjusted Logical. If \code{TRUE} (default) and a best-of-k
+#'     adjustment is active (any \code{k_studies > 1}), the forest plot also
+#'     shows each study's unadjusted reported estimate (open circle) and Wald
+#'     confidence interval (faint bar), drawn slightly above the adjusted
+#'     interval. Ignored when all \code{k_studies = 1}, since the adjusted and
+#'     unadjusted quantities coincide. Only relevant if \code{type} contains
+#'     \code{"forest"}, see \code{\link{confMeta}} for more details on best-of-k adjustment.
 #' @param xlim Numeric vector of length 2. Global limits for the x-axis. 
 #'   If \code{NULL}, limits are calculated automatically.
 #' @param xlim_p Numeric vector of length 2. Specific x-axis limits for the 
@@ -80,7 +86,16 @@
 #' @return An object of class \code{ggplot} containing the specified plot(s).
 #'
 #'
-#'
+#' @section Comparing multiple confMeta objects:
+#' When several \code{confMeta} objects are supplied via \code{...}, they must
+#' share the same \code{estimates}, \code{SEs}, \code{study_names},
+#' \code{conf_level}, and \code{k_studies}; otherwise the function stops with
+#' an error. Plotting
+#' multiple objects together is therefore intended for comparing different
+#' \strong{combination methods} (e.g. Edgington vs. Fisher) on the same data
+#' and the same best-of-k adjustment, not for comparing different datasets or
+#' different \code{k_studies} settings. To compare those, create separate
+#' plots.
 #'
 #' @importFrom patchwork wrap_plots
 #'
@@ -109,22 +124,21 @@ autoplot.confMeta <- function(
 ) {
 
     # Check validity of reference methods
-  check_ref_methods(reference_methods = reference_methods_forest)
-  if (!all(reference_methods_p %in% c("fe", "re"))) {
-    stop("`reference_methods_p` can only contain \"fe\", \"re\", or both.")
-  }
   type <- match.arg(type, several.ok = TRUE)
-  reference_methods_forest <- match.arg(
-    reference_methods_forest,
-    several.ok = TRUE,
-    choices = c("fe", "re", "hk", "hc")
-  )
-  reference_methods_p <- match.arg(
-    reference_methods_p,
-    several.ok = TRUE,
-    choices = c("fe", "re")
-  )
   
+  # to handle the case of not wanting no reference methos 
+  if (is.null(reference_methods_forest)) reference_methods_forest <- character(0)
+  if (is.null(reference_methods_p))      reference_methods_p      <- character(0)
+  
+  if (length(reference_methods_forest))
+    reference_methods_forest <- match.arg(
+      reference_methods_forest, several.ok = TRUE,
+      choices = c("fe", "re", "hk", "hc"))
+  
+  if (length(reference_methods_p))
+    reference_methods_p <- match.arg(
+      reference_methods_p, several.ok = TRUE,
+      choices = c("fe", "re"))
   
   # Check for ref_labels
   valid_method_keys <- c("fe", "re", "hk", "hc")
@@ -183,17 +197,34 @@ autoplot.confMeta <- function(
     
     # COLOR HANDLING
     fun_names_shared  <- vapply(cms, "[[", i = "fun_name", character(1L)) #take the fun_name from every confMeta object (Edgington, Edgington_w ...)
-    ref_base_p        <- intersect(c("fe", "re"), reference_methods_p)
-    ref_forest_only   <- setdiff(
-      map_ref_methods(reference_methods_forest, labels = ref_labels),
-      map_ref_methods(ref_base_p, labels = ref_labels)
-    )
-    fac_levels_all    <- c(map_ref_methods(ref_base_p, labels = ref_labels), ref_forest_only, fun_names_shared)
-    shared_colors     <- c("#000000", scales::hue_pal()(length(fac_levels_all) - 1))
+    
+    # Reference methods, in a canonical order (so colour assignment is
+    # deterministic regardless of the order the user supplied them).
+    canonical <- c("fe", "re", "hk", "hc")
+    ref_p_ord      <- canonical[canonical %in% reference_methods_p]       # fe/re only
+    ref_forest_ord <- canonical[canonical %in% reference_methods_forest]  # any of the four
+    
+    ref_labels_p      <- map_ref_methods(ref_p_ord,      labels = ref_labels)
+    ref_labels_forest <- map_ref_methods(ref_forest_ord, labels = ref_labels)
+    
+    # Methods shown only in the forest (not already coloured via the p-plot),
+    # so each method appears once in the global level set.
+    ref_forest_only <- setdiff(ref_labels_forest, ref_labels_p)
+    
+    fac_levels_all <- c(ref_labels_p, ref_forest_only, fun_names_shared)
+    
+    dup <- intersect(fun_names_shared, c(ref_labels_p, ref_forest_only))
+    if (length(dup))
+      stop("A confMeta `fun_name` collides with a reference-method label: ",
+           paste(dup, collapse = ", "), ". Rename via `fun_name`.",
+           call. = FALSE)
+    
+
+    shared_colors  <- c("#000000", scales::hue_pal()(length(fac_levels_all) - 1L))
     names(shared_colors) <- fac_levels_all #attach each method name to the color vector
     
     #This is the complete list of everything that needs a color 
-    #we want one color x method -> first is black, then hue_pal() generates evenly sapced color
+    #we want one color x method -> first is black, then hue_pal() generates evenly spaced colors
     
     
     # xlim for p plot:
@@ -412,19 +443,6 @@ check_xlim <- function(x) {
 }
 
 
-check_ref_methods <- function(reference_methods) {
-    # Check for invalid reference_methods
-    valid_methods <- c("fe", "re", "hk", "hc")
-    is_invalid <- !(reference_methods %in% valid_methods)
-    if (any(is_invalid)) {
-        msg <- paste0(
-            "Detected invalid reference_methods: ",
-            paste0(reference_methods[is_invalid], collapse = ", "),
-            "."
-        )
-        stop(msg)
-    }
-}
 
 # ==============================================================================
 # p-value function plot
@@ -603,18 +621,20 @@ ggPvalueFunction <- function(
           
           # then use get_drapery_df 
         
-        rmadf <- do.call("rbind", lapply(ref_names, function(nm) {
-          rmaestimate <- mean(ci_obj[nm, ])
-          rmase       <- (ci_obj[nm, 2L] - ci_obj[nm, 1L]) /
-            (2 * stats::qnorm((1 + cl) / 2))
-          df       <- get_drapery_df(estimates = rmaestimate, SEs = rmase, mu = const$muSeq)
-          df$study <- NULL
-          df$group <- default_to_label[nm]
-          
-          df
-        }))
-        rmadf$group <- factor(rmadf$group, levels = fac_levels)
-        
+        if (length(ref_names)) {
+          rmadf <- do.call("rbind", lapply(ref_names, function(nm) {
+            rmaestimate <- mean(ci_obj[nm, ])
+            rmase       <- (ci_obj[nm, 2L] - ci_obj[nm, 1L]) /
+              (2 * stats::qnorm((1 + cl) / 2))
+            df       <- get_drapery_df(estimates = rmaestimate, SEs = rmase, mu = const$muSeq)
+            df$study <- NULL
+            df$group <- default_to_label[nm]
+            df
+          }))
+          rmadf$group <- factor(rmadf$group, levels = fac_levels)
+        } else {
+          rmadf <- NULL
+        }
     }
     
     # now dp and rmdaf are two similar df, one for my methods, the other for the baseline method  
@@ -654,7 +674,7 @@ ggPvalueFunction <- function(
     #now add the plot for baseline method
     if (!drapery) { #only vertical lines if drapery FALSE
         p <- p + ggplot2::geom_vline(
-            xintercept = estimates, #or const$estimates
+            xintercept = const$estimates, 
             linetype = "dashed"
         )
     } else { #otwise add the drapery
@@ -665,13 +685,15 @@ ggPvalueFunction <- function(
                 linetype = "dashed",
                 color = "lightgrey",
                 show.legend = FALSE
-            ) +
-            ggplot2::geom_line(
-                data = rmadf,
-                mapping = ggplot2::aes(x = x, y = y, color = group),
-                # color = "#00000099",
-                show.legend = TRUE
-            )
+            ) 
+        
+        if (!is.null(rmadf)) {
+          p <- p + ggplot2::geom_line(
+            data = rmadf,
+            mapping = ggplot2::aes(x = x, y = y, color = group),
+            show.legend = TRUE
+          )
+        }
 
 
     }
@@ -753,6 +775,8 @@ ggPvalueFunction <- function(
 
 # Calculate the drapery lines, i.e. p-value functions of single studies, that are plotted as 
 # grey dashed lines in the back
+# Note that even though the object can have an input_p = "greater",  the plot shows two sided study curves while the
+# main combined curve is obtained by combining one sided p values and only later it is symmetrized. 
 #' @importFrom stats pnorm
 #' @noRd
 get_drapery_df <- function(estimates, SEs, mu, k = rep(1, length(estimates) ) ) {
@@ -917,18 +941,27 @@ ForestPlot <- function(
         polygons$ci_exists <- TRUE
     }
     ## Assign correct y-coordinate
-    methods <- unique(polygons$name)
+    ## When show_studies = FALSE the study rows (and the separating gap row)
+    ## are not allocated at all, so the method diamonds fill the whole plot.
+    methods   <- unique(polygons$name)
     n_methods <- length(methods)
-    spacing <- seq(
-        (nrow(studyCIs) + n_methods + 1L) * v_space,
-        v_space,
-        by = -v_space
-    )
-    studyCIs$y <- spacing[seq_len(nrow(studyCIs))]
-    method_spacing <- spacing[(nrow(studyCIs) + 2L):length(spacing)]
+    
+    n_study_rows <- if (show_studies) nrow(studyCIs) else 0L
+    gap_row      <- if (show_studies) 1L else 0L
+    n_total      <- n_study_rows + gap_row + n_methods
+    
+    spacing <- seq(n_total * v_space, v_space, by = -v_space)
+    
+    if (show_studies) {
+      studyCIs$y     <- spacing[seq_len(n_study_rows)]
+      method_spacing <- spacing[(n_study_rows + 2L):length(spacing)]  # skip gap row
+    } else {
+      method_spacing <- spacing  # every row is a method
+    }
+    
     for (i in seq_along(methods)) {
-        idx <- with(polygons, name == methods[i])
-        polygons$y[idx] <- polygons$y[idx] + method_spacing[i]
+      idx <- with(polygons, name == methods[i])
+      polygons$y[idx] <- polygons$y[idx] + method_spacing[i]
     }
     ## Manage colors
     polygons$color_hex <- ifelse(
@@ -1032,7 +1065,11 @@ ForestPlot <- function(
         ) +
         ggplot2::scale_y_continuous(
             breaks = spacing,
-            labels = c(studyCIs$name, "", unique(polygons$name)),
+            labels = if (show_studies) {
+              c(studyCIs$name, "", unique(polygons$name))
+            } else {
+              unique(polygons$name)
+            },
             limits = c(min(spacing) - v_space/2, max(spacing) + v_space/2) # this fixes the problem where that the last polygon was always too close to the x axis! 
             
         ) +
